@@ -24,7 +24,7 @@ const catalog = { getProduct };
 interface Deps { specialists: Specialists; emit: Emit }
 type Planned = { change: DraftChange; draft: Draft; after?: (d: Draft) => Draft; problems?: string[] } | { note: string; problems?: string[] };
 
-function nextLineId(draft: Draft): string {
+export function nextLineId(draft: Draft): string {
   const max = Math.max(0, ...draft.lines.map((l) => Number(l.id.replace(/^l-/, '')) || 0));
   return `l-${max + 1}`;
 }
@@ -36,7 +36,7 @@ const fmt = (n: number) => `${Math.round(n * 100) / 100}`;
  * How much of a component the draft already covers. A stock split (fitToStock) puts the rest on a
  * `<id>-more` component, so both halves count as one dish.
  */
-function coverage(draft: Draft, c: MenuComponent) {
+export function coverage(draft: Draft, c: MenuComponent) {
   const root = c.id.replace(/-more$/, '');
   const family = draft.components.filter((x) => x.id === root || x.id === `${root}-more`);
   const ids = new Set([c.id, ...family.map((x) => x.id)]);

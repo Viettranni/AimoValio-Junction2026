@@ -49,7 +49,9 @@ flowchart LR
 | Pipeline | `src/mastra/pipeline/*` | `buildDraft`: menu → quantities → search → product pick → allergen screen (via MCP) → price and stock → same-kind substitution and stock split → history → totals. |
 | Domain (pure) | `src/domain/*` | Portion rules, rounding up to whole packs, leftover-history ratios, price range and totals, draft mutations, effective cut-off. |
 | Catalogue | `src/catalog/*`, `data/catalog.index.json` | An index of 17,546 products built from the 87 MB raw file. MiniSearch over Finnish and English names; allergens derived from ingredient text and names; pack sizes per sales unit. |
-| MCP | `src/mcp/*` | The `aimo-products` MCP server (`searchProducts`, `getProduct`, `getAlternatives`, `getIngredients`, `checkAllergens`). The pipeline's allergen step calls it over stdio; external agents can use the same server. |
+| Agent gateway | `src/gateway/*` | What external purchasing agents can do: the widget's event flow (plan, edit, check out, leftovers) on the same pipeline, price and availability lookup, fixed-price offers (15 min, never past cut-off), orders with requote on any change, a deterministic per-customer authority policy, human approvals, API-key identity. Offers and approvals in SQLite, every step audited. |
+| MCP | `src/mcp/*`, `src/app/api/mcp` | The `aimo-gateway` MCP server: tool registry (catalogue, pricing, offers, orders, policy, `chatWithAimo`), resources `aimo://policy` and `aimo://playbook`, stdio and bearer-protected Streamable HTTP. The pipeline's allergen step calls its `checkAllergens` over stdio. See [MCP.md](MCP.md) and [docs/CONNECT.md](docs/CONNECT.md). |
+| Approvals | `src/app/approvals`, `src/app/api/approvals/*` | The human approver's page: the only way to approve an agent's order outside its authority. No login in this prototype: keep it on localhost (see MCP.md, security model). |
 | Valio | `src/valio/*` | Batched (≤1000), cached (10 min), retrying client for `/api/price` and `/api/availability`. Falls back to stale cache when Valio is down. |
 | Data | `src/db/*` | SQLite via Drizzle: drafts, orders and receipts, order lines, leftovers, audit log, demo clock. `npm run seed` creates the demo customer and 8 past events. |
 | Contracts | `src/contracts.ts` | The single set of shared types used by every layer, including the `data-*` stream parts. |
@@ -101,7 +103,7 @@ sequenceDiagram
 
 ## Safety and control
 
-- **Only a buyer click submits.** No agent tool can submit. `/api/order/approve` re-checks everything and returns per-line problems instead of dropping lines silently. A double click is race-safe.
+- **In the widget, only a buyer click submits.** No widget agent tool can submit. External agents order through the gateway: code checks the authority policy, and orders outside it wait for a human on `/approvals` (no MCP tool can approve). `/api/order/approve` re-checks everything and returns per-line problems instead of dropping lines silently. A double click is race-safe.
 - **Allergens.**
   - Products with no real ingredient data are "unknown" and never pass a constraint.
   - Shared items must satisfy every diet group.
@@ -118,4 +120,4 @@ sequenceDiagram
 
 ## Running and testing
 
-See [README.md](README.md). Summary: `npm run seed`, `npm run dev`, open `/demo-host?demo=1`. `npm test` runs 180 tests. `scripts/agent-smoke.ts` runs a live end-to-end conversation.
+See [README.md](README.md). Summary: `npm run seed`, `npm run dev`, open `/demo-host?demo=1`. `npm test` runs 225 tests. `scripts/gateway-demo.ts` runs an external agent against the gateway over MCP. `scripts/agent-smoke.ts` runs a live end-to-end conversation.

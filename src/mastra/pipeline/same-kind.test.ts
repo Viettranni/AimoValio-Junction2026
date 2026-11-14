@@ -19,6 +19,16 @@ describe('sameKind', () => {
     expect(sameKind(c, crumbs, otherCrumbs)).toBe(true);
   });
 
+  it('never turns gluten-free breadcrumbs into gluten-free snack pizzas (seen live)', () => {
+    const c = component('gluteeniton korppujauho kanalle', 'gluten-free breadcrumbs for chicken', { category: 'seasoning' });
+    const crumbs = product({ nameEn: 'Moilas Gluten-Free Breadcrumbs 350g', nameFi: 'Moilas Gluteeniton Korppujauho 350g', category: '21310' });
+    const pizza = product({ nameEn: '12 x Moilas Gluten-Free Snack Pizza BBQ Chicken 100g pre-baked frozen', nameFi: '12 x Moilas gluteeniton snackpizza BBQ broileri 100g', category: '41755' });
+    const mestari = product({ nameEn: 'Mestari gluten-free Breadcrumb 5 kg', nameFi: 'Mestari gluteeniton Korppujauho 5 kg', category: '21310' });
+    expect(sameKind(c, crumbs, pizza)).toBe(false);
+    expect(sameKind(c, crumbs, { ...pizza, category: '21310' })).toBe(false); // a snack is never an ingredient's stand-in
+    expect(sameKind(c, crumbs, mestari)).toBe(true);
+  });
+
   it('rejects a dessert sold by the piece for a dessert needed by the kg', () => {
     const c = component('mutakakku', 'mud cake');
     const cake = product({ nameEn: 'Mud cake 2kg', nameFi: 'Mutakakku 2kg', category: '30', packUnit: 'kg' });

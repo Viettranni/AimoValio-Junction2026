@@ -21,6 +21,11 @@ export function getDraftByConversation(conversationId: string, db: Db = getDb())
   return row ? (JSON.parse(row.json) as Draft) : null;
 }
 
+export function getDraftById(id: string, db: Db = getDb()): Draft | null {
+  const row = db.select().from(drafts).where(eq(drafts.id, id)).get();
+  return row ? (JSON.parse(row.json) as Draft) : null;
+}
+
 // ── Orders ──
 
 /** Stores an order from a receipt plus a map of line id → portion category. */

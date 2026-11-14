@@ -5,7 +5,7 @@ import type { ChoicesEvent, DietKind, Intake, UiLang } from '@/contracts';
 import { getDraftByConversation } from '@/db/repo';
 import { dietCountOptions } from '@/domain/diets';
 import { dietLabel, t, uiLangFor, type UiKey } from '@/ui/i18n';
-import { getAimoContext, type AimoContext } from '../context';
+import { ONE_QUESTION_NOTE, getAimoContext, markQuestionAsked, questionAsked, type AimoContext } from '../context';
 import { audit, emitterFor, type Emit } from '../events';
 
 const UI_LANGS: UiLang[] = ['en', 'fi', 'sv'];
@@ -90,10 +90,16 @@ export const askDietsTool = createTool({
     'The tap arrives as the next user message; pass it to understandRequest. Returns asked: null when there is nothing to ask.',
   inputSchema: z.object({}),
   outputSchema: z.object({
+    note: z.string().optional(),
     asked: z.enum(['count', 'pick']).nullable(),
     diet: z.string().optional(),
     options: z.array(z.string()).optional(),
   }),
-  execute: async (_input, context) =>
-    runAskDiets({ ctx: getAimoContext(context.requestContext) }, { emit: emitterFor(context.writer) }),
+  execute: async (_input, context) => {
+    const ctx = getAimoContext(context.requestContext);
+    if (questionAsked(context.requestContext)) return { asked: null, note: ONE_QUESTION_NOTE };
+    const result = await runAskDiets({ ctx }, { emit: emitterFor(context.writer) });
+    if (result.asked) markQuestionAsked(context.requestContext);
+    return result;
+  },
 });

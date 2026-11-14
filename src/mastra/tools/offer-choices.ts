@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { getAimoContext } from '../context';
+import { ONE_QUESTION_NOTE, getAimoContext, markQuestionAsked, questionAsked } from '../context';
 import { audit, emitterFor } from '../events';
 
 export const offerChoicesTool = createTool({
@@ -15,11 +15,13 @@ export const offerChoicesTool = createTool({
     multi: z.boolean().describe('True when several options can be chosen (add-ons)'),
     allowFreeText: z.boolean().describe('Show a "Something else…" field'),
   }),
-  outputSchema: z.object({ shown: z.literal(true) }),
+  outputSchema: z.object({ shown: z.boolean(), note: z.string().optional() }),
   execute: async (input, context) => {
     const { conversationId } = getAimoContext(context.requestContext);
+    if (questionAsked(context.requestContext)) return { shown: false, note: ONE_QUESTION_NOTE };
+    markQuestionAsked(context.requestContext);
     await emitterFor(context.writer)({ type: 'data-choices', data: { id: randomUUID(), ...input } });
     audit(conversationId, 'orchestrator', 'offerChoices', `Asked: ${input.question} (${input.options.map((o) => o.label).join(' / ')})`);
-    return { shown: true as const };
+    return { shown: true };
   },
 });

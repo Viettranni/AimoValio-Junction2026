@@ -79,7 +79,7 @@ export default function DemoHostPage() {
             Valio Aimo
           </span>
           <nav aria-label="Päävalikko" className="hidden xl:block">
-            <ul className="flex gap-7 font-display text-[18px] font-bold uppercase tracking-[0.02em] text-navy">
+            <ul className="flex items-center gap-7 font-display text-[18px] font-bold uppercase tracking-[0.02em] text-navy">
               {NAV.map((item) => (
                 <li key={item}>{item}</li>
               ))}

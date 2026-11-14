@@ -15,8 +15,10 @@ What was built for the Junction 2026 Valio Aimo challenge "Trusted Trade Agents"
 9. **Check-in:** the demo fast-forward jumps to the day after the event. The buyer replies "about 5 kg chicken left, rice ran out" and gets an editable left/short table, which is saved and used for the next order.
 10. **My orders:** past orders with receipts, recorded leftovers and "Reorder as new draft".
 11. **Languages:** replies come in the buyer's language; fixed UI text is translated for English, Finnish and Swedish.
+12. **Analytiikka:** a Finnish analytics section (`/analytiikka`) with a year story, question-driven exploration with charts and forecasts, and a per-restaurant view; reached from the main menu, where it is marked as AI.
+13. **Hosted demo:** deployed on Render's free tier at https://aimovalio-junction2026.onrender.com; the MCP link on the page points there.
 
-Quality gates: 180 automated tests and a clean type check. Every task was reviewed independently and fixed until approved, followed by a final whole-branch review and fix wave.
+Quality gates: 371 automated tests (at the time of the Analytiikka work) and a clean type check. Every task was reviewed independently and fixed until approved, followed by a final whole-branch review and fix wave.
 
 ## Bugs caught by review and live runs (all fixed)
 

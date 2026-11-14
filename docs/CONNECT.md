@@ -13,6 +13,10 @@ Both transports serve MCP 2026-07-28 clients and 2025-era clients (the ones that
 
 What each check below was verified with is noted in the section. "Not verified" means we couldn't click through that product's UI from here.
 
+## Hosted demo
+
+The Render deployment serves the same endpoint at `https://aimovalio-junction2026.onrender.com/api/mcp/<connect key>`; the **Aimo Claudessa** section on `/demo-host` shows the full link, ready to paste into a Claude connector or `claude mcp add`. No tunnel is needed. The free instance sleeps when idle, so the first call after a pause can take about a minute.
+
 ## Run the server
 
 ```bash

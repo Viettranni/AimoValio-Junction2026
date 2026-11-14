@@ -3,9 +3,9 @@
 // scaled to the new guest count and corrected by what was left over (or ran short) last time.
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import type { EventType, Receipt } from '@/contracts';
+import type { EventType, PortionCategory, Receipt } from '@/contracts';
 import { getProduct } from '@/catalog';
-import { getReceipt, listLeftoverRecords, listOrders } from '@/db/repo';
+import { getOrderLines, getReceipt, listLeftoverRecords, listOrders } from '@/db/repo';
 import { getAimoContext, type AimoContext } from '../context';
 import { emitterFor, type Emit } from '../events';
 import { runDirectOrder } from './direct-order';
@@ -100,7 +100,8 @@ export async function runDraftFromPastOrder(input: z.infer<typeof draftFromPastO
   });
   const result = await runDirectOrder({
     deliveryDate: input.deliveryDate, items, title: receipt.eventName, lang: input.lang, replaceExisting: input.replaceExisting,
-  }, ctx, emit, { guests, eventType: receipt.eventType as EventType, eventName: receipt.eventName });
+  }, ctx, emit, { guests, eventType: receipt.eventType as EventType, eventName: receipt.eventName },
+  Object.fromEntries(getOrderLines(receipt.orderId).map((l) => [l.productId, l.category as PortionCategory])));
   return {
     basedOn: { orderId: receipt.orderId, eventName: receipt.eventName, date: receipt.deliveryDate, guests: receipt.guests, totalExclVat: receipt.total },
     changes: lines.filter((l) => l.why).map((l) => `${l.productName}: ${l.was} → ${l.now} ${l.unit} (${l.why})`),

@@ -46,7 +46,11 @@ function groupOf(p: CatalogProduct): PortionCategory {
 /** Event details a reorder carries over from the past order (guests, event type and name) onto the draft. */
 export type DirectOrderIntake = Partial<Pick<import('@/contracts').Intake, 'guests' | 'eventType' | 'eventName'>>;
 
-export async function runDirectOrder(input: DirectOrderInput, ctx: AimoContext, emit: Emit, carry: DirectOrderIntake = {}) {
+export async function runDirectOrder(
+  input: DirectOrderInput, ctx: AimoContext, emit: Emit, carry: DirectOrderIntake = {},
+  /** Known portion categories by product id (a reorder takes them from the past order). */
+  categoryOf: Record<string, PortionCategory> = {},
+) {
   const existing = getDraftByConversation(ctx.conversationId);
   if (existing?.status === 'ready') {
     if (pendingOfferFor(existing)) throw new Error('The open draft is waiting for the purchasing manager\'s approval; it cannot be replaced until they decide.');
@@ -88,7 +92,7 @@ export async function runDirectOrder(input: DirectOrderInput, ctx: AimoContext, 
       return;
     }
     const component: MenuComponent = {
-      id: `c-item-${i + 1}`, label: name, searchTerms: { fi: p.nameFi, en: p.nameEn }, category: groupOf(p), origin: 'requested',
+      id: `c-item-${i + 1}`, label: name, searchTerms: { fi: p.nameFi, en: p.nameEn }, category: categoryOf[p.id] ?? groupOf(p), origin: 'requested',
       guests: 0, requiredAmount: amount, requiredUnit: p.packUnit,
       ...(input.requireDiet?.length ? { requiredDiet: input.requireDiet } : {}),
       ...(input.excludeAllergens?.length ? { excludeAllergens: input.excludeAllergens } : {}),

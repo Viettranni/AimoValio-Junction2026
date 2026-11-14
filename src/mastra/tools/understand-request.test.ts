@@ -45,7 +45,7 @@ describe('validateIntake', () => {
 
 describe('runUnderstandRequest', () => {
   const empty: IntakeExtraction = {
-    lang: 'en', deliveryDate: null, guests: null, menu: null, budget: null, diets: null, eventType: null, eventName: null,
+    lang: 'en', deliveryDate: null, guests: null, menu: null, budget: null, diets: null, dietsWithoutCount: null, eventType: null, eventName: null,
   };
   const ctx = { conversationId: 'conv-intake', customerId: 'helsinki-juhlapalvelu' };
   const building: Draft = {

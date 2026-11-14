@@ -17,12 +17,13 @@ function slotText(slot: IntakeSlot, intake: Intake, lang: UiLang): string | null
     case 'budget':
       if (intake.budget === undefined) return null;
       return intake.budget === 'none' ? t('slot.budgetNone', lang) : t('slot.budget', lang, { v: formatMoney(intake.budget, lang) });
-    case 'diets':
-      if (intake.diets === undefined) return null;
-      if (intake.diets === 'none') return t('slot.dietsNone', lang);
-      return intake.diets
-        .map((d) => `${d.guests} ${dietLabel(d.diet, lang)}`)
-        .join(' · ');
+    case 'diets': {
+      // Counted diets, then the ones still waiting for a count ("12 gluten-free · vegan ?").
+      const counted = Array.isArray(intake.diets) ? intake.diets.map((d) => `${d.guests} ${dietLabel(d.diet, lang)}`) : [];
+      const pending = (intake.dietsPending ?? []).map((d) => t('slot.dietPending', lang, { diet: dietLabel(d, lang) }));
+      if (counted.length || pending.length) return [...counted, ...pending].join(' · ');
+      return intake.diets === 'none' ? t('slot.dietsNone', lang) : null;
+    }
   }
 }
 
@@ -61,7 +62,7 @@ export function SlotChips({
                   : 'border border-transparent bg-sky text-navy hover:border-blue/40'
               }`}
             >
-              {isMissing ? t(`slot.missing.${slot}`, lang) : text}
+              {text ?? t(`slot.missing.${slot}`, lang)}
             </motion.button>
           );
         })}

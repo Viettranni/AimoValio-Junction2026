@@ -113,7 +113,9 @@ export interface AvailabilityInfo {
 
 // ───────────────────────── Intake ─────────────────────────
 
-export interface DietNeed { diet: DietFlag | Allergen; guests: number } // allergen = "no <allergen>"
+/** A diet flag, or an allergen meaning "no <allergen>". */
+export type DietKind = DietFlag | Allergen;
+export interface DietNeed { diet: DietKind; guests: number } // allergen = "no <allergen>"
 
 export interface Intake {
   deliveryDate?: ISODate;
@@ -121,6 +123,8 @@ export interface Intake {
   menu?: string[];                // free text dishes, e.g. ["chicken", "rice"]
   budget?: number | 'none';       // EUR excl. VAT, or 'none' when skipped
   diets?: DietNeed[] | 'none';
+  /** Diets the buyer named without a guest count, in the order asked; the diets slot stays missing until each has one. */
+  dietsPending?: DietKind[];
   eventType?: EventType;
   eventName?: string;             // "Wedding"
   lang?: Lang;

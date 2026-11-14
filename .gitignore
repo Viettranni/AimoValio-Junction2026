@@ -17,6 +17,7 @@ data/raw/
 *.db
 # written by npm run dev while its tunnel is up
 data/connect.json
+data/mcp-access.log
 
 # tooling
 .superpowers/

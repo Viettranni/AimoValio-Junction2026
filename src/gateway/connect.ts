@@ -1,4 +1,4 @@
-// The copy-paste MCP link for Claude (and any client that takes only a URL): <base>/api/mcp?key=<connect key>.
+// The copy-paste MCP link for Claude (and any client that takes only a URL): <base>/api/mcp/<connect key>.
 // The public base comes from the tunnel `npm run dev` opens (written to data/connect.json by scripts/dev.ts),
 // else AIMO_PUBLIC_URL; the local base from AIMO_BASE_URL, else the request's own origin.
 import { readFileSync } from 'node:fs';
@@ -29,7 +29,7 @@ export function tunnelBaseUrl(file = CONNECT_FILE): string | null {
   }
 }
 
-const mcpLink = (base: string, key: string) => `${base.replace(/\/+$/, '')}/api/mcp?key=${encodeURIComponent(key)}`;
+const mcpLink = (base: string, key: string) => `${base.replace(/\/+$/, '')}/api/mcp/${encodeURIComponent(key)}`;
 
 export function connectInfo(requestOrigin: string | null, env: Env = process.env, file = CONNECT_FILE): ConnectInfo {
   const key = connectKey(env);

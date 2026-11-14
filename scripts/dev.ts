@@ -8,7 +8,7 @@
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { copyFileSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { startMcpProxy } from './mcp-only-proxy';
+import { accessLogger, startMcpProxy } from './mcp-only-proxy';
 import { CONNECT_FILE } from '../src/gateway/connect';
 
 const root = process.cwd();
@@ -60,7 +60,7 @@ const tunnelUrl: Promise<string | null> = (async () => {
     warn('cloudflared not found: Claude Code works with the local link, but claude.ai / Claude Desktop connectors need a public one. `brew install cloudflared`, then restart.');
     return null;
   }
-  startMcpProxy(proxyPort, new URL(baseUrl)).on('error', (e) => warn(`MCP proxy on :${proxyPort} failed: ${e.message}`));
+  startMcpProxy(proxyPort, new URL(baseUrl), accessLogger()).on('error', (e) => warn(`MCP proxy on :${proxyPort} failed: ${e.message}`));
   const tunnel = spawn('cloudflared', ['tunnel', '--no-autoupdate', '--url', `http://localhost:${proxyPort}`], { stdio: ['ignore', 'pipe', 'pipe'] });
   children.push(tunnel);
   return new Promise((resolve) => {

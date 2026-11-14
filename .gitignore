@@ -13,6 +13,7 @@ dist/
 # local data (raw Valio product file is 87 MB; generated index is rebuilt by script)
 data/raw/
 *.sqlite
+*.sqlite-*
 *.db
 
 # tooling

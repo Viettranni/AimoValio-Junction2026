@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import type { UiLang } from '@/contracts';
 import { t } from './i18n';
-import { SendIcon } from './icons';
+import { PaperclipIcon, SendIcon } from './icons';
 
 export function Composer({
   value,
@@ -13,6 +13,8 @@ export function Composer({
   disabled,
   focusKey,
   lang,
+  onAttach,
+  reading,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -22,8 +24,13 @@ export function Composer({
   /** Changing this focuses the input, e.g. after a slot chip prefilled it. */
   focusKey?: number;
   lang: UiLang;
+  /** Shows a paperclip for the buyer's notes (photo, Excel, PDF, CSV). */
+  onAttach?: (file: File) => void;
+  /** An attached document is being read. */
+  reading?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (focusKey) input.current?.focus();
   }, [focusKey]);
@@ -42,11 +49,36 @@ export function Composer({
         submit();
       }}
     >
+      {onAttach && (
+        <>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*,.pdf,.xlsx,.csv,.txt"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) onAttach(file);
+            }}
+          />
+          <button
+            type="button"
+            disabled={disabled || reading}
+            onClick={() => fileInput.current?.click()}
+            aria-label={t('composer.attach', lang)}
+            title={t('composer.attach', lang)}
+            className="-ml-1.5 flex h-8 w-8 flex-none items-center justify-center rounded-full text-muted transition-colors hover:bg-ice hover:text-blue disabled:opacity-30"
+          >
+            <PaperclipIcon size={16} className={reading ? 'animate-pulse text-blue' : undefined} />
+          </button>
+        </>
+      )}
       <input
         ref={input}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        placeholder={reading ? t('document.reading', lang) : placeholder}
         aria-label={placeholder}
         className="min-w-0 flex-1 bg-transparent py-1.5 focus-visible:outline-none text-[13px] text-navy outline-none placeholder:text-muted"
       />

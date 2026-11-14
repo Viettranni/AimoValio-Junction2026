@@ -43,10 +43,10 @@ describe('tool registry', () => {
   it('keeps the catalogue tool names and adds the gateway tools, grouped', () => {
     expect(Object.keys(registryTools())).toEqual([
       'searchProducts', 'getProduct', 'getAlternatives', 'getIngredients', 'checkAllergens',
-      'getPriceAndAvailability', 'requestOffer', 'planEvent', 'getDraft', 'updateDraft', 'checkoutDraft',
+      'getPriceAndAvailability', 'requestOffer', 'readOrderDocument', 'planEvent', 'getDraft', 'updateDraft', 'checkoutDraft',
       'placeOrder', 'getOrderStatus', 'listOrders', 'getOrder', 'getDeliveryStatus', 'reportLeftovers', 'getAuthorityPolicy', 'chatWithAimo',
     ]);
-    expect(TOOL_GROUPS.map((g) => g.group)).toEqual(['catalog', 'pricing', 'offers', 'drafts', 'orders', 'policy', 'assistant']);
+    expect(TOOL_GROUPS.map((g) => g.group)).toEqual(['catalog', 'pricing', 'offers', 'documents', 'drafts', 'orders', 'policy', 'assistant']);
   });
 
   it('has no tool that approves, and no price input anywhere', () => {

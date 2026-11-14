@@ -92,7 +92,9 @@ export function deriveThread({ messages, progress, local, answers, checkins, err
       const structured: ThreadItem[] = [];
       m.parts.forEach((part, i) => {
         const id = `${m.id}-${i}`;
-        if (part.type === 'text' && part.text?.trim()) items.push({ id, kind: 'assistant', text: part.text.trim() });
+        // Stray HTML line breaks the model sometimes emits instead of prose are not a reply.
+        const text = part.type === 'text' ? (part.text ?? '').replace(/<br\s*\/?>/gi, '\n').replace(/\n{3,}/g, '\n\n').trim() : '';
+        if (text) items.push({ id, kind: 'assistant', text });
         else if (part.type === 'data-checkin') {
           structured.push({ id, kind: 'checkin', event: part.data as CheckInEvent, ...checkins[id] });
         } else if (part.type === 'data-connect') {

@@ -30,6 +30,11 @@ You are a purchasing agent buying from Valio Aimo for one customer (your API key
    track for terminal lines, late risk and short-delivered lines with reasons (simulated). getOrder and listOrders include the state.
 5. After the event: getOrder(orderId), then reportLeftovers(orderId, entries) so the next plan learns from it. listOrders shows everything.
 
+## (c) The buyer's own notes: a photo, PDF, Excel sheet or CSV
+readOrderDocument(text | fileBase64 | fileUrl) reads it into event details and ingredients (amounts only when written), the slots still
+missing and questions to ask. Ask them (never guess), then flow (b) with planEventArgs, or flow (a) for a shopping list with amounts.
+If you can see the photo or sheet yourself, pass what it says as text.
+
 ## Outcomes of placeOrder / checkoutDraft
 - "ordered": within your authority. The receipt is a simulated order (no real order is sent in this demo).
 - "pending_approval": outside your authority. Tell your user who signs off (approver) and why (reasons); poll getOrderStatus(approvalId).
@@ -96,6 +101,7 @@ export const aimoGatewayServer = new MCPServer({
   description: 'Valio Aimo for purchasing agents: catalogue, live prices and availability, fixed-price offers, orders within authority and human approval.',
   instructions: 'Read resource aimo://playbook first. Direct flow: searchProducts → getPriceAndAvailability → requestOffer → placeOrder. ' +
     'Event flow: planEvent → updateDraft → checkoutDraft → getDeliveryStatus → getOrder → reportLeftovers. ' +
+    'Notes, photos or Excel lists from the buyer: readOrderDocument, ask what is missing, then planEvent. ' +
     'Prices are fixed (no negotiation). Orders outside your authority wait for a human approver; you cannot approve.',
   tools: registryTools(),
   resources,

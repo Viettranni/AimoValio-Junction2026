@@ -82,7 +82,7 @@ export function ChatThread({
                 <motion.div
                   key={item.id}
                   {...enter}
-                  className="ml-auto max-w-[85%] rounded-[14px_14px_4px_14px] bg-blue px-3 py-2 text-[13px] leading-[19px] text-white"
+                  className="ml-auto max-w-[85%] whitespace-pre-line rounded-[14px_14px_4px_14px] bg-blue px-3 py-2 text-[13px] leading-[19px] text-white"
                 >
                   {item.text}
                 </motion.div>

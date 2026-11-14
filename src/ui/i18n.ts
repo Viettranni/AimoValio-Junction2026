@@ -15,6 +15,9 @@ const en = {
   'composer.placeholder': 'Describe your event…',
   'composer.placeholderDraft': 'Change anything, e.g. make it 320 guests',
   'composer.send': 'Send',
+  'composer.attach': 'Attach your notes: a photo, Excel or PDF',
+  'document.reading': 'Reading your notes…',
+  'document.failed': 'I couldn’t read that file. Try a sharper photo, an .xlsx or a CSV.',
 
   'slot.guests': '{n} guests',
   'slot.budget': 'budget {v}',
@@ -301,6 +304,9 @@ const fi: Dict = {
   'composer.placeholder': 'Kerro tilaisuudesta…',
   'composer.placeholderDraft': 'Muuta mitä vain, esim. 320 vierasta',
   'composer.send': 'Lähetä',
+  'composer.attach': 'Liitä muistiinpanosi: kuva, Excel tai PDF',
+  'document.reading': 'Luen muistiinpanojasi…',
+  'document.failed': 'Tiedostoa ei saatu luettua. Kokeile tarkempaa kuvaa, .xlsx- tai CSV-tiedostoa.',
 
   'slot.guests': '{n} vierasta',
   'slot.budget': 'budjetti {v}',
@@ -584,6 +590,9 @@ const sv: Dict = {
   'composer.placeholder': 'Beskriv ditt evenemang…',
   'composer.placeholderDraft': 'Ändra vad som helst, t.ex. 320 gäster',
   'composer.send': 'Skicka',
+  'composer.attach': 'Bifoga dina anteckningar: foto, Excel eller PDF',
+  'document.reading': 'Läser dina anteckningar…',
+  'document.failed': 'Filen gick inte att läsa. Prova ett skarpare foto, en .xlsx eller en CSV.',
 
   'slot.guests': '{n} gäster',
   'slot.budget': 'budget {v}',

@@ -89,7 +89,8 @@ function WidgetView({
   const [hostOpen, setHostOpen] = useState(true);
   const pageVisible = usePageVisible();
   const terms = sampleTerms(session.draft?.intake ?? session.intake);
-  const products = useProductSample({ terms, lang, enabled: session.busy, fixtureNames });
+  // Wait for the intake (data-slots) so the first request is the menu's own; staples only when it has no menu.
+  const products = useProductSample({ terms, lang, enabled: session.busy && session.intake !== null, fixtureNames });
   const running = hostOpen && pageVisible;
   const shelf: ShelfState = { products, working: session.busy, running, lang };
 

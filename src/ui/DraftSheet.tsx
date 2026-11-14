@@ -87,7 +87,7 @@ export function DraftSheet({
             </>
           )}
         </span>
-        {sheetEditing && <LimeBar className="absolute inset-x-0 -bottom-[2px]" />}
+        {sheetEditing && <LimeBar className="absolute inset-x-0 -bottom-[2px] z-10" />}
         <span role="status" className="sr-only">{sheetEditing ? t('sheet.editing', lang) : ''}</span>
       </header>
       {draft.cutoff && intake.deliveryDate && (

@@ -29,7 +29,7 @@ export const ANNOUNCE_MS = 3000;
 const words = (en: string, fi: string) => new RegExp(`(?:^|[^\\p{L}])(?:${en})|${fi}`, 'iu');
 
 // Strong pantry words win over the main ingredient ("chicken bouillon" is a seasoning).
-const PANTRY_STRONG = words('bouillon|stock|broth|fond|gravy|oil|vinegar|salt(?!\\p{L})|spice|seasoning', 'liemi|öljy|suola|mauste');
+const PANTRY_STRONG = words('bouillon|stock|broth|fond|gravy|oil|vinegar|salt(?!\\p{L})|spice|seasoning', 'liemi|öljy|suola(?!t)|mauste');
 const POULTRY = words('chicken|broiler|turkey|duck|poultry', 'kana|broileri|kalkkuna|ankka');
 const DAIRY = words('milk|cream|cheese|butter|yog(?:h)?urt|quark|crème|creme|smetana|valio|voi(?!\\p{L})', 'maito|kerma|juusto|rahka');
 const GRAINS = words(

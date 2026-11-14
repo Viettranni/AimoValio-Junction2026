@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import type { SVGProps } from 'react';
+import { useMemo, type SVGProps } from 'react';
 import { t, type UiKey } from './i18n';
 import {
   ANNOUNCE_MS, REDUCED_ROLL_MS, ROLL_MS, productsFromNames, rollIndex, scramblePrice, type ShelfGroup, type ShelfMode, type ShelfProduct,
@@ -130,11 +130,15 @@ export function LimeBar({ className = '' }: { className?: string }) {
   );
 }
 
-const roll = {
-  initial: { y: '70%', opacity: 0 },
-  animate: { y: '0%', opacity: 1 },
-  exit: { y: '-70%', opacity: 0 },
-  transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const },
+/**
+ * The one roll every loader uses: the old item leaves upwards, then the new one comes up from below, inside a
+ * clipped slot (use with AnimatePresence mode="wait"). Exit 0.12 s + enter 0.18 s stays under ROLL_MS, so only
+ * one name is ever legible.
+ */
+export const ROLL = {
+  initial: { y: '100%', opacity: 0 },
+  animate: { y: '0%', opacity: 1, transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] as const } },
+  exit: { y: '-100%', opacity: 0, transition: { duration: 0.12, ease: [0.55, 0, 1, 0.45] as const } },
 };
 
 // ───────────── Chat card: "Aimo is browsing the shelves" ─────────────
@@ -145,14 +149,14 @@ export function ShelfCard() {
   const { product, index, reduce } = useRoll(products);
 
   return (
-    <div className="w-[260px] max-w-[92%] overflow-hidden rounded-[14px_14px_14px_4px] border border-line bg-white" aria-label={t('shelf.title', lang)}>
+    <div className="w-[260px] max-w-[92%] overflow-hidden rounded-[14px_14px_14px_4px] border border-line bg-white" role="group" aria-label={t('shelf.title', lang)}>
       <div className="flex h-[62px] items-center gap-3 px-3">
         <span className="flex h-8 w-8 flex-none items-center justify-center overflow-hidden rounded-full bg-sky text-blue">
           {product && (reduce ? (
             <ShelfGlyph group={product.group} size={17} />
           ) : (
-            <AnimatePresence initial={false} mode="popLayout">
-              <motion.span key={index} {...roll} className="flex">
+            <AnimatePresence initial={false} mode="wait">
+              <motion.span key={index} {...ROLL} className="flex">
                 <ShelfGlyph group={product.group} size={17} />
               </motion.span>
             </AnimatePresence>
@@ -167,8 +171,8 @@ export function ShelfCard() {
               reduce ? (
                 <ProductLines product={product} />
               ) : (
-                <AnimatePresence initial={false}>
-                  <motion.div key={index} {...roll} className="absolute inset-0">
+                <AnimatePresence initial={false} mode="wait">
+                  <motion.div key={index} {...ROLL} className="absolute inset-0">
                     <ProductLines product={product} />
                   </motion.div>
                 </AnimatePresence>
@@ -211,7 +215,8 @@ function ProductLines({ product }: { product: ShelfProduct }) {
  */
 export function StepShuffle({ mode, names }: { mode: ShelfMode; names?: string[] }) {
   const shelf = useShelf();
-  const products = names?.length ? productsFromNamesCached(names) : shelf.products;
+  const named = useMemo(() => (names?.length ? productsFromNames(names) : null), [names]);
+  const products = named ?? shelf.products;
   const { product, index, tick, reduce } = useRoll(products);
   if (!product) return <div className="aimo-shimmer mt-1 h-4 w-44 rounded" aria-hidden="true" />;
 
@@ -220,7 +225,10 @@ export function StepShuffle({ mode, names }: { mode: ShelfMode; names?: string[]
       <span className="flex-none text-blue/70">
         <ShelfGlyph group={product.group} size={12} />
       </span>
-      <span className="min-w-0 truncate">{product.displayName}</span>
+      <span className="min-w-0 truncate">
+        {reduce && <span className="text-muted">{t('shelf.count', shelf.lang, { n: products.length })} </span>}
+        {product.displayName}
+      </span>
       {mode === 'allergens' && (
         <span className="flex-none text-ok">
           <ShieldCheck key={index} />
@@ -235,8 +243,8 @@ export function StepShuffle({ mode, names }: { mode: ShelfMode; names?: string[]
         {reduce ? (
           row
         ) : (
-          <AnimatePresence initial={false}>
-            <motion.div key={index} {...roll} className="absolute inset-0">
+          <AnimatePresence initial={false} mode="wait">
+            <motion.div key={index} {...ROLL} className="absolute inset-0">
               {row}
             </motion.div>
           </AnimatePresence>
@@ -250,10 +258,4 @@ export function StepShuffle({ mode, names }: { mode: ShelfMode; names?: string[]
       <Announce mode={mode} name={product.displayName} />
     </div>
   );
-}
-
-let namesCache: { names: string[]; products: ShelfProduct[] } | null = null;
-function productsFromNamesCached(names: string[]): ShelfProduct[] {
-  if (namesCache?.names !== names) namesCache = { names, products: productsFromNames(names) };
-  return namesCache.products;
 }

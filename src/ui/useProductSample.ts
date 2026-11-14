@@ -1,11 +1,11 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { UiLang } from '@/contracts';
 import { mixGroups, productsFromNames, termsKey, throttleWait, type ShelfProduct } from './shelf';
 
 const SAMPLE_SIZE = 24;
-/** One request per term set for the life of the page; failures are retried on the next term set only. */
+/** One successful request per term set for the life of the page. */
 const requests = new Map<string, Promise<ShelfProduct[]>>();
 
 function fetchSample(terms: string[], lang: UiLang): Promise<ShelfProduct[]> {
@@ -16,7 +16,12 @@ function fetchSample(terms: string[], lang: UiLang): Promise<ShelfProduct[]> {
     request = fetch(`/api/catalog/sample?${params}`)
       .then((res) => (res.ok ? (res.json() as Promise<{ products: ShelfProduct[] }>) : { products: [] }))
       .then((json) => json.products ?? [])
-      .catch(() => []);
+      .catch(() => [] as ShelfProduct[])
+      .then((products) => {
+        // Failures and empty answers are not remembered: the next turn asks again.
+        if (!products.length) requests.delete(key);
+        return products;
+      });
     requests.set(key, request);
   }
   return request;
@@ -53,17 +58,13 @@ export function useProductSample({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, enabled, fixture]);
 
-  if (fixture) return fixtureProducts(fixtureNames);
+  const fixtureProducts = useMemo(() => (fixtureNames ? mixGroups(productsFromNames(fixtureNames)) : null), [fixtureNames]);
+  if (fixtureProducts) return fixtureProducts;
   // Until the new term set arrives the previous products keep rolling, so the card never empties.
   return loaded?.products ?? EMPTY;
 }
 
 const EMPTY: ShelfProduct[] = [];
-let fixtureCache: { names: string[]; products: ShelfProduct[] } | null = null;
-function fixtureProducts(names: string[]): ShelfProduct[] {
-  if (fixtureCache?.names !== names) fixtureCache = { names, products: mixGroups(productsFromNames(names)) };
-  return fixtureCache.products;
-}
 
 // ───────────── Shared loader state ─────────────
 

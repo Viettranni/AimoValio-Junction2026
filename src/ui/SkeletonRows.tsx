@@ -5,7 +5,7 @@ import type { DraftTotals, Intake, UiLang } from '@/contracts';
 import { SHEET_COLUMNS } from './DraftRow';
 import { formatDay } from './format';
 import { t } from './i18n';
-import { LimeBar, ShelfGlyph } from './ShelfShuffle';
+import { LimeBar, ROLL, ShelfGlyph } from './ShelfShuffle';
 import { REDUCED_ROLL_MS, rollIndex } from './shelf';
 import { TotalsFooter } from './TotalsFooter';
 import { useShelf, useTick } from './useProductSample';
@@ -32,21 +32,20 @@ export function SkeletonRow({ index }: { index: number }) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { delay: index * 0.06 } }}
-      exit={{ opacity: 0, transition: { duration: 0.15 } }}
-      className={`${ROW_HEIGHT} border-b border-line last:border-b-0`}
+      // Folds away instead of vanishing, so the real row landing above does not make the list jump.
+      exit={{ opacity: 0, height: 0, transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] } }}
+      className={`${ROW_HEIGHT} overflow-hidden border-b border-line last:border-b-0`}
       aria-hidden="true"
     >
       <div className={`${SHEET_COLUMNS} h-full px-4`}>
         <div className="min-w-0">
           <div className="relative h-[18px] overflow-hidden">
             {product ? (
-              <AnimatePresence initial={false}>
+              <AnimatePresence initial={false} mode="wait">
                 <motion.div
                   key={`${product.id}-${tick}`}
-                  initial={reduce ? false : { opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.3 }}
+                  {...ROLL}
+                  initial={reduce ? false : ROLL.initial}
                   className="absolute inset-0 flex items-center gap-1.5 text-[13px] leading-[18px] text-muted/70"
                 >
                   <span className="flex-none text-blue/40">
@@ -85,7 +84,7 @@ export function SkeletonSheet({ intake, lang }: { intake: Intake | null; lang: U
           {intake?.deliveryDate && ` · ${formatDay(intake.deliveryDate, lang)}`}
           {intake?.guests && ` · ${t('sheet.guests', lang, { n: intake.guests })}`}
         </span>
-        <LimeBar className="absolute inset-x-0 -bottom-[2px]" />
+        <LimeBar className="absolute inset-x-0 -bottom-[2px] z-10" />
       </header>
       <div className="px-4 pt-2 text-[11.5px] text-muted">{t('sheet.building', lang)}</div>
       <div className={`${SHEET_COLUMNS} mt-2 bg-ice px-4 py-1.5 text-[10px] font-medium uppercase tracking-[0.07em] text-muted`}>

@@ -6,8 +6,9 @@ import type { DeliveryStatus } from '@/gateway/delivery';
 import { DeliveryTimeline } from './DeliveryTimeline';
 import { formatDay, formatMoney, formatNumber, formatQty } from './format';
 import { t } from './i18n';
-import { ClockIcon, HistoryIcon, LeafIcon, PrintIcon } from './icons';
+import { ClockIcon, DownloadIcon, HistoryIcon, LeafIcon } from './icons';
 import { shortName } from './productName';
+import { downloadReceipt } from './receiptDocument';
 import { SECONDARY_BUTTON } from './styles';
 
 /** Order confirmation. The order number is "stamped" in; the decision log unfolds underneath. */
@@ -148,9 +149,9 @@ export function ReceiptView({
               {t('receipt.reorder', lang)}
             </button>
           )}
-          <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-blue hover:underline">
-            <PrintIcon size={14} />
-            {t('receipt.print', lang)}
+          <button type="button" onClick={() => downloadReceipt(receipt, lang)} className="inline-flex items-center gap-1.5 text-blue hover:underline">
+            <DownloadIcon size={14} />
+            {t('receipt.download', lang)}
           </button>
           <button type="button" onClick={onOpenAudit} className="text-blue hover:underline">
             {audit ? t('receipt.hideLog', lang) : t('receipt.log', lang)}

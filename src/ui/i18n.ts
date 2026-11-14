@@ -132,7 +132,6 @@ const en = {
   'receipt.vat': 'VAT',
   'receipt.total': 'Total incl. VAT',
   'receipt.co2': 'Estimated footprint {v} kg CO₂e',
-  'receipt.print': 'Print',
   'receipt.log': 'Decision log',
   'receipt.hideLog': 'Hide decision log',
 
@@ -241,6 +240,22 @@ const en = {
   'unit.kg': 'kg',
   'unit.l': 'L',
   'unit.pcs': 'pcs',
+  'receipt.download': 'Download receipt',
+  'receipt.doc.title': 'Order receipt',
+  'receipt.doc.order': 'Order',
+  'receipt.doc.placed': 'Ordered',
+  'receipt.doc.delivery': 'Delivery',
+  'receipt.doc.event': 'Event',
+  'receipt.doc.customer': 'Customer',
+  'receipt.doc.product': 'Product',
+  'receipt.doc.pack': 'Pack',
+  'receipt.doc.qty': 'Quantity',
+  'receipt.doc.unitPrice': 'Unit price',
+  'receipt.doc.lineTotal': 'Line total',
+  'receipt.doc.packs': '{n} packs',
+  'receipt.doc.packs.one': '1 pack',
+  'receipt.doc.pricesNote': 'Unit prices are per pack. Prices and line totals excl. VAT.',
+  'receipt.doc.simulated': 'Simulated demo order. Nothing is charged.',
 } as const;
 
 export type UiKey = keyof typeof en;
@@ -378,7 +393,6 @@ const fi: Dict = {
   'receipt.vat': 'ALV',
   'receipt.total': 'Yhteensä sis. alv',
   'receipt.co2': 'Arvioitu hiilijalanjälki {v} kg CO₂e',
-  'receipt.print': 'Tulosta',
   'receipt.log': 'Päätösloki',
   'receipt.hideLog': 'Piilota päätösloki',
 
@@ -487,6 +501,22 @@ const fi: Dict = {
   'unit.kg': 'kg',
   'unit.l': 'l',
   'unit.pcs': 'kpl',
+  'receipt.download': 'Lataa kuitti',
+  'receipt.doc.title': 'Tilauskuitti',
+  'receipt.doc.order': 'Tilaus',
+  'receipt.doc.placed': 'Tilattu',
+  'receipt.doc.delivery': 'Toimitus',
+  'receipt.doc.event': 'Tilaisuus',
+  'receipt.doc.customer': 'Asiakas',
+  'receipt.doc.product': 'Tuote',
+  'receipt.doc.pack': 'Pakkaus',
+  'receipt.doc.qty': 'Määrä',
+  'receipt.doc.unitPrice': 'Yksikköhinta',
+  'receipt.doc.lineTotal': 'Rivin summa',
+  'receipt.doc.packs': '{n} pakkausta',
+  'receipt.doc.packs.one': '1 pakkaus',
+  'receipt.doc.pricesNote': 'Yksikköhinnat ovat pakkauskohtaisia. Hinnat ja rivisummat alv 0 %.',
+  'receipt.doc.simulated': 'Simuloitu demotilaus. Mitään ei veloiteta.',
 };
 
 const sv: Dict = {
@@ -621,7 +651,6 @@ const sv: Dict = {
   'receipt.vat': 'Moms',
   'receipt.total': 'Totalt inkl. moms',
   'receipt.co2': 'Uppskattat avtryck {v} kg CO₂e',
-  'receipt.print': 'Skriv ut',
   'receipt.log': 'Beslutslogg',
   'receipt.hideLog': 'Dölj beslutslogg',
 
@@ -730,6 +759,22 @@ const sv: Dict = {
   'unit.kg': 'kg',
   'unit.l': 'l',
   'unit.pcs': 'st',
+  'receipt.download': 'Ladda ner kvitto',
+  'receipt.doc.title': 'Orderkvitto',
+  'receipt.doc.order': 'Order',
+  'receipt.doc.placed': 'Beställd',
+  'receipt.doc.delivery': 'Leverans',
+  'receipt.doc.event': 'Evenemang',
+  'receipt.doc.customer': 'Kund',
+  'receipt.doc.product': 'Produkt',
+  'receipt.doc.pack': 'Förpackning',
+  'receipt.doc.qty': 'Antal',
+  'receipt.doc.unitPrice': 'Styckpris',
+  'receipt.doc.lineTotal': 'Radsumma',
+  'receipt.doc.packs': '{n} förp.',
+  'receipt.doc.packs.one': '1 förp.',
+  'receipt.doc.pricesNote': 'Styckpriser gäller per förpackning. Priser och radsummor exkl. moms.',
+  'receipt.doc.simulated': 'Simulerad demoorder. Inget debiteras.',
 };
 
 const dicts: Record<UiLang, Dict> = { en, fi, sv };

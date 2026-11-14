@@ -86,10 +86,10 @@ export const CloseIcon = (p: IconProps) => (
   </Icon>
 );
 
-export const PrintIcon = (p: IconProps) => (
+export const DownloadIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M7 9V3h10v6M7 17H4v-7h16v7h-3" />
-    <path d="M7 14h10v7H7z" />
+    <path d="M12 4v11M7 10.5l5 5 5-5" />
+    <path d="M5 20h14" />
   </Icon>
 );
 

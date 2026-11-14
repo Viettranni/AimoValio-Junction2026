@@ -3,6 +3,7 @@
 A drop-in ordering assistant for Valio Aimo B2B customers. Describe the event ("wedding, 300 guests, chicken and rice") and get a priced, stock-checked order draft that learns from your past leftovers. Edit it by chatting or clicking, review it, and approve it.
 
 - Spec: [`spec.md`](spec.md)
+- Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md) · Build summary: [`SUMMARY.md`](SUMMARY.md)
 - UI mockups: [`docs/mockups/`](docs/mockups/)
 
 Stack: Next.js 16 + TypeScript · Mastra agents on Claude Opus 5.5 · SQLite (Drizzle) · MiniSearch.

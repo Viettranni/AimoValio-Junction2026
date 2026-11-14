@@ -12,6 +12,7 @@ export const documentAgent = new Agent({
   description: "Reads a caterer's notes (photo, PDF or spreadsheet rows) into event details and an ingredient list.",
   instructions: cachedSystem(`You read a caterer's own order notes for Valio Aimo, a Finnish food-service wholesaler: a photo of handwritten or printed notes, a PDF, or the rows of a spreadsheet.
 Return only what the document states. Use null for anything it doesn't state; never guess numbers, dates or amounts.
+- isFoodEvent: true when this is an occasion the caterer serves food at (wedding, lunch, party, buffet, meeting with catering, ...) or an order/ingredient list; false for anything else (a dentist visit, an internal meeting without food, a holiday).
 - lang: the language the notes are written in (fi, en, sv, ...); "fi" if unclear.
 - eventName / eventType: e.g. "Häät" / wedding, when the notes name the occasion.
 - deliveryDate: YYYY-MM-DD when a date is written. Resolve it against today's date in the prompt; a date without a year is the next upcoming one.
@@ -28,6 +29,7 @@ Return only what the document states. Use null for anything it doesn't state; ne
 const dietSchema = z.union([dietFlagSchema, allergenSchema]);
 
 export const documentExtractionSchema = z.object({
+  isFoodEvent: z.boolean(),
   lang: z.string(),
   eventName: z.string().nullable(),
   eventType: eventTypeSchema.nullable(),

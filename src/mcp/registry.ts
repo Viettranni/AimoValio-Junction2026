@@ -1,4 +1,5 @@
 // One place that assembles every MCP tool, by group. Used by the MCP server and by the docs.
+import { calendarTools } from './tools/calendar';
 import { catalogTools } from './tools/catalog';
 import { chatTools } from './tools/chat';
 import { documentTools } from './tools/documents';
@@ -15,6 +16,7 @@ export const TOOL_GROUPS = [
   { group: 'pricing', label: 'Live price and availability for a delivery date', tools: pricingTools },
   { group: 'offers', label: 'Inquiry → binding offer at fixed catalogue prices', tools: offerTools },
   { group: 'documents', label: "The buyer's own notes (photo, PDF, Excel, CSV) → event details, ingredients and what is missing", tools: documentTools },
+  { group: 'calendar', label: "Plan the buyer's upcoming events from their calendar (events from your calendar tool, or an iCal feed)", tools: calendarTools },
   { group: 'drafts', label: 'Event planning like the widget: plan, edit, check out', tools: draftTools },
   { group: 'orders', label: 'Place within authority or route to a human; status, orders, delivery, leftovers', tools: orderTools },
   { group: 'waste', label: 'Food waste (hävikki): log what was thrown away, and a report with € value, CO₂ and insights', tools: wasteTools },

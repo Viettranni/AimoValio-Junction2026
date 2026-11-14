@@ -5,7 +5,7 @@ import { fetchableUrl } from '@/mcp/tools/documents';
 import { DocumentError, documentContent, documentMessage, documentQuestions, documentType, isShoppingList, missingSlots, sheetsToText } from './document';
 
 const event: DocumentExtraction = {
-  lang: 'fi', eventName: 'Häät', eventType: 'wedding', deliveryDate: '2026-11-28', guests: 120, budget: null,
+  isFoodEvent: true, lang: 'fi', eventName: 'Häät', eventType: 'wedding', deliveryDate: '2026-11-28', guests: 120, budget: null,
   diets: [{ diet: 'gluten_free', guests: 12 }, { diet: 'vegan', guests: null }],
   items: [{ name: 'kanan rintafilee', quantity: null, unit: null }, { name: 'basmatiriisi', quantity: null, unit: null }],
   notes: null, unreadable: [],

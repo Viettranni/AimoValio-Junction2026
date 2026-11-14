@@ -32,7 +32,7 @@ function loadVega(): Promise<VegaEmbed | null> {
   loading ??= SCRIPTS.reduce((p, src) => p.then(() => loadScript(src)), Promise.resolve())
     .then(() => window.vegaEmbed ?? null)
     .catch((e: unknown) => {
-      console.warn('Charts fall back to tables:', e);
+      console.warn('Kaaviot näytetään taulukkoina:', e);
       return null;
     });
   return loading;

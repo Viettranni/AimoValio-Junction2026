@@ -23,14 +23,14 @@ export function YearStory({ vm }: { vm: InsightsVM }) {
   }, [step]);
 
   return (
-    <section aria-label="Your year">
+    <section aria-label="Sinun vuotesi">
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <SiteSelect sites={vm.sites} value={vm.yearSite} onChange={vm.setYearSite} />
         <span className="text-[13px] text-muted">{wrapped?.title}</span>
       </div>
-      {!wrapped ? <p className="text-[13.5px] text-muted">Loading your year…</p> : !c ? <p className="text-[13.5px] text-muted">Nothing to show.</p> : (
+      {!wrapped ? <p className="text-[13.5px] text-muted">Ladataan vuottasi…</p> : !c ? <p className="text-[13.5px] text-muted">Ei näytettävää.</p> : (
         <>
-          <article className="ik-card relative overflow-hidden p-6 md:p-8" aria-roledescription="story" aria-label={`Card ${card + 1} of ${cards.length}`}>
+          <article className="ik-card relative overflow-hidden p-6 md:p-8" aria-roledescription="story" aria-label={`Kortti ${card + 1} / ${cards.length}`}>
             <div className="mb-6 flex gap-1" aria-hidden="true">
               {cards.map((_, i) => <i key={i} className={`h-1 flex-1 rounded-full ${i <= card ? 'bg-navy' : 'bg-line'}`} />)}
             </div>
@@ -48,11 +48,11 @@ export function YearStory({ vm }: { vm: InsightsVM }) {
             {c.chart && <div className="mt-6"><VegaChart spec={c.chart} height={170} /></div>}
           </article>
           <div className="mt-3 flex items-center justify-between">
-            <button type="button" className="rounded-full border border-line px-4 py-2 text-[14px] text-navy disabled:opacity-40" disabled={card === 0} onClick={() => step(-1)}>Previous</button>
+            <button type="button" className="rounded-full border border-line px-4 py-2 text-[14px] text-navy disabled:opacity-40" disabled={card === 0} onClick={() => step(-1)}>Edellinen</button>
             <span className="text-[13px] tabular-nums text-muted">{card + 1} / {cards.length}</span>
             {last
-              ? <button type="button" className="rounded-full bg-lime px-4 py-2 text-[14px] font-semibold text-lime-ink" onClick={() => setTab('explore')}>Explore your data</button>
-              : <button type="button" className="rounded-full border border-line px-4 py-2 text-[14px] text-navy" onClick={() => step(1)}>Next</button>}
+              ? <button type="button" className="rounded-full bg-lime px-4 py-2 text-[14px] font-semibold text-lime-ink" onClick={() => setTab('explore')}>Tutki dataasi</button>
+              : <button type="button" className="rounded-full border border-line px-4 py-2 text-[14px] text-navy" onClick={() => step(1)}>Seuraava</button>}
           </div>
         </>
       )}

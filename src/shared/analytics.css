@@ -1,0 +1,19 @@
+/* Analytiikka (Oivallukset and Ravintolat): light theme only, built on the app's own tokens (globals.css). */
+.ik-root {
+  --ik-surface: #ffffff;
+  --ik-raised: #f7fafb;
+  --ik-cat-1: #005670; --ik-cat-2: #8db600; --ik-cat-3: #c98a1b; --ik-cat-4: #7a5aa6;
+  --ik-cat-5: #2a9d8f; --ik-cat-6: #d1495b; --ik-cat-7: #4f6d7a; --ik-cat-8: #e9c46a;
+  --ik-seq-1: #e3eef1; --ik-seq-2: #5fa3b7; --ik-seq-3: #003f52;
+  background: var(--ice);
+  color: var(--ink);
+}
+
+.ik-card { background: var(--ik-surface); border: 1px solid var(--line); border-radius: 12px; }
+.ik-raised { background: var(--ik-raised); }
+.ik-root select, .ik-root input {
+  background: var(--ik-surface); color: var(--ink); border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 12px; font-size: 13.5px;
+}
+.ik-chart { width: 100%; min-height: 120px; }
+.ik-chart .vega-embed { width: 100%; }

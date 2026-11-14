@@ -15,7 +15,6 @@ import { PlaybookError } from './errors';
 import { INSIGHT_PLAYBOOK, TOOL_INPUTS } from './playbook';
 import { isRecord, type Column, type NormalSpec } from './query';
 import type { Row } from './schema';
-import { currentSource } from './store';
 import type { JsonSchema } from './validate';
 
 export const MODEL = 'claude-haiku-5-5';
@@ -48,7 +47,7 @@ const DIM_WORDS: Array<[string, [string, string | null]]> = [
   ['weekday|day of (the )?week|viikonpäiv', ['weekday', null]],
   ['categor|kategori|tuoteryhm', ['category', null]],
   ['product|item|tuotte|tuote', ['product', null]],
-  ['kitchen|site|location|hotel|keittiö|toimipai', ['site', null]],
+  ['kitchen|restaurant|site|location|hotel|keittiö|ravintol|toimipai', ['site', null]],
   ['brand|supplier|merkki|toimittaj', ['brand', null]],
   ['event type|kind of event|tapahtumatyyp', ['event_type', null]],
   ['\\bevents?\\b|tapahtumittain|juhlittain', ['event', null]],
@@ -58,7 +57,7 @@ const DIM_WORDS: Array<[string, [string, string | null]]> = [
 const CHART_WORDS: Array<[string, string]> = [
   ['heat ?map|lämpökartta', 'heatmap'], ['\\bpie\\b|donut|piirakka', 'donut'], ['scatter|hajonta', 'scatter'],
   ['bubble', 'bubble'], ['\\btable\\b|taulukko', 'table'], ['\\barea\\b', 'area'], ['stacked|pinottu', 'stacked'],
-  ['grouped|side by side', 'grouped'], ['\\bmix\\b|100 ?%|percent(age)? split', 'percent'],
+  ['grouped|side by side', 'grouped'], ['\\bmix\\b|100 ?%|percent(age)? split|osuusjakauma|prosenttijakauma', 'percent'],
   ['waterfall|vesiputous', 'waterfall'], ['histogram|distribution|jakauma', 'histogram'],
   ['box ?plot|spread', 'boxplot'], ['\\bbars?\\b|pylväs', 'bar'], ['\\bline\\b|viiva', 'line'],
   ['\\bkpi\\b|one number|total|yhteensä', 'kpi'],
@@ -77,10 +76,10 @@ function period(text: string): string | null {
 export const ASK_FILTERS: JsonSchema = {
   type: 'object', additionalProperties: false,
   properties: {
-    site: { type: 'string', description: 'kitchen name, e.g. Pohjola Tampere' },
-    siteId: { type: ['string', 'null'], description: 'kitchen id' },
-    category: { type: 'string', description: 'product category, e.g. dairy' },
-    event_type: { type: 'string', description: 'event type, e.g. gala_dinner' },
+    site: { type: 'string', description: 'restaurant name, e.g. Pohjola Tampere' },
+    siteId: { type: ['string', 'null'], description: 'restaurant id' },
+    category: { type: 'string', description: 'product category, e.g. Maitotuotteet' },
+    event_type: { type: 'string', description: 'event type, e.g. Gaala' },
     period: { description: '{from, to} or last_month | last_3_months | last_6_months | last_30_days | this_year',
       anyOf: [{ type: 'string' }, { type: 'object', properties: { from: { type: 'string' }, to: { type: 'string' } } }] },
   },
@@ -157,17 +156,14 @@ export class Analyst {
         ans = await this.askClaude({ model: this.model, prompt, filters, buyerId, siteId });
       } catch (e) { // never leave the chef without an answer
         ans = this.rulesOrNull({ prompt, filters, buyerId, siteId });
-        note = `Answered with built-in rules (${e instanceof Error ? e.name : 'Error'}).`;
+        note = `Vastattu sisäänrakennetuilla säännöillä (${e instanceof Error ? e.name : 'Error'}).`;
       }
     } else {
       ans = this.rulesOrNull({ prompt, filters, buyerId, siteId }); // e.g. no rows to chart
     }
     if (ans && 'clarify' in ans) return ans;
     if (!ans || !hasData(ans)) { // nothing to show: ask, don't draw an empty chart
-      const intro = currentSource() === 'live'
-        ? 'There are no live orders for that yet. Order in the chat, or switch to Demo history.'
-        : 'I found no data for that.';
-      return this.clarify({ prompt, buyerId, intro, empty: true, filtered: Object.values(filters).some(Boolean) });
+      return this.clarify({ prompt, buyerId, intro: '', empty: true, filtered: Object.values(filters).some(Boolean) });
     }
     return note ? { ...ans, note } : ans;
   }
@@ -189,14 +185,15 @@ export class Analyst {
     const sites = (this.deps.buyers()[buyerId]?.sites ?? []).map((s) => s.name);
     let qs = questions ?? [];
     if (!qs.length) {
-      qs = ['What should I look at?', 'Which period?'];
+      qs = ['Mitä haluaisit tarkastella?', 'Miltä ajanjaksolta?'];
       if (empty) {
-        qs = ['Should I look at the whole year?', 'What should I look at instead?'];
-        if (filtered) qs.splice(1, 0, 'Should I drop the filters (kitchen, category, event type)?');
+        qs = ['Tarkastellaanko koko vuotta?', 'Mitä haluaisit tarkastella sen sijaan?'];
+        if (filtered) qs.splice(1, 0, 'Poistetaanko suodattimet (ravintola, tuoteryhmä ja tapahtumatyyppi)?');
       }
-      if (sites.length > 1 && !empty) qs.push('Which kitchen?');
+      if (sites.length > 1 && !empty) qs.push('Mitä ravintolaa tarkoitat?');
     }
-    return { clarify: true, prompt, intro, questions: qs.slice(0, 3).map((q) => ({ q, options: options({ q, sites }) })) };
+    const introText = intro || 'Tarvitsen vähän lisätietoa vastatakseni tähän.';
+    return { clarify: true, prompt, intro: introText, questions: qs.slice(0, 3).map((q) => ({ q, options: options({ q, sites }) })) };
   }
 
   // ------------------------------------------------------------------ rules engine
@@ -211,7 +208,7 @@ export class Analyst {
     if (measures.includes('waste') && has('%|percent|share|rate|osuus|prosent')) measures[measures.indexOf('waste')] = 'waste_pct';
     if (!measures.length) {
       measures.push('spend');
-      assumed.push('I showed spend because the question did not name a measure.');
+      assumed.push('Näytin kulutuksen, koska kysymyksessä ei mainittu mittaria.');
     }
     let dims: DimArg[] = [];
     for (const [pat, [f, g]] of DIM_WORDS) {
@@ -220,7 +217,7 @@ export class Analyst {
     const top = rx('\\btop\\s*(\\d+)|(\\d+)\\s*(?:most|largest|biggest|eniten|suurinta)').exec(t);
     if (!dims.length && !has('\\btotal|yhteensä|\\bkpi\\b')) {
       dims = [{ field: 'date', grain: 'month' }];
-      assumed.push('I split it by month because the question did not say how.');
+      assumed.push('Jaoin tiedot kuukausiin, koska kysymyksessä ei sanottu miten.');
     }
     const names = dims.map(dimField);
     if (names.includes('site') && names.length > 1) { // "category per kitchen": kitchen first reads better
@@ -229,18 +226,22 @@ export class Analyst {
     const spec: RuleSpec = { measures: measures.slice(0, 3), dimensions: dims.slice(0, 2), filters: [] };
     for (const s of this.deps.buyers()[buyerId]?.sites ?? []) {
       const words = s.name.toLowerCase().split(/\s+/)
-        .filter((w) => w.length > 4 && !['kitchen', 'pohjola', 'school', 'production', 'central'].includes(w));
+        .filter((w) => w.length > 4 && !['keskuskeittiö', 'tuotantokeittiö', 'koulukeittiö', 'pohjola', 'sairaalan', 'kaari-sairaalan'].includes(w));
       if (words.some((w) => has(`\\b${escapeRe(w.slice(0, 6))}`))) spec.filters.push({ field: 'site', op: 'eq', value: s.name });
     }
     const categories: Record<string, string> = {
-      Dairy: 'dairy|maito', Fish: 'fish|kala', Meat: 'meat|liha', 'Fruit & veg': 'veg|fruit|vihannes|hedelm',
-      Bakery: 'bakery|bread|leipä', 'Dry goods': 'dry goods|kuiva', 'Plant-based': 'plant|vegan|kasvi',
+      Maitotuotteet: 'dairy|maito', Kala: 'fish|kala', Liha: 'meat|liha', 'Hedelmät ja vihannekset': 'veg|fruit|vihannes|hedelm',
+      Leipomotuotteet: 'bakery|bread|leipä', Kuivatuotteet: 'dry goods|kuiva', Kasvipohjaiset: 'plant|vegan|kasvi',
     };
     for (const [cat, words] of Object.entries(categories)) {
       if (has(`\\b(${words})`) && !t.includes('categor')) spec.filters.push({ field: 'category', op: 'eq', value: cat });
     }
-    for (const et of ['Gala', 'Wedding', 'Conference', 'Christmas party', 'Birthday', 'Lunch']) {
-      if (t.includes(et.toLowerCase()) && !names.includes('event_type')) spec.filters.push({ field: 'event_type', op: 'eq', value: et });
+    const eventTypes: Record<string, string> = {
+      Gaala: 'gala|gaala', Häät: 'wedding|häät', Konferenssi: 'conference|konferenss', Pikkujoulu: 'christmas party|pikkujoul',
+      Syntymäpäivä: 'birthday|syntymäpäiv', Lounas: 'lunch|lounas',
+    };
+    for (const [et, words] of Object.entries(eventTypes)) {
+      if (has(`(${words})`) && !names.includes('event_type')) spec.filters.push({ field: 'event_type', op: 'eq', value: et });
     }
     if (top) {
       const n = Number(top[1] ?? top[2]);
@@ -292,7 +293,7 @@ export class Analyst {
       call({ sid, toolName: 'run_query', args: spec });
     } catch (e) { // a guess the rails rejected: fall back to the safest question
       if (!(e instanceof PlaybookError)) throw e;
-      assumed.push(`I could not ask that exactly (${e.message}), so I showed spend by month.`);
+      assumed.push(`En voinut kysyä sitä täsmälleen (${e.message}), joten näytin kulutuksen kuukausittain.`);
       spec = { measures: ['spend'], dimensions: [{ field: 'date', grain: 'month' }], filters: spec.filters };
       call({ sid, toolName: 'run_query', args: spec });
     }
@@ -301,7 +302,7 @@ export class Analyst {
     const session = E.sessions.get(sid);
     const ok = session?.result ? fits(session.result) : [];
     const ctype = chartType && ok.includes(chartType) ? chartType : types[0];
-    if (chartType && ctype !== chartType) assumed.push(`A ${chartType} does not fit this answer, so I used a ${ctype}.`);
+    if (chartType && ctype !== chartType) assumed.push(`Kaaviotyyppi ${chartType} ei sovi tähän vastaukseen, joten käytin tyyppiä ${ctype}.`);
     call({ sid, toolName: 'build_chart', args: { type: ctype } });
     const ex = call({ sid, toolName: 'explain_result' }).output;
     return this.answer({ sid, steps, ex, assumed, engine: 'rules', spec });
@@ -342,7 +343,7 @@ export class Analyst {
         });
       }
     }
-    const system = "You answer a chef's question about their kitchen data by calling the tools in order: "
+    const system = "You answer a chef's question about their restaurant data by calling the tools in order: "
       + 'describe_data, optionally get_values, run_query (repeat if needed), suggest_chart, build_chart, explain_result. '
       + "Use only names returned by describe_data. If a tool returns an error with a 'fix', follow the fix and retry. "
       + "If the question is vague, choose the measure and grouping that answer it best (for example 'wasting money' "
@@ -350,7 +351,8 @@ export class Analyst {
       + 'and say in the final sentence what you looked at. '
       + 'Only if the question cannot be mapped to the data at all, or run_query returns no rows even after you '
       + 'widen it, do not build a chart: reply with at most three short questions to the chef, one per line, '
-      + "each ending with '?', and nothing else. "
+      + "each ending with '?', and nothing else. Write clarification questions in Finnish because the app UI is Finnish. "
+      + "For chart titles and the final sentence, use the same language as the user's question. "
       + `Apply these page filters in every run_query: ${JSON.stringify(filters)}. `
       + `Worked examples:\n${JSON.stringify(INSIGHT_PLAYBOOK.recipes)}`
       + '\nFinish after explain_result with one short sentence.';
@@ -361,7 +363,7 @@ export class Analyst {
     const s = E.sessions.get(sid);
     if (!s?.chart || !s.result) {
       const qs = res.text.split(/\n+/).filter((q) => q.trim().endsWith('?')).map((q) => q.replace(/^[ \-•0-9.)]+|[ \-•0-9.)]+$/g, ''));
-      if (qs.length) return this.clarify({ prompt, buyerId, intro: 'I need a bit more to answer that.', questions: qs });
+      if (qs.length) return this.clarify({ prompt, buyerId, intro: '', questions: qs });
       throw new Error('the model did not build a chart');
     }
     const ex = E.call({ sid, tool: 'explain_result' }).output;
@@ -391,9 +393,8 @@ function hasData(ans: Answer): boolean {
 
 function options({ q, sites }: { q: string; sites: string[] }): string[] {
   const t = q.toLowerCase();
-  if (/^(should|shall|do|does|did|is|are|can|would|want)\b/.test(t)) return ['Yes', 'No'];
-  if (/look at|measure|instead|what should/.test(t)) return ['Spend', 'Waste', 'Orders'];
-  if (/period|when|month/.test(t)) return ['Last month', 'Last 3 months', 'Whole year'];
-  if (/kitchen|site/.test(t)) return sites.slice(0, 3);
-  return ['Yes', 'No'];
+  if (/katso|mittari|sen sijaan/.test(t)) return ['Kulutus', 'Hävikki', 'Tilaukset'];
+  if (/ajanjakso|milloin|kuukau|jakso/.test(t)) return ['Viime kuukausi', 'Viimeiset 3 kuukautta', 'Koko vuosi'];
+  if (/ravintola|keittiö|toimipaikka/.test(t)) return sites.slice(0, 3);
+  return ['Kyllä', 'Ei'];
 }

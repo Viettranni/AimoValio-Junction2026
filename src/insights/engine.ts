@@ -93,14 +93,14 @@ export class InsightEngine {
 
   call({ sid, tool, args = {} }: { sid: string | null; tool: string; args?: unknown }): ToolCallResult {
     const s = sid ? this.sessions.get(sid) ?? null : null;
-    if (sid && !s) throw new NotFound(`no analysis session ${sid}`);
+    if (sid && !s) throw new NotFound(`analyysisessiota ${sid} ei löydy`);
     if (!(tool in TOOL_STEP)) {
-      throw new NotFound(`unknown tool ${tool}`, { known: Object.keys(TOOL_STEP).sort(), next_allowed_tools: this.allowed(s),
-        fix: { tools: 'GET /api/insights/playbook lists every tool and its input' } });
+      throw new NotFound(`tuntematon työkalu ${tool}`, { known: Object.keys(TOOL_STEP).sort(), next_allowed_tools: this.allowed(s),
+        fix: { tools: 'GET /api/insights/playbook listaa jokaisen työkalun ja sen syötteen' } });
     }
     const allowed = this.allowed(s);
     if (!allowed.includes(tool)) {
-      throw new StepNotAllowed(`'${tool}' is not allowed yet.`, { step: s?.step ?? null, next_allowed_tools: allowed,
+      throw new StepNotAllowed(`Työkalu '${tool}' ei ole vielä käytettävissä.`, { step: s?.step ?? null, next_allowed_tools: allowed,
         insightPlaybookVersion: INSIGHT_PLAYBOOK.version });
     }
     validateInput({ schema: TOOL_INPUTS[tool], tool, args });
@@ -108,7 +108,7 @@ export class InsightEngine {
     const t0 = performance.now();
     const out = this.dispatch({ s, tool, a });
     const session = tool === 'start_analysis' ? this.sessions.get(String(out.sessionId)) : s;
-    if (!session) throw new NotFound(`no analysis session ${String(out.sessionId)}`);
+    if (!session) throw new NotFound(`analyysisessiota ${String(out.sessionId)} ei löydy`);
     session.step = TOOL_STEP[tool];
     session.calls += 1;
     const ms = Math.round((performance.now() - t0) * 10) / 10;
@@ -124,7 +124,7 @@ export class InsightEngine {
 
   private dispatch({ s, tool, a }: { s: AnalysisSession | null; tool: string; a: Record<string, unknown> }): Record<string, unknown> {
     if (tool === 'start_analysis') return this.startAnalysis(a);
-    if (!s) throw new NotFound('no analysis session');
+    if (!s) throw new NotFound('analyysisessiota ei löydy');
     switch (tool) {
       case 'describe_data': return this.describeData({ s, a });
       case 'get_values': return this.getValues({ s, a });
@@ -137,12 +137,12 @@ export class InsightEngine {
       }
       case 'explain_change': return this.explainChange({ s, a });
       case 'explain_result': return explain.run(this.result(s));
-      default: throw new NotFound(`unknown tool ${tool}`);
+      default: throw new NotFound(`tuntematon työkalu ${tool}`);
     }
   }
 
   private result(s: AnalysisSession): QueryResult {
-    if (!s.result) throw new StepNotAllowed('Run a query first.', { next_allowed_tools: this.allowed(s) });
+    if (!s.result) throw new StepNotAllowed('Aja ensin kysely.', { next_allowed_tools: this.allowed(s) });
     return s.result;
   }
 
@@ -151,10 +151,10 @@ export class InsightEngine {
     const buyers = this.host.buyers();
     const bid = a.buyerId;
     const buyer = typeof bid === 'string' ? buyers[bid] : undefined;
-    if (!buyer) throw new GuardFailed(`Unknown buyer ${String(bid ?? null)}.`, { fix: `Use one of: ${Object.keys(buyers).join(', ')}.` });
+    if (!buyer) throw new GuardFailed(`Tuntematon asiakas ${String(bid ?? null)}.`, { fix: `Käytä jotakin näistä: ${Object.keys(buyers).join(', ')}.` });
     const site = typeof a.siteId === 'string' && a.siteId ? a.siteId : null;
     if (site && !buyer.sites.some((x) => x.id === site)) {
-      throw new GuardFailed(`Kitchen ${site} does not belong to ${buyer.id}.`, { fix: `Use one of: ${buyer.sites.map((x) => x.id).join(', ')}.` });
+      throw new GuardFailed(`Ravintola ${site} ei kuulu asiakkaalle ${buyer.id}.`, { fix: `Käytä jotakin näistä: ${buyer.sites.map((x) => x.id).join(', ')}.` });
     }
     const sid = newId('ANA');
     this.sessions.set(sid, { sessionId: sid, buyerId: buyer.id, siteId: site, step: 'start', calls: 0, result: null,
@@ -180,8 +180,8 @@ export class InsightEngine {
     const b = this.host.buyers()[s.buyerId];
     return {
       dataset: ds.name, datasets: ['orders', 'agent_activity', 'demand'],
-      datasetNote: 'orders = a year of order history; agent_activity = one row per agent session; '
-        + 'demand = planned and ordered lines plus needs that could not be met (and why).',
+      datasetNote: 'orders = vuoden tilaushistoria; agent_activity = yksi rivi agentin istuntoa kohti; '
+        + 'demand = suunnitellut ja tilatut rivit sekä tarpeet, joita ei voitu täyttää (ja miksi).',
       measures: Object.fromEntries(Object.entries(ds.schema.measures).map(([k, v]) => [k, { label: v.label, unit: v.unit }])),
       dimensions: Object.fromEntries(Object.entries(ds.schema.dimensions).map(([k, v]) => [k, { label: v.label, type: v.type }])),
       timeGrains: Object.keys(query.GRAINS), period: { from: ds.period[0], to: ds.period[1] },
@@ -193,7 +193,7 @@ export class InsightEngine {
   private getValues({ s, a }: { s: AnalysisSession; a: Record<string, unknown> }): Record<string, unknown> {
     const f = a.field;
     const dims: Record<string, { sql: string }> = SCHEMA.dimensions;
-    if (typeof f !== 'string' || !(f in dims)) throw new GuardFailed(`Unknown dimension '${String(f)}'.`, { fix: `Use one of: ${Object.keys(dims).join(', ')}.` });
+    if (typeof f !== 'string' || !(f in dims)) throw new GuardFailed(`Tuntematon ulottuvuus '${String(f)}'.`, { fix: `Käytä jotakin näistä: ${Object.keys(dims).join(', ')}.` });
     const col = f !== 'date' ? dims[f].sql : 'substr(date,1,7)';
     let sql = `SELECT DISTINCT ${col} AS v FROM line WHERE buyer_id = ? AND ${col} IS NOT NULL`;
     const args: string[] = [s.buyerId];
@@ -223,10 +223,10 @@ export class InsightEngine {
     const meas = ds.schema.measures;
     const m = String(a.measure);
     const by = String(a.by);
-    if (!(m in meas)) throw new GuardFailed(`Unknown measure '${m}'.`, { fix: `Use one of: ${Object.keys(meas).join(', ')}.` });
+    if (!(m in meas)) throw new GuardFailed(`Tuntematon mittari '${m}'.`, { fix: `Käytä jotakin näistä: ${Object.keys(meas).join(', ')}.` });
     const sql = meas[m].sql.toUpperCase();
     if (!(sql.startsWith('SUM(') || sql.startsWith('COUNT(')) || sql.includes('/')) {
-      throw new GuardFailed(`'${m}' is a rate, so its change does not split into parts.`, { fix: 'Use a total such as spend, waste, co2e, quantity or orders.' });
+      throw new GuardFailed(`'${m}' on suhdeluku, joten sen muutosta ei voi jakaa osiin.`, { fix: 'Käytä summaa, kuten spend, waste, co2e, quantity tai orders.' });
     }
     const conn = this.connForDataset(ds.name);
     const base: Record<string, unknown> = { dataset: ds.name, measures: [m], dimensions: [by] };
@@ -255,15 +255,15 @@ export class InsightEngine {
     }
     const unit = meas[m].unit;
     const label = meas[m].label.toLowerCase();
-    const word = change >= 0 ? 'rise' : 'fall';
+    const word = change >= 0 ? 'nousua' : 'laskua';
     const signed = (v: number) => {
-      const text = unit === 'EUR' && Math.abs(v) >= 1000 ? `€${(Math.abs(v) / 1000).toFixed(1)}k` : explain.fmt({ v: Math.abs(v), unit });
+      const text = unit === 'EUR' && Math.abs(v) >= 1000 ? `${(Math.abs(v) / 1000).toFixed(1).replace('.', ',')} t€` : explain.fmt({ v: Math.abs(v), unit });
       return (v >= 0 ? '+' : '−') + text;
     };
     for (const p of top) p.sharePct = change ? round({ v: (p.contribution / change) * 100, places: 1 }) : null;
-    const sentences = top.slice(0, 3).map((p) => `${String(p.value)} drove ${signed(p.contribution)} of the ${signed(change)} ${word} in ${label}.`);
+    const sentences = top.slice(0, 3).map((p) => `${String(p.value)} selitti ${signed(p.contribution)} mittarin ”${label}” ${signed(change)} ${word}.`);
     return { measure: m, by, dataset: ds.name, periodA: ra.period, periodB: rb.period,
       totalA: round({ v: totalA, places: 2 }), totalB: round({ v: totalB, places: 2 }), change, contributions: top,
-      sentences, caption: sentences[0] ?? 'No change to explain.' };
+      sentences, caption: sentences[0] ?? 'Ei muutosta selitettävänä.' };
   }
 }

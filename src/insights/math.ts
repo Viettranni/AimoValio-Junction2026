@@ -10,6 +10,9 @@ export function roundHalfEven(x: number): number {
   return f % 2 === 0 ? f : f + 1;
 }
 
-/** Python's format(v, ',.Nf'). */
+/** A Finnish number: space-grouped thousands, decimal comma (1 234,5). */
 export const grouped = ({ v, digits }: { v: number; digits: number }) =>
-  v.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  v.toLocaleString('fi-FI', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+/** A Finnish number with a fixed number of decimals, no grouping (7,7). */
+export const fixed = ({ v, digits }: { v: number; digits: number }) => v.toFixed(digits).replace('.', ',');

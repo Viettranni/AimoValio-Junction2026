@@ -96,7 +96,7 @@ export function dataset({ name, conn }: { name: unknown; conn?: Sql }): Dataset 
   if (name === undefined || name === null || name === 'orders') {
     return currentSource() === 'live' ? { ...ORDERS, period: livePeriod(conn) } : ORDERS;
   }
-  if (!has(DATASETS, name)) fail({ message: `Unknown dataset '${String(name)}'.`, fix: `Use one of: orders, ${keys(DATASETS)}.` });
+  if (!has(DATASETS, name)) fail({ message: `Tuntematon aineisto '${String(name)}'.`, fix: `Käytä jotakin näistä: orders, ${keys(DATASETS)}.` });
   return { name, ...DATASETS[name] };
 }
 
@@ -117,7 +117,7 @@ export function resolvePeriod({ period, ds = ORDERS }: { period: unknown; ds?: D
     }
     if (period === 'last_30_days') return [addDays({ iso: end, days: -29 }), end];
     if (period === 'this_year') return [start, end];
-    fail({ message: `Unknown period '${period}'.`, fix: `Use one of ${JSON.stringify(RELATIVE)} or {'from': 'YYYY-MM-DD', 'to': 'YYYY-MM-DD'}.` });
+    fail({ message: `Tuntematon ajanjakso '${period}'.`, fix: `Käytä jotakin näistä ${JSON.stringify(RELATIVE)} tai {'from': 'VVVV-KK-PP', 'to': 'VVVV-KK-PP'}.` });
   }
   let a: string;
   let b: string;
@@ -128,74 +128,74 @@ export function resolvePeriod({ period, ds = ORDERS }: { period: unknown; ds?: D
     parseIso(a);
     parseIso(b);
   } catch {
-    fail({ message: 'Period dates must be YYYY-MM-DD.', fix: "Example: {'from': '2026-01-01', 'to': '2026-03-31'}." });
+    fail({ message: 'Ajanjakson päivämäärien muoto on VVVV-KK-PP.', fix: "Esimerkki: {'from': '2026-01-01', 'to': '2026-03-31'}." });
   }
-  if (a > b) fail({ message: "Period 'from' is after 'to'.", fix: 'Swap the dates.' });
+  if (a > b) fail({ message: "Ajanjakson alku on loppua myöhemmin.", fix: 'Vaihda päivämäärät keskenään.' });
   return [a, b];
 }
 
 export function normalise({ spec, ds = ORDERS }: { spec: unknown; ds?: Dataset }): NormalSpec {
   const { dimensions: DIMS, measures: MEAS } = ds.schema;
-  if (!isRecord(spec)) fail({ message: 'The query must be an object.', fix: "Send {'measures': ['spend'], 'dimensions': ['category']}." });
+  if (!isRecord(spec)) fail({ message: 'Kyselyn on oltava objekti.', fix: "Lähetä {'measures': ['spend'], 'dimensions': ['category']}." });
   let raw: unknown = spec.measures || [];
   if (typeof raw === 'string') raw = [raw];
   const list = Array.isArray(raw) ? raw : [raw];
-  if (!list.length) fail({ message: 'At least one measure is needed.', fix: `Pick from: ${keys(MEAS)}.` });
+  if (!list.length) fail({ message: 'Tarvitaan vähintään yksi mittari.', fix: `Valitse näistä: ${keys(MEAS)}.` });
   const ms = list.map((m) => (isRecord(m) ? m.field : m));
   const measures: string[] = [];
   for (const m of ms) {
-    if (!has(MEAS, m)) fail({ message: `Unknown measure '${String(m)}'.`, fix: `Use one of: ${keys(MEAS)}.` });
+    if (!has(MEAS, m)) fail({ message: `Tuntematon mittari '${String(m)}'.`, fix: `Käytä jotakin näistä: ${keys(MEAS)}.` });
     measures.push(m);
   }
   const dims: DimSpec[] = [];
   for (const d of Array.isArray(spec.dimensions) ? spec.dimensions : []) {
     const f = typeof d === 'string' ? d : isRecord(d) ? d.field : undefined;
     let g = isRecord(d) ? d.grain : null;
-    if (!has(DIMS, f)) fail({ message: `Unknown dimension '${String(f)}'.`, fix: `Use one of: ${keys(DIMS)}.` });
+    if (!has(DIMS, f)) fail({ message: `Tuntematon ulottuvuus '${String(f)}'.`, fix: `Käytä jotakin näistä: ${keys(DIMS)}.` });
     if (DIMS[f].type === 'time') {
       g = g || 'month';
-      if (!has(GRAINS, g)) fail({ message: `Unknown time grain '${String(g)}'.`, fix: `Use one of: ${keys(GRAINS)}.` });
+      if (!has(GRAINS, g)) fail({ message: `Tuntematon aikaväli '${String(g)}'.`, fix: `Käytä jotakin näistä: ${keys(GRAINS)}.` });
     }
     // a grain only means something on the date (Python would build SQL from it and fail)
     dims.push({ field: f, grain: DIMS[f].type === 'time' && typeof g === 'string' ? g : null });
   }
-  if (dims.length > 3) fail({ message: 'Too many dimensions.', fix: 'Use at most 3 dimensions.' });
+  if (dims.length > 3) fail({ message: 'Liian monta ulottuvuutta.', fix: 'Käytä enintään 3 ulottuvuutta.' });
   const calc: CalcSpec[] = [];
   for (const c of Array.isArray(spec.calc) ? spec.calc : []) {
     const type = isRecord(c) ? c.type : undefined;
     if (!isRecord(c) || typeof type !== 'string' || !CALCS.includes(type)) {
-      fail({ message: `Unknown calc '${String(type ?? null)}'.`, fix: `Use one of: ${CALCS.join(', ')}.` });
+      fail({ message: `Tuntematon laskenta '${String(type ?? null)}'.`, fix: `Käytä jotakin näistä: ${CALCS.join(', ')}.` });
     }
     if (TIME_CALCS.has(type) && !(dims.length === 1 && DIMS[dims[0].field].type === 'time')) {
-      fail({ message: `calc '${type}' works on one series over time.`,
-        fix: "Use exactly one dimension: {'field': 'date', 'grain': 'month'} (or week, day, quarter)." });
+      fail({ message: `Laskenta '${type}' toimii yhdelle aikasarjalle.`,
+        fix: "Käytä täsmälleen yhtä ulottuvuutta: {'field': 'date', 'grain': 'month'} (tai week, day, quarter)." });
     }
     const out: CalcSpec = { type, of: '' };
     if (c.window !== undefined) out.window = c.window;
     if (type === 'forecast') {
       const h = c.horizon ?? 3;
       if (!(typeof h === 'number' && Number.isInteger(h) && h >= 1 && h <= 6)) {
-        fail({ message: 'forecast horizon must be 1 to 6 periods.', fix: "Example: {'type': 'forecast', 'of': 'spend', 'horizon': 3}." });
+        fail({ message: 'Ennusteen jänteen on oltava 1–6 jaksoa.', fix: "Esimerkki: {'type': 'forecast', 'of': 'spend', 'horizon': 3}." });
       }
       out.horizon = h;
     }
     const of = c.of ?? measures[0];
     if (typeof of !== 'string' || !measures.includes(of)) {
-      fail({ message: `calc '${type}' refers to '${String(of)}', which is not a measure in this query.`, fix: `Use one of: ${measures.join(', ')}.` });
+      fail({ message: `Laskenta '${type}' viittaa kohteeseen '${String(of)}', joka ei ole tämän kyselyn mittari.`, fix: `Käytä jotakin näistä: ${measures.join(', ')}.` });
     }
     out.of = of;
     calc.push(out);
   }
   const limit = spec.limit ?? null;
   if (limit !== null && !(typeof limit === 'number' && Number.isInteger(limit) && limit >= 1 && limit <= 500)) {
-    fail({ message: 'limit must be a whole number from 1 to 500.', fix: "Example: 'limit': 10." });
+    fail({ message: 'Rivirajan on oltava kokonaisluku 1–500.', fix: "Esimerkki: 'limit': 10." });
   }
   const compare = spec.compare ?? null;
   if (compare !== null && compare !== 'previous_period' && compare !== 'previous_year') {
-    fail({ message: `Unknown compare '${String(compare)}'.`, fix: "Use 'previous_period' or 'previous_year'." });
+    fail({ message: `Tuntematon vertailu '${String(compare)}'.`, fix: "Käytä 'previous_period' tai 'previous_year'." });
   }
   if (compare && dims.some((d) => DIMS[d.field].type === 'time')) {
-    fail({ message: 'compare cannot be combined with a date dimension.', fix: "Remove the date dimension, or use calc 'change_pct' for change over time." });
+    fail({ message: 'Vertailua ei voi yhdistää päivämääräulottuvuuteen.', fix: "Poista päivämääräulottuvuus tai käytä laskentaa 'change_pct' ajan muutokseen." });
   }
   return {
     measures, dimensions: dims, filters: Array.isArray(spec.filters) ? spec.filters : [], period: spec.period ?? null,
@@ -208,7 +208,7 @@ type Bind = string | number | null;
 function bindable(v: unknown): Bind {
   if (typeof v === 'boolean') return v ? 1 : 0;
   if (v === null || typeof v === 'string' || typeof v === 'number') return v;
-  return fail({ message: 'Filter values must be text or numbers.', fix: "Example: {'field': 'site', 'op': 'eq', 'value': 'Pohjola Tampere'}." });
+  return fail({ message: 'Suodattimen arvojen on oltava tekstiä tai lukuja.', fix: "Esimerkki: {'field': 'site', 'op': 'eq', 'value': 'Pohjola Tampere'}." });
 }
 
 function where({ filters, buyerId, a, b, ds }: {
@@ -226,17 +226,17 @@ function where({ filters, buyerId, a, b, ds }: {
     const field = r.field;
     const op = r.op ?? 'eq';
     const val = r.value;
-    if (!has(DIMS, field)) fail({ message: `Cannot filter on '${String(field ?? null)}'.`, fix: `Filter on one of: ${keys(DIMS)}.` });
-    if (!has(OPS, op)) fail({ message: `Unknown filter operator '${String(op)}'.`, fix: `Use one of: ${keys(OPS)}.` });
+    if (!has(DIMS, field)) fail({ message: `Kentällä '${String(field ?? null)}' ei voi suodattaa.`, fix: `Suodata jollakin näistä: ${keys(DIMS)}.` });
+    if (!has(OPS, op)) fail({ message: `Tuntematon suodatinoperaattori '${String(op)}'.`, fix: `Käytä jotakin näistä: ${keys(OPS)}.` });
     const col = DIMS[field].sql;
     if (op === 'in' || op === 'not_in') {
       const vals = Array.isArray(val) ? val : [val];
-      if (!vals.length) fail({ message: "'in' needs a list of values.", fix: "Example: {'op': 'in', 'value': ['Dairy', 'Fish']}." });
+      if (!vals.length) fail({ message: "'in' tarvitsee arvolistan.", fix: "Esimerkki: {'op': 'in', 'value': ['Maitotuotteet', 'Kala']}." });
       parts.push(`${col} ${OPS[op]} (${vals.map(() => '?').join(', ')})`);
       args.push(...vals.map(bindable));
     } else if (op === 'between') {
       if (!(Array.isArray(val) && val.length === 2)) {
-        fail({ message: "'between' needs [low, high].", fix: "Example: {'op': 'between', 'value': ['2026-01-01', '2026-03-31']}." });
+        fail({ message: "'between' tarvitsee muodon [alin, ylin].", fix: "Esimerkki: {'op': 'between', 'value': ['2026-01-01', '2026-03-31']}." });
       }
       parts.push(`${col} BETWEEN ? AND ?`);
       args.push(...val.map(bindable));
@@ -304,11 +304,11 @@ export function run({ conn, spec, buyerId, kAnon = 0 }: {
   const s = normalise({ spec, ds });
   s.dataset = ds.name;
   if (buyerId === null && !kAnon) {
-    fail({ message: 'A cross-buyer query needs k-anonymity.', fix: 'Ask as one buyer, or as Valio Aimo operations through /v1/ops/*.' });
+    fail({ message: 'Usean asiakkaan kysely vaatii k-anonymiteetin.', fix: 'Kysy yhtenä asiakkaana.' });
   }
   if (kAnon && s.dimensions.some((d) => DIMS[d.field].identifying)) {
-    fail({ message: 'Cross-buyer data cannot be grouped by customer, kitchen, agent or approver.',
-      fix: 'Group by category, product, date, channel or decision instead.' });
+    fail({ message: 'Usean asiakkaan dataa ei voi ryhmitellä asiakkaan, ravintolan, agentin tai hyväksyjän mukaan.',
+      fix: 'Ryhmittele tuoteryhmän, tuotteen, päivän, kanavan tai päätöksen mukaan.' });
   }
   const [a, b] = resolvePeriod({ period: s.period, ds });
   const first = select({ conn, s, buyerId, a, b, ds, kAnon });
@@ -321,7 +321,7 @@ export function run({ conn, spec, buyerId, kAnon = 0 }: {
     : timeDim ? [{ by: timeDim, dir: 'asc' }] : dimKeys.length ? [{ by: s.measures[0], dir: 'desc' }] : [];
   for (const o of [...order].reverse()) {
     const by = o.by;
-    if (rows.length && !has(rows[0], by)) fail({ message: `Cannot sort by '${String(by ?? null)}'.`, fix: `Sort by one of: ${keys(rows[0])}.` });
+    if (rows.length && !has(rows[0], by)) fail({ message: `Lajittelu kentällä '${String(by ?? null)}' ei onnistu.`, fix: `Lajittele jollakin näistä: ${keys(rows[0])}.` });
     const sign = o.dir === 'desc' ? -1 : 1;
     if (typeof by === 'string') rows.sort((x, y) => sign * compareCells(x[by], y[by]));
   }
@@ -389,9 +389,9 @@ export function extraLabel({ k, meas = SCHEMA.measures }: { k: string; meas?: Re
   const kind = i < 0 ? '' : k.slice(i + 1);
   const m = has(meas, base) ? meas[base].label : base;
   const labels: Record<string, string> = {
-    prev: `${m}, before`, change_pct: `${m}, change %`, share: `${m}, share %`, running_total: `${m}, running total`,
-    rank: `${m}, rank`, moving_avg: `${m}, moving average`, lo: `${m}, low estimate`, hi: `${m}, high estimate`,
-    z: `${m}, how unusual (z)`, forecast: 'Forecast', anomaly: 'Unusual', anchor: 'Last actual',
+    prev: `${m}, aiemmin`, change_pct: `${m}, muutos %`, share: `${m}, osuus %`, running_total: `${m}, kertymä`,
+    rank: `${m}, sijoitus`, moving_avg: `${m}, liukuva keskiarvo`, lo: `${m}, alaraja-arvio`, hi: `${m}, yläraja-arvio`,
+    z: `${m}, poikkeavuus (z)`, forecast: 'Ennuste', anomaly: 'Poikkeava', anchor: 'Viimeisin toteuma',
   };
   return labels[kind] ?? k;
 }
@@ -444,7 +444,7 @@ function forecast({ rows, key, m, horizon, grain, partial }: {
     const v = num(r[m]);
     return v === null ? [] : [[i, v]];
   }).slice(-6);
-  if (pts.length < 3) fail({ message: 'A forecast needs at least 3 full periods of history.', fix: 'Widen the period or use a coarser grain.' });
+  if (pts.length < 3) fail({ message: 'Ennuste tarvitsee vähintään 3 täyttä jaksoa historiaa.', fix: 'Laajenna ajanjaksoa tai käytä karkeampaa aikaväliä.' });
   const n = pts.length;
   const mx = pts.reduce((s, [i]) => s + i, 0) / n;
   const my = pts.reduce((s, [, v]) => s + v, 0) / n;
@@ -478,7 +478,7 @@ function forecast({ rows, key, m, horizon, grain, partial }: {
     }
     if (partial && label === String(rows[rows.length - 1][key])) continue;
     out.push({ [key]: label, [m]: f, [`${m}_lo`]: lo, [`${m}_hi`]: hi, is_forecast: true,
-      forecast_basis: seas !== undefined && seas !== null ? 'same period last year + trend' : 'trend of the last 6 periods' });
+      forecast_basis: seas !== undefined && seas !== null ? 'sama jakso viime vuonna + trendi' : 'kuuden viimeisen jakson trendi' });
   }
   return out;
 }

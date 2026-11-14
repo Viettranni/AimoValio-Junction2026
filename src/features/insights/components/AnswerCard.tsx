@@ -6,8 +6,8 @@ import { DataTable } from '@/shared/components/DataTable';
 import { VegaChart } from '@/shared/components/VegaChart';
 
 const STEP_WORDS: Record<string, string> = {
-  start_analysis: 'Opened your data', describe_data: 'Looked at what can be asked', get_values: 'Checked the values', run_query: 'Asked the question',
-  suggest_chart: 'Picked the chart types that fit', build_chart: 'Drew the chart', explain_result: 'Wrote the summary',
+  start_analysis: 'Avasi datasi', describe_data: 'Katsoi, mitä voi kysyä', get_values: 'Tarkisti arvot', run_query: 'Kysyi kysymyksen',
+  suggest_chart: 'Valitsi sopivat kaaviotyypit', build_chart: 'Piirsi kaavion', explain_result: 'Kirjoitti yhteenvedon',
 };
 
 /** Caption, chart or table, three facts, and "How I made this" (the rail steps taken). */
@@ -26,7 +26,7 @@ export function AnswerCard({ answer }: { answer: Answer }) {
           {answer.assumed.length > 0 && <p className="mt-1 text-[13px] text-muted">{answer.assumed.join(' ')}</p>}
           {answer.note && <p className="mt-1 text-[12.5px] text-muted">{answer.note}</p>}
         </div>
-        <div role="group" aria-label="Show as" className="inline-flex rounded-full border border-line p-0.5 text-[12.5px]">{seg('chart', 'Chart')}{seg('table', 'Table')}</div>
+        <div role="group" aria-label="Näytä muodossa" className="inline-flex rounded-full border border-line p-0.5 text-[12.5px]">{seg('chart', 'Kaavio')}{seg('table', 'Taulukko')}</div>
       </div>
       <div className="mt-4">
         {view === 'table' || !answer.chart ? <DataTable columns={answer.columns} rows={answer.rows} /> : <VegaChart spec={answer.chart} />}
@@ -34,19 +34,19 @@ export function AnswerCard({ answer }: { answer: Answer }) {
       <ul className="mt-4 grid gap-2 md:grid-cols-3">
         {answer.facts.map((f) => <li key={f} className="ik-raised rounded-[10px] px-3 py-2 text-[13.5px] text-ink-soft">{f}</li>)}
       </ul>
-      <button type="button" className="mt-4 text-[13px] font-semibold text-navy underline" aria-expanded={steps} onClick={() => setSteps(!steps)}>How I made this</button>
+      <button type="button" className="mt-4 text-[13px] font-semibold text-navy underline" aria-expanded={steps} onClick={() => setSteps(!steps)}>Näin tämä tehtiin</button>
       {steps && (
         <>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-[13px] text-ink-soft">
             {answer.steps.map((s, i) => (
               <li key={i}><b>{STEP_WORDS[s.tool] ?? s.tool}</b>
                 {s.tool === 'run_query' && <small className="block break-all font-mono text-[11.5px] text-muted">{JSON.stringify(s.args)}</small>}
-                {s.error && <small className="block text-warn">Fixed: {String(s.error.message)}</small>}
+                {s.error && <small className="block text-warn">Korjattu: {String(s.error.message)}</small>}
               </li>
             ))}
           </ol>
           <p className="mt-2 text-[12.5px] text-muted">
-            {answer.engine === 'claude' ? 'Answered by Claude Haiku using the insight tools.' : 'Answered by the built-in rules using the insight tools.'} Any agent can call the same tools over the API.
+            {answer.engine === 'claude' ? 'Vastannut Claude Haiku analytiikkatyökaluilla.' : 'Vastannut sisäänrakennettu sääntömoottori analytiikkatyökaluilla.'} Mikä tahansa agentti voi kutsua samoja työkaluja rajapinnan kautta.
           </p>
         </>
       )}

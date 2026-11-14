@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
+import { fiAllergen, fiBuyer, fiCategory, fiCategoryCode, fiEventName, fiEventType, fiProduct, fiRole, fiSegment, fiSite, fiSiteType, fiStorage, fiWeekday } from './fi';
 import type { ActivityRow, DemandRow, LineRow } from './schema';
 import { LINE_COLUMNS } from './schema';
 
@@ -41,7 +42,18 @@ const buyer = z.object({
 export type Buyer = z.infer<typeof buyer>;
 export type Site = z.infer<typeof site>;
 
-export const buyers = once(() => readJson({ file: 'buyers.json', schema: z.object({ buyers: z.array(buyer) }) }).buyers);
+const finnish = (b: Buyer): Buyer => ({
+  ...b,
+  name: fiBuyer(b.name),
+  segment: fiSegment(b.segment),
+  site: { ...b.site, name: fiSite(b.site.name) },
+  admin: { ...b.admin, role: fiRole(b.admin.role) },
+  approvers: b.approvers.map((a) => ({ ...a, role: fiRole(a.role) })),
+  mandate: { ...b.mandate, hardExclusions: { allergens: b.mandate.hardExclusions.allergens.map(fiAllergen) } },
+  sites: b.sites.map((x) => ({ ...x, name: fiSite(x.name), type: fiSiteType(x.type) })),
+});
+
+export const buyers = once(() => readJson({ file: 'buyers.json', schema: z.object({ buyers: z.array(buyer) }) }).buyers.map(finnish));
 
 // ── history.json: the buyer's memory (favourites, past orders with outcome labels) ──
 
@@ -72,7 +84,8 @@ const products = once(() => new Map(readJson({
 }).products.map((p) => [p.key, p])));
 
 export function productName(key: string): string {
-  return products().get(key)?.name ?? key;
+  const value = products().get(key)?.name ?? key;
+  return fiProduct(value);
 }
 
 // ── demo-lines.json: the generated year of order history (store.py generate(), seed 2026) ──
@@ -91,9 +104,9 @@ export const demoLines = once((): LineRow[] => {
   const file = readJson({ file: 'demo-lines.json', schema: z.object({ columns: z.array(z.string()), rows: z.array(lineTuple) }) });
   if (file.columns.join() !== LINE_COLUMNS.join()) throw new Error('data/insights/demo-lines.json columns do not match the line schema');
   return file.rows.map((r) => ({
-    order_id: r[0], order_type: r[1], buyer_id: r[2], site_id: r[3], site_name: r[4], date: r[5], month: r[6],
-    weekday: r[7], event_id: r[8], event_type: r[9], event_name: r[10], guests: r[11], product: r[12],
-    product_key: r[13], category: r[14], brand: r[15], temp: r[16], qty: r[17], unit: r[18], unit_price: r[19],
+    order_id: r[0], order_type: r[1], buyer_id: r[2], site_id: r[3], site_name: r[4] && fiSite(r[4]), date: r[5], month: r[6],
+    weekday: fiWeekday(r[7]), event_id: r[8], event_type: r[9] && fiEventType(r[9]), event_name: r[10] && fiEventName(r[10]), guests: r[11], product: fiProduct(r[12]),
+    product_key: r[13], category: r[14] && fiCategory(r[14]), brand: r[15], temp: r[16] && fiStorage(r[16]), qty: r[17], unit: r[18], unit_price: r[19],
     value_eur: r[20], kg: r[21], co2e_kg: r[22], on_time: r[23], used_pct: r[24], waste_eur: r[25], label: r[26],
   }));
 });
@@ -110,7 +123,10 @@ const demandRow = z.object({
   source: z.enum(['planned', 'ordered', 'unmet']), unmet_reason: strN,
 }) satisfies z.ZodType<DemandRow>;
 
-export const demoDatasets = once(() => readJson({
-  file: 'demo-datasets.json',
-  schema: z.object({ agent_activity: z.array(activityRow), demand: z.array(demandRow) }),
-}));
+export const demoDatasets = once(() => {
+  const raw = readJson({ file: 'demo-datasets.json', schema: z.object({ agent_activity: z.array(activityRow), demand: z.array(demandRow) }) });
+  return {
+    agent_activity: raw.agent_activity.map((r) => ({ ...r, site: r.site && fiSite(r.site) })),
+    demand: raw.demand.map((r) => ({ ...r, category: fiCategoryCode(r.category), site: r.site && fiSite(r.site) })),
+  };
+});

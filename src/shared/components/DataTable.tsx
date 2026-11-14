@@ -2,7 +2,7 @@ import type { Cell } from '@/insights/schema';
 
 export interface TableColumn { name: string; label: string }
 
-const show = (v: Cell | undefined) => (typeof v === 'number' ? v.toLocaleString('en-US', { maximumFractionDigits: 1 }) : v === null || v === undefined ? '–' : String(v));
+const show = (v: Cell | undefined) => (typeof v === 'number' ? v.toLocaleString('fi-FI', { maximumFractionDigits: 1 }) : v === null || v === undefined ? '–' : String(v));
 
 /** The numbers behind a chart (first 200 rows). */
 export function DataTable({ columns, rows }: { columns: TableColumn[]; rows: Array<Record<string, Cell>> }) {

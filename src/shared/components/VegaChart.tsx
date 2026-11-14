@@ -3,11 +3,11 @@
 import { useEffect, useRef } from 'react';
 import type { ChartSpec } from '@/insights/charts';
 import type { Cell } from '@/insights/schema';
-import { useTheme } from '../hooks/useTheme';
 import { useVegaEmbed } from '../hooks/useVegaEmbed';
+import { FORMAT_LOCALE, TIME_FORMAT_LOCALE } from '../vegaLocale';
 import { DataTable, type TableColumn } from './DataTable';
 
-/** The page's light/dark theme as Vega-Lite config (specs carry no colours). */
+/** The page's theme as Vega-Lite config (specs carry no colours). */
 function vegaConfig(el: Element) {
   const css = (n: string) => getComputedStyle(el).getPropertyValue(n).trim();
   const cat = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => css(`--ik-cat-${i}`));
@@ -36,7 +36,6 @@ const tableColumns = (v: unknown): TableColumn[] =>
 export function VegaChart({ spec, height }: { spec: ChartSpec; height?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const { embed, failed } = useVegaEmbed();
-  const { theme } = useTheme();
   const isTable = spec.type === 'table';
 
   useEffect(() => {
@@ -48,14 +47,13 @@ export function VegaChart({ spec, height }: { spec: ChartSpec; height?: number }
     const s: Record<string, unknown> = { ...spec, autosize: { type: 'fit-x', contains: 'padding' },
       config: { ...vegaConfig(root), ...(typeof spec.config === 'object' && spec.config !== null ? spec.config : {}) },
       ...(height ? { height } : {}) };
-    // a frame later, so the theme attribute is applied before colours are read
     const frame = requestAnimationFrame(() => {
-      embed(el, s, { actions: false, renderer: 'svg' })
+      embed(el, s, { actions: false, renderer: 'svg', formatLocale: FORMAT_LOCALE, timeFormatLocale: TIME_FORMAT_LOCALE })
         .then((r) => { if (alive) view = r; else r.finalize(); })
-        .catch((e: unknown) => console.warn('Chart could not be drawn:', e));
+        .catch((e: unknown) => console.warn('Kaaviota ei voitu piirtää:', e));
     });
     return () => { alive = false; cancelAnimationFrame(frame); view?.finalize(); };
-  }, [embed, spec, height, theme, isTable]);
+  }, [embed, spec, height, isTable]);
 
   if (isTable || failed) {
     const data = isTable ? spec : spec.data;

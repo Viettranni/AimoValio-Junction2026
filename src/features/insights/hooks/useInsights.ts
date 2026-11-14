@@ -5,8 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '../api/insightsApi';
 import type { AskResult, Directory, ExploreFilters, Source, Wrapped } from '../api/insightsApi';
 
-export const STARTERS = ['Spend by month', 'Top 10 products by spend, rest as other', 'Waste % by kitchen compared to previous period, last 3 months',
-  'Category mix per kitchen', 'Carbon footprint by category, share', 'Orders by weekday and kitchen as a heatmap', 'Spend and waste % by product'];
+export const STARTERS = ['Kulutus kuukausittain', 'Kymmenen tuotetta kulutuksen mukaan, loput yhdessä',
+  'Hävikki-% ravintoloittain verrattuna edelliseen jaksoon, viimeiset 3 kuukautta', 'Tuoteryhmien osuusjakauma ravintoloittain',
+  'Hiilijalanjälki tuoteryhmittäin, osuus', 'Tilaukset viikonpäivän ja ravintolan mukaan lämpökarttana', 'Kulutus ja hävikki-% tuotteittain'];
 
 export type Tab = 'year' | 'explore';
 export interface ClarifyState { answers: Record<number, string>; custom: number | null }
@@ -30,7 +31,7 @@ export function useInsights({ initialBuyerId, initialSiteId }: { initialBuyerId?
   const seq = useRef(0);
 
   useEffect(() => {
-    api.fetchDirectory().then(setDirectory).catch((e: unknown) => console.error('Insights directory failed', e));
+    api.fetchDirectory().then(setDirectory).catch((e: unknown) => console.error('Oivallusten hakemisto epäonnistui', e));
   }, []);
 
   const liveBuyerId = directory?.live[0]?.id ?? null;
@@ -62,7 +63,7 @@ export function useInsights({ initialBuyerId, initialSiteId }: { initialBuyerId?
     try {
       result = await api.ask({ buyerId: bid, prompt: text, filters: over.filters ?? filters, source: over.source ?? source });
     } catch (e) {
-      result = { error: e instanceof Error ? e.message : 'That question could not be answered.' };
+      result = { error: e instanceof Error ? e.message : 'Tähän kysymykseen ei voitu vastata.' };
     }
     if (mine !== seq.current) return;
     setAnswer(result);
@@ -93,11 +94,11 @@ export function useInsights({ initialBuyerId, initialSiteId }: { initialBuyerId?
     if (!answer || !('clarify' in answer)) return;
     const ans = clar.answers;
     let next = filters;
-    answer.questions.forEach((q, i) => { if (/drop the filters/i.test(q.q) && ans[i] === 'Yes') next = {}; });
+    answer.questions.forEach((q, i) => { if (/pudotanko suodattimet/i.test(q.q) && ans[i] === 'Kyllä') next = {}; });
     setFilters(next);
-    const inst = answer.questions.findIndex((q, i) => /instead/i.test(q.q) && ans[i]); // "look at X instead" replaces the question
+    const inst = answer.questions.findIndex((q, i) => /sen sijaan/i.test(q.q) && ans[i]); // "look at X instead" replaces the question
     const extra = answer.questions
-      .map((q, i) => (i !== inst && ans[i] && ans[i] !== 'No' ? (ans[i] === 'Yes' ? q.q.replace(/^should i /i, '').replace(/\?$/, '') : ans[i]) : null))
+      .map((q, i) => (i !== inst && ans[i] && ans[i] !== 'Ei' ? (ans[i] === 'Kyllä' ? q.q.replace(/^(katsonko|pudotanko) /i, '').replace(/\?$/, '') : ans[i]) : null))
       .filter((x): x is string => Boolean(x));
     void ask([inst >= 0 ? ans[inst] : answer.prompt.replace(/[?.]+$/, ''), ...extra].join(', '), { filters: next });
   };

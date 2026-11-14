@@ -4,20 +4,20 @@ import * as charts from './charts';
 import type { ChartSpec } from './charts';
 import { memoryOf, productName, type Buyer } from './data';
 import { fmt, MONTHS } from './explain';
-import { grouped } from './math';
+import { fixed, grouped } from './math';
 import * as query from './query';
 import type { QueryResult } from './query';
 import type { Cell, Row } from './schema';
 import { currentSource, type Sql } from './store';
 
 const PERSONALITY: Record<string, [string, string]> = {
-  Dairy: ['The Cream Team', 'Dairy carried your kitchen this year.'],
-  Meat: ['The Grill Master', 'Meat was the heart of your menus.'],
-  Fish: ['The Sea Lover', 'Fish led your plates this year.'],
-  'Fruit & veg': ['The Green Machine', 'Fresh produce ruled your kitchen.'],
-  Bakery: ['The Early Riser', 'Bread and pastry set your mornings.'],
-  'Dry goods': ['The Pantry Planner', 'A well-stocked pantry kept you going.'],
-  'Plant-based': ['The Plant Pioneer', 'Plant-based was your signature.'],
+  Maitotuotteet: ['Kermatiimi', 'Maitotuotteet kantoivat keittiötäsi tänä vuonna.'],
+  Liha: ['Grillimestari', 'Liha oli ruokalistojesi sydän.'],
+  Kala: ['Merenrakastaja', 'Kala johti lautasiasi tänä vuonna.'],
+  'Hedelmät ja vihannekset': ['Vihreä kone', 'Tuoretuotteet hallitsivat keittiötäsi.'],
+  Leipomotuotteet: ['Aamuvirkku', 'Leipä ja pullat rytmittivät aamujasi.'],
+  Kuivatuotteet: ['Ruokakomeron suunnittelija', 'Hyvin varusteltu ruokakomero piti sinut liikkeellä.'],
+  Kasvipohjaiset: ['Kasvien edelläkävijä', 'Kasvipohjaiset olivat tavaramerkkisi.'],
 };
 
 /** What the views read: the orders connection for the current source, and one buyer's directory entry. */
@@ -59,63 +59,63 @@ export function wrapped({ host, buyerId, siteId = null }: { host: ViewsHost; buy
   const live = currentSource() === 'live';
   const tot = q({ host, buyerId, spec: { measures: ['spend', 'orders', 'kg'] }, siteId });
   if (!tot.rows.length || !num(tot.rows[0].spend)) {
-    return { title: `${where}: your year`, cards: [{ kind: 'empty', eyebrow: 'Your year', headline: 'Your story starts now.',
-      sub: live ? 'No orders through the gateway yet. Order in the chat and watch this fill up.'
-        : 'Order for a few weeks and your year in food appears here.', numbers: [] }] };
+    return { title: `${where}: sinun vuotesi`, cards: [{ kind: 'empty', eyebrow: 'Sinun vuotesi', headline: 'Tarinasi alkaa nyt.',
+      sub: live ? 'Tilauksia ei ole vielä tehty. Tee tilaus chatissa ja seuraa, kuinka tämä täyttyy.'
+        : 'Tilaa muutaman viikon ajan, niin vuotesi ruoan parissa ilmestyy tähän.', numbers: [] }] };
   }
   const t = tot.rows[0];
-  const cards: StoryCard[] = [{ kind: 'intro', eyebrow: 'Your year in food', headline: `${where}, what a year.`,
-    sub: live ? 'Every order placed through the gateway in this demo, live.' : 'Dec 2025 – Nov 2026, every order you placed with Valio Aimo.',
-    numbers: [{ label: 'spent', value: fmt({ v: t.spend, unit: 'EUR' }) }, { label: 'orders', value: grouped({ v: num(t.orders) ?? 0, digits: 0 }) },
-      ...(num(t.kg) !== null ? [{ label: 'of food', value: `${grouped({ v: (num(t.kg) ?? 0) / 1000, digits: 1 })} t` }] : [])] }];
+  const cards: StoryCard[] = [{ kind: 'intro', eyebrow: 'Vuotesi ruoan parissa', headline: `${where}, mikä vuosi.`,
+    sub: live ? 'Kaikki tässä sovelluksessa tehdyt tilaukset, livenä.' : 'Joulu 2025 – marras 2026, kaikki Valio Aimolta tekemäsi tilaukset.',
+    numbers: [{ label: 'kulutettu', value: fmt({ v: t.spend, unit: 'EUR' }) }, { label: 'tilausta', value: grouped({ v: num(t.orders) ?? 0, digits: 0 }) },
+      ...(num(t.kg) !== null ? [{ label: 'ruokaa', value: `${grouped({ v: (num(t.kg) ?? 0) / 1000, digits: 1 })} t` }] : [])] }];
   const top = q({ host, buyerId, spec: { measures: ['spend', 'orders'], dimensions: ['product'], sort: [{ by: 'spend', dir: 'desc' }], limit: 5 }, siteId });
   const p = top.rows[0];
-  cards.push({ kind: 'top_product', eyebrow: 'Your number one', headline: String(p.product), sub: `On ${String(p.orders)} orders. Nothing else came close.`,
-    numbers: [{ label: 'spent on it', value: fmt({ v: p.spend, unit: 'EUR' }) }], chart: charts.build({ result: top, intent: { type: 'bar' } }) });
+  cards.push({ kind: 'top_product', eyebrow: 'Ykkösesi', headline: String(p.product), sub: `${String(p.orders)} tilauksella. Mikään muu ei päässyt lähelle.`,
+    numbers: [{ label: 'kului siihen', value: fmt({ v: p.spend, unit: 'EUR' }) }], chart: charts.build({ result: top, intent: { type: 'bar' } }) });
   const cats = q({ host, buyerId, spec: { measures: ['spend'], dimensions: ['category'], calc: [{ type: 'share', of: 'spend' }] }, siteId });
   const c0 = cats.rows[0];
   if (c0) {
     const category = String(c0.category);
-    const [name, line] = PERSONALITY[category] ?? ['The All-Rounder', 'A bit of everything, done well.'];
-    cards.push({ kind: 'personality', eyebrow: 'Your kitchen personality', headline: name, sub: line,
-      numbers: [{ label: `of spend was ${category.toLowerCase()}`, value: `${(num(c0.spend_share) ?? 0).toFixed(0)}%` }],
+    const [name, line] = PERSONALITY[category] ?? ['Yleisnero', 'Vähän kaikkea, hyvin tehtynä.'];
+    cards.push({ kind: 'personality', eyebrow: 'Keittiösi persoona', headline: name, sub: line,
+      numbers: [{ label: `kulutuksesta oli ${category.toLowerCase()}`, value: `${(num(c0.spend_share) ?? 0).toFixed(0)}%` }],
       chart: charts.build({ result: cats, intent: { type: 'donut' } }) });
   }
   const months = q({ host, buyerId, spec: { measures: ['spend'], dimensions: [{ field: 'date', grain: 'month' }] }, siteId });
   const best = months.rows.reduce((a, r) => ((num(r.spend) ?? 0) > (num(a.spend) ?? 0) ? r : a));
-  cards.push({ kind: 'busiest_month', eyebrow: 'Your busiest month', headline: monthLabel(String(best.date)), sub: 'The kitchen never slept.',
-    numbers: [{ label: 'spent that month', value: fmt({ v: best.spend, unit: 'EUR' }) }], chart: charts.build({ result: months, intent: { type: 'column' } }) });
+  cards.push({ kind: 'busiest_month', eyebrow: 'Vilkkain kuukautesi', headline: monthLabel(String(best.date)), sub: 'Keittiö ei nukkunut hetkeäkään.',
+    numbers: [{ label: 'kului sinä kuussa', value: fmt({ v: best.spend, unit: 'EUR' }) }], chart: charts.build({ result: months, intent: { type: 'column' } }) });
   const ev = q({ host, buyerId, spec: { measures: ['guests', 'spend'], dimensions: ['event'], sort: [{ by: 'guests', dir: 'desc' }], limit: 1 }, siteId });
   const evn = q({ host, buyerId, spec: { measures: ['events'] }, siteId }).rows;
   if (ev.rows.length) {
     const e = ev.rows[0];
-    cards.push({ kind: 'top_event', eyebrow: 'Your biggest night', headline: String(e.event), sub: `One of ${String(evn[0]?.events ?? 0)} events you fed this year.`,
-      numbers: [{ label: 'guests', value: grouped({ v: num(e.guests) ?? 0, digits: 0 }) }, { label: 'on food', value: fmt({ v: e.spend, unit: 'EUR' }) }] });
+    cards.push({ kind: 'top_event', eyebrow: 'Suurin iltasi', headline: String(e.event), sub: `Yksi vuoden ${String(evn[0]?.events ?? 0)} tapahtumasta, joissa ruokit vieraita.`,
+      numbers: [{ label: 'vierasta', value: grouped({ v: num(e.guests) ?? 0, digits: 0 }) }, { label: 'ruokaan', value: fmt({ v: e.spend, unit: 'EUR' }) }] });
   }
-  // Live orders may have no leftovers, CO2 or on-time data yet (null): those cards are left out rather than guessed.
+  // Oikeilla tilauksilla ei välttämättä ole hävikki-, CO₂- tai ajallaan-tietoja (null): ne kortit jätetään pois arvaamisen sijaan.
   const waste = q({ host, buyerId, spec: { measures: ['waste_pct'], dimensions: [{ field: 'date', grain: 'month' }] }, siteId });
   const w = waste.rows.map((r) => num(r.waste_pct)).filter((v): v is number => v !== null);
   if (w.length) {
     const first = w.slice(0, 3).reduce((s, v) => s + v, 0) / 3;
     const last = w.slice(-3).reduce((s, v) => s + v, 0) / 3;
     const drop = first ? ((first - last) / first) * 100 : 0;
-    cards.push({ kind: 'waste', eyebrow: 'Less in the bin', headline: `${Math.abs(drop).toFixed(0)}% ${drop >= 0 ? 'less' : 'more'} food left over`,
-      sub: 'Your last three months compared to your first three.', tone: drop >= 0 ? 'good' : 'watch',
-      numbers: [{ label: 'left over now', value: `${last.toFixed(1)}%` }], chart: charts.build({ result: waste, intent: { type: 'area' } }) });
+    cards.push({ kind: 'waste', eyebrow: 'Vähemmän roskiin', headline: `${drop >= 0 ? 'Hävikki' : 'Hävikkiä'} ${drop >= 0 ? `${Math.abs(drop).toFixed(0)} % pienempi` : `${Math.abs(drop).toFixed(0)} % enemmän`}`,
+      sub: 'Kolme viimeistä kuukauttasi verrattuna kolmeen ensimmäiseen.', tone: drop >= 0 ? 'good' : 'watch',
+      numbers: [{ label: 'hävikki nyt', value: `${fixed({ v: last, digits: 1 })} %` }], chart: charts.build({ result: waste, intent: { type: 'area' } }) });
   }
   const co2 = num(q({ host, buyerId, spec: { measures: ['co2e'] }, siteId }).rows[0]?.co2e);
   if (co2 !== null) {
     const trips = co2 / 31; // car, Helsinki–Tampere one way ≈ 180 km × 0.17 kg/km
-    cards.push({ kind: 'co2', eyebrow: 'Your footprint', headline: `${grouped({ v: co2 / 1000, digits: 0 })} tonnes CO₂e`,
-      sub: `About ${grouped({ v: trips, digits: 0 })} car trips from Helsinki to Tampere.`,
-      numbers: [{ label: 'per kg of food', value: `${(co2 / Math.max(1, num(t.kg) ?? 0)).toFixed(1)} kg` }] });
+    cards.push({ kind: 'co2', eyebrow: 'Jalanjälkesi', headline: `${grouped({ v: co2 / 1000, digits: 0 })} tonnia CO₂e`,
+      sub: `Noin ${grouped({ v: trips, digits: 0 })} automatkaa Helsingistä Tampereelle.`,
+      numbers: [{ label: 'ruokakiloa kohti', value: `${fixed({ v: co2 / Math.max(1, num(t.kg) ?? 0), digits: 1 })} kg` }] });
   }
   const ot = num(q({ host, buyerId, spec: { measures: ['on_time_pct'] }, siteId }).rows[0]?.on_time_pct);
   if (ot !== null) {
-    cards.push({ kind: 'on_time', eyebrow: 'Delivered on time', headline: `${ot.toFixed(0)}% of the time`, sub: 'Valio Aimo trucks, rain or shine.', numbers: [] });
+    cards.push({ kind: 'on_time', eyebrow: 'Toimitettu ajallaan', headline: `${ot.toFixed(0)} % kerroista`, sub: 'Valio Aimon autot, säällä kuin säällä.', numbers: [] });
   }
-  cards.push({ kind: 'outro', eyebrow: 'Next year', headline: "Keep cooking. We'll keep counting.", sub: 'Ask anything about your year in Explore.', numbers: [] });
-  return { title: `${where}: your year`, cards };
+  cards.push({ kind: 'outro', eyebrow: 'Ensi vuosi', headline: 'Jatka kokkaamista. Me jatkamme laskemista.', sub: 'Kysy mitä tahansa vuodestasi Tutki-välilehdellä.', numbers: [] });
+  return { title: `${where}: sinun vuotesi`, cards };
 }
 
 export interface HistoryOrder {
@@ -153,7 +153,7 @@ export function orderHistory({ conn, buyerId, page = 1, size = 50, q: text = nul
   const orders = rows.slice(start, start + size).map((r): HistoryOrder => ({
     id: String(r[0]), key: String(r[0]), date: String(r[1]), siteId: str(r[2]), site: str(r[3]), type: String(r[4]), event: str(r[5]),
     eventType: str(r[6]), guests: n(r[7]), lines: n(r[8]) ?? 0, total: Math.round((n(r[9]) ?? 0) * 100) / 100, onTime: Boolean(r[10]),
-    outcome: r[11] ? 'Some left over' : 'Just right', status: 'done',
+    outcome: r[11] ? 'Jäi yli' : 'Sopiva määrä', status: 'done',
   }));
   return { orders, total: rows.length, page, size };
 }
@@ -164,7 +164,7 @@ export function orderDetail({ conn, buyerId, orderId }: { conn: Sql; buyerId: st
   return {
     id: orderId,
     lines: rows.map((r) => ({ product: r.product, category: r.category, qty: r.qty, unit: r.unit, value: r.value_eur,
-      outcome: r.label === 'right_sized' ? 'Just right' : 'Some left over', onTime: Boolean(r.on_time) })),
+      outcome: r.label === 'right_sized' ? 'Sopiva määrä' : 'Jäi yli', onTime: Boolean(r.on_time) })),
     date: rows[0]?.date ?? null, site: rows[0]?.site_name ?? null, event: rows[0]?.event_name ?? null,
   };
 }
@@ -207,8 +207,8 @@ export function kitchens({ host, buyer, liveApi }: { host: ViewsHost; buyer: Buy
       creditLimit: buyer.creditLimitEUR, openInvoices: buyer.openInvoicesEUR },
     sites,
     favourites: mem.favourites.map((f) => ({ name: productName(f.key), pinned: Boolean(f.pinned) })),
-    limits: [{ label: 'Per order', value: m.limits.perOrderEUR }, { label: 'Per event', value: m.limits.perEventEUR ?? null },
-      { label: 'Per month', value: m.limits.perMonthEUR }],
+    limits: [{ label: 'Tilausta kohti', value: m.limits.perOrderEUR }, { label: 'Tapahtumaa kohti', value: m.limits.perEventEUR ?? null },
+      { label: 'Kuukaudessa', value: m.limits.perMonthEUR }],
     allergens: m.hardExclusions.allergens,
     liveApi,
   };

@@ -1,6 +1,7 @@
 // The ONE mapper from this project's orders (src/db/schema.ts: orders, order_lines, leftovers) to `line` rows.
 // Fields this project does not record stay null.
 import { weekdayName } from './dates';
+import { CATEGORY_CODE_FI, fiProduct, PROJECT_EVENT_TYPE_FI, STORAGE_FI } from './fi';
 import { round } from './math';
 import type { LineRow } from './schema';
 
@@ -42,16 +43,10 @@ export interface ProductFacts {
   co2PerKg: number | null;
 }
 
-const EVENT_TYPE_LABEL: Record<string, string> = {
-  wedding: 'Wedding', corporate_lunch: 'Corporate lunch', party: 'Party', buffet: 'Buffet', school: 'School', other: 'Other',
-};
-
-/** poultry_main -> Poultry main. */
-const humanise = (code: string) => (code.charAt(0).toUpperCase() + code.slice(1)).replace(/_/g, ' ');
 
 function storage(temperature: string | undefined): string | null {
-  if (temperature === 'chilled') return 'Chilled';
-  if (temperature === 'frozen' || temperature === 'ambient') return 'Ambient & frozen';
+  if (temperature === 'chilled') return STORAGE_FI.chilled;
+  if (temperature === 'frozen' || temperature === 'ambient') return STORAGE_FI.ambient;
   return null;
 }
 
@@ -77,16 +72,16 @@ export function toLineRows({ orders, leftovers, productFacts }: {
       month: o.deliveryDate.slice(0, 7),
       weekday: weekdayName(o.deliveryDate),
       event_id: o.id,
-      event_type: EVENT_TYPE_LABEL[o.eventType] ?? humanise(o.eventType),
+      event_type: PROJECT_EVENT_TYPE_FI[o.eventType] ?? o.eventType,
       event_name: o.eventName,
       guests: o.guests,
-      product: ln.productName,
+      product: fiProduct(ln.productName),
       product_key: ln.productId,
-      category: humanise(ln.category),
+      category: CATEGORY_CODE_FI[ln.category] ?? ln.category,
       brand: facts?.vendor || null,
       temp: storage(facts?.temperature),
       qty: ln.packs,
-      unit: 'pack',
+      unit: 'laatikko',
       unit_price: ln.unitPrice,
       value_eur: value,
       kg,

@@ -55,40 +55,39 @@ export function forBuyer({ buyerId, decisions }: { buyerId: string; decisions: s
     const a = series.slice(0, 4).reduce((s, v) => s + v, 0) / 4;
     const b = series.slice(4).reduce((s, v) => s + v, 0) / 4;
     statements.push({ id: 'waste', tone: b < a ? 'good' : 'watch',
-      text: b < a ? 'You threw away less this month.' : 'A bit more was left over this month.',
-      detail: b < a ? `About ${roundHalfEven((Math.abs(a - b) / a) * 100)}% less left over than the month before.` : '' });
+      text: b < a ? 'Heitit tässä kuussa vähemmän pois.' : 'Tässä kuussa jäi hieman enemmän yli.',
+      detail: b < a ? `Noin ${roundHalfEven((Math.abs(a - b) / a) * 100)} % vähemmän hävikkiä kuin edellisessä kuussa.` : '' });
   }
   if (lines.length) {
-    statements.push({ id: 'right', tone: 'good', text: `${roundHalfEven((right / lines.length) * 100)}% of what you ordered was just right.`,
-      detail: 'Counted from what your team tapped in “How did it go?”.' });
+    statements.push({ id: 'right', tone: 'good', text: `${roundHalfEven((right / lines.length) * 100)} % tilaamastasi oli sopiva määrä.`,
+      detail: 'Laskettu siitä, mitä tiimisi merkitsi kohdassa ”Miten meni?”.' });
   }
   const auto = decisions.filter((d) => d === 'auto' || d === 'tell_me').length;
   const total = decisions.length;
   statements.push({ id: 'ok', tone: 'neutral',
-    text: !total || auto / total >= 0.5 ? 'Most orders went through without waiting for an OK.' : 'Many orders needed an OK this week.',
-    detail: 'Orders inside your limits go straight to Valio Aimo.' });
+    text: !total || auto / total >= 0.5 ? 'Useimmat tilaukset menivät läpi odottamatta hyväksyntää.' : 'Moni tilaus tarvitsi tällä viikolla hyväksynnän.',
+    detail: 'Rajojesi sisällä olevat tilaukset menevät suoraan Valio Aimolle.' });
   const favs = mem.favourites.map((f) => productName(f.key)).slice(0, 3);
   if (favs.length) {
-    statements.push({ id: 'fav', tone: 'neutral', text: `Your favourites are used first: ${favs[0]}${favs.length > 1 ? ' and more.' : '.'}`,
-      detail: 'Change them in Settings.' });
+    statements.push({ id: 'fav', tone: 'neutral', text: `Suosikkisi käytetään ensin: ${favs[0]}${favs.length > 1 ? ' ja muut.' : '.'}`,
+      detail: 'Muuta niitä asetuksissa.' });
   }
   const tipList: Array<{ text: string; tipId: string | null }> = [];
   const eventTypes = [...new Set(mem.orders.flatMap((o) => (o.eventType ? [o.eventType] : [])))].sort();
   for (const et of eventTypes) {
     for (const t of tips({ memory: mem, eventType: et })) {
-      tipList.push({ text: `Your last 3 ${et}s had ${t.need} left over. Order ${t.cutPct}% less next time?`, tipId: t.tipId });
+      tipList.push({ text: `Kolmella viimeisellä tapahtumalla (${et}) tuotetta ”${t.need}” jäi yli. Tilaa ensi kerralla ${t.cutPct} % vähemmän?`, tipId: t.tipId });
     }
   }
   if (buyerId === 'BUY-POHJOLA' && !tipList.length) {
-    tipList.push({ text: 'Your salmon portions are spot on. Keep the same amount for the next gala.', tipId: null });
+    tipList.push({ text: 'Lohiannoksesi ovat kohdillaan. Pidä sama määrä seuraavaan gaalaan.', tipId: null });
   }
   return { statements: statements.slice(0, 4),
-    chart: { title: 'Food left over', unit: '%', labels: series.length ? WEEKS.slice(-series.length) : [], values: series },
+    chart: { title: 'Hävikki', unit: '%', labels: series.length ? WEEKS.slice(-series.length) : [], values: series },
     tips: tipList.slice(0, 3) };
 }
 
-const ALLERGEN_WORDS: Record<string, string> = { nuts: 'Nuts', peanuts: 'Peanuts', milk: 'Milk', sesame: 'Sesame', fish: 'Fish', eggs: 'Eggs' };
-const title = (s: string) => s.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function settings({ buyer, all, liveApi }: { buyer: Buyer; all: Buyer[]; liveApi: boolean }) {
   const lim = buyer.mandate.limits;
@@ -96,9 +95,9 @@ export function settings({ buyer, all, liveApi }: { buyer: Buyer; all: Buyer[]; 
     buyer: { id: buyer.id, name: buyer.name, site: buyer.site.name, segment: buyer.segment },
     buyers: all.map((x) => ({ id: x.id, name: x.name, segment: x.segment })),
     favourites: memoryOf(buyer.id).favourites.map((f) => ({ name: productName(f.key), pinned: Boolean(f.pinned) })),
-    limits: [{ label: 'Per order', value: lim.perOrderEUR }, { label: 'Per event', value: lim.perEventEUR ?? null },
-      { label: 'Per month', value: lim.perMonthEUR }],
-    allergens: buyer.mandate.hardExclusions.allergens.map((a) => ALLERGEN_WORDS[a] ?? title(a)),
+    limits: [{ label: 'Tilausta kohti', value: lim.perOrderEUR }, { label: 'Tapahtumaa kohti', value: lim.perEventEUR ?? null },
+      { label: 'Kuukaudessa', value: lim.perMonthEUR }],
+    allergens: buyer.mandate.hardExclusions.allergens.map(cap),
     approvers: buyer.approvers.map((a) => ({ name: a.name, role: a.role })),
     liveApi,
   };

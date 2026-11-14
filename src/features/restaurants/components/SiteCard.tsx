@@ -16,8 +16,8 @@ export function SiteCard({ site, onOpen }: { site: KitchenSite; onOpen: () => vo
         <span><b className="block text-[15px] text-ink">{site.name}</b><small className="text-[12.5px] text-muted">{site.type}</small></span>
       </span>
       <span className="grid grid-cols-3 gap-2">
-        {[[eur(site.spendMonth), 'last 30 days'], [pct({ v: site.wastePct, digits: 1 }), 'left over'],
-          [site.onTimePct === null ? '–' : `${Math.round(site.onTimePct)}%`, 'on time']].map(([v, l]) => (
+        {[[eur(site.spendMonth), 'viim. 30 pv'], [pct({ v: site.wastePct, digits: 1 }), 'hävikki'],
+          [site.onTimePct === null ? '–' : `${Math.round(site.onTimePct)} %`, 'ajallaan']].map(([v, l]) => (
           <span key={l}><b className="block tabular-nums text-[16px] text-ink">{v}</b><small className="text-[12px] text-muted">{l}</small></span>
         ))}
       </span>

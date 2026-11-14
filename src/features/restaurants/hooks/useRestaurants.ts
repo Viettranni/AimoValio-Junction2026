@@ -20,14 +20,14 @@ export function useRestaurants() {
   const [siteTab, setSiteTab] = useState<SiteTab>('overview');
 
   useEffect(() => {
-    fetchDirectory().then((d) => setOrgs(d.demo)).catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load'));
+    fetchDirectory().then((d) => setOrgs(d.demo)).catch((e: unknown) => setError(e instanceof Error ? e.message : 'Lataus epäonnistui'));
   }, []);
 
   useEffect(() => {
     let alive = true;
     fetchRestaurants(buyerId)
       .then((d) => { if (alive) { setData(d); setError(null); } })
-      .catch((e: unknown) => { if (alive) setError(e instanceof Error ? e.message : 'Could not load'); });
+      .catch((e: unknown) => { if (alive) setError(e instanceof Error ? e.message : 'Lataus epäonnistui'); });
     return () => { alive = false; setData(null); };
   }, [buyerId]);
 

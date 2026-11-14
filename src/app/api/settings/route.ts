@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   try {
     const gw = insightsGateway();
     const buyer = gw.demoBuyer(q.data.buyerId);
-    if (!buyer) throw new NotFound(`Unknown organisation ${q.data.buyerId}.`);
+    if (!buyer) throw new NotFound(`Tuntematon organisaatio ${q.data.buyerId}.`);
     return NextResponse.json(settings({ buyer, all: buyers(), liveApi: gw.liveApi }));
   } catch (e) {
     return insightsFailure(e);

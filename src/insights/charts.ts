@@ -12,12 +12,12 @@ const SCHEMA = allFields();
 
 export const SCHEMA_URL = 'https://vega.github.io/schema/vega-lite/v5.json';
 export const TYPES: Record<string, string> = {
-  line: 'Trend over time', area: 'Trend with volume', column: 'Compare a few values, vertical',
-  bar: 'Rank categories, horizontal', stacked: 'Totals split into parts', grouped: 'Side-by-side parts',
-  percent: 'Mix of parts (100%)', heatmap: 'Two categories at once', donut: 'Share of a whole (few parts)',
-  scatter: 'Two measures against each other', bubble: 'Three measures at once', histogram: 'How values spread',
-  boxplot: 'Spread per category', waterfall: 'What drove the change', kpi: 'One big number',
-  sparkline: 'Tiny trend', table: 'All the numbers',
+  line: 'Kehitys ajan yli', area: 'Kehitys ja volyymi', column: 'Muutaman arvon vertailu, pysty',
+  bar: 'Luokkien järjestys, vaaka', stacked: 'Kokonaisuus osiin jaettuna', grouped: 'Osat vierekkäin',
+  percent: 'Osien jakauma (100 %)', heatmap: 'Kaksi luokittelua kerralla', donut: 'Osuus kokonaisuudesta (muutama osa)',
+  scatter: 'Kaksi mittaria vastakkain', bubble: 'Kolme mittaria kerralla', histogram: 'Arvojen jakauma',
+  boxplot: 'Vaihtelu luokittain', waterfall: 'Mikä muutoksen aiheutti', kpi: 'Yksi iso luku',
+  sparkline: 'Pieni trendi', table: 'Kaikki luvut',
 };
 
 /** A Vega-Lite spec, or a plain table. Only JSON-safe values. */
@@ -64,7 +64,7 @@ export function suggest(result: QueryResult): Array<{ type: string; why: string 
 
 function field({ result, name }: { result: QueryResult; name: string }): Column {
   const c = result.columns.find((x) => x.name === name);
-  if (!c) throw new GuardFailed(`'${name}' is not in the result.`, { fix: `Use one of: ${result.columns.map((x) => x.name).join(', ')}.` });
+  if (!c) throw new GuardFailed(`'${name}' ei ole tuloksessa.`, { fix: `Käytä jotakin näistä: ${result.columns.map((x) => x.name).join(', ')}.` });
   return c;
 }
 
@@ -117,8 +117,8 @@ function layerTimeCalcs({ spec, m, rows }: { spec: ChartSpec; m: string; rows: R
   if (anyForecast) {
     layers.push({ transform: [{ filter: fut }], mark: { type: 'line', strokeDash: [6, 4], strokeWidth: 2, interpolate: 'monotone' },
       encoding: { x, y, tooltip: [...tips,
-        { field: `${m}_lo`, type: 'quantitative', title: 'Low', format: ',.0f' },
-        { field: `${m}_hi`, type: 'quantitative', title: 'High', format: ',.0f' }] } });
+        { field: `${m}_lo`, type: 'quantitative', title: 'Alaraja', format: ',.0f' },
+        { field: `${m}_hi`, type: 'quantitative', title: 'Yläraja', format: ',.0f' }] } });
   }
   if (rows.some((r) => r.is_partial)) {
     layers.push({ transform: [{ filter: 'datum.is_partial' }], mark: { type: 'point', filled: false, size: 64, strokeWidth: 2 },
@@ -126,7 +126,7 @@ function layerTimeCalcs({ spec, m, rows }: { spec: ChartSpec; m: string; rows: R
   }
   if (rows.some((r) => r.is_anomaly)) {
     layers.push({ transform: [{ filter: 'datum.is_anomaly' }], mark: { type: 'point', filled: true, size: 110, strokeWidth: 2, style: 'anomaly' },
-      encoding: { x, y, tooltip: [...tips, { field: `${m}_z`, type: 'quantitative', title: 'How unusual (z)' }] } });
+      encoding: { x, y, tooltip: [...tips, { field: `${m}_z`, type: 'quantitative', title: 'Poikkeavuus (z)' }] } });
   }
   spec.layer = layers;
 }
@@ -142,10 +142,10 @@ function asOrdinal(e: Enc): void {
 
 export function build({ result, intent }: { result: QueryResult; intent: ChartIntent }): ChartSpec {
   const t = intent.type;
-  if (typeof t !== 'string' || !(t in TYPES)) throw new GuardFailed(`Unknown chart type '${String(t ?? null)}'.`, { fix: `Use one of: ${Object.keys(TYPES).join(', ')}.` });
+  if (typeof t !== 'string' || !(t in TYPES)) throw new GuardFailed(`Tuntematon kaaviotyyppi '${String(t ?? null)}'.`, { fix: `Käytä jotakin näistä: ${Object.keys(TYPES).join(', ')}.` });
   const ok = fits(result);
-  if (!ok.includes(t)) throw new GuardFailed(`A ${t} chart does not fit this result.`, { fix: `These fit: ${ok.join(', ')}. Or change the query.` });
-  if (!result.rows.length) throw new GuardFailed('The result is empty.', { fix: 'Widen the period or remove a filter, then run_query again.' });
+  if (!ok.includes(t)) throw new GuardFailed(`Kaaviotyyppi ${t} ei sovi tähän tulokseen.`, { fix: `Nämä sopivat: ${ok.join(', ')}. Tai muuta kyselyä.` });
+  if (!result.rows.length) throw new GuardFailed('Tulos on tyhjä.', { fix: 'Laajenna ajanjaksoa tai poista suodatin ja aja run_query uudelleen.' });
   const { dims, time, meas, n } = cols(result);
   const title = str(intent.title);
   if (t === 'table') return { type: 'table', columns: result.columns, rows: result.rows, title };
@@ -157,7 +157,7 @@ export function build({ result, intent }: { result: QueryResult; intent: ChartIn
   if (title) spec.title = title;
   const tip = tooltip(result);
   if (t === 'line' || t === 'area' || t === 'sparkline') {
-    if (x === null) throw new GuardFailed(`A ${t} chart needs a dimension.`, { fix: `These fit: ${ok.join(', ')}.` });
+    if (x === null) throw new GuardFailed(`Kaaviotyyppi ${t} tarvitsee ulottuvuuden.`, { fix: `Nämä sopivat: ${ok.join(', ')}.` });
     spec.mark = { type: t !== 'area' ? 'line' : 'area', point: t === 'line' && n <= 24, interpolate: 'monotone', strokeWidth: 2.5,
       ...(t === 'area' ? { line: true, opacity: 0.25 } : {}) };
     const encoding: Enc = { x: enc({ result, name: x }), y: enc({ result, name: m }), tooltip: tip };
@@ -172,21 +172,21 @@ export function build({ result, intent }: { result: QueryResult; intent: ChartIn
     }
   } else if (t === 'column' || t === 'bar') {
     const cat = t === 'column' ? x : str(intent.x) ?? dims[0];
-    if (cat === null) throw new GuardFailed(`A ${t} chart needs a dimension.`, { fix: `These fit: ${ok.join(', ')}.` });
+    if (cat === null) throw new GuardFailed(`Kaaviotyyppi ${t} tarvitsee ulottuvuuden.`, { fix: `Nämä sopivat: ${ok.join(', ')}.` });
     const val = enc({ result, name: m });
     const key = enc({ result, name: cat, extra: t === 'bar' && cat !== time ? { sort: '-x' } : {} });
     spec.mark = { type: 'bar', cornerRadiusEnd: 4 };
     spec.encoding = t === 'column' ? { x: key, y: val, tooltip: tip } : { y: key, x: val, tooltip: tip };
     if (t === 'column' && key.type === 'temporal') asOrdinal(key);
   } else if (t === 'stacked' || t === 'grouped' || t === 'percent') {
-    if (x === null || color === null) throw new GuardFailed(`A ${t} chart needs two dimensions.`, { fix: `These fit: ${ok.join(', ')}.` });
+    if (x === null || color === null) throw new GuardFailed(`Kaaviotyyppi ${t} tarvitsee kaksi ulottuvuutta.`, { fix: `Nämä sopivat: ${ok.join(', ')}.` });
     spec.mark = { type: 'bar', cornerRadiusEnd: 2 };
     const xe = enc({ result, name: x });
     if (xe.type === 'temporal') asOrdinal(xe);
     const ye = enc({ result, name: m, extra: { stack: t === 'percent' ? 'normalize' : t === 'grouped' ? null : 'zero' } });
     if (t === 'percent') {
       ye.axis = { format: '%' };
-      ye.title = 'Share';
+      ye.title = 'Osuus';
     }
     const encoding: Enc = { x: xe, y: ye, color: enc({ result, name: color }), tooltip: tip };
     if (t === 'grouped') encoding.xOffset = { field: color };
@@ -214,7 +214,7 @@ export function build({ result, intent }: { result: QueryResult; intent: ChartIn
   } else if (t === 'histogram') {
     spec.mark = { type: 'bar', cornerRadiusEnd: 2 };
     spec.encoding = { x: enc({ result, name: m, extra: { bin: { maxbins: 12 } } }),
-      y: { aggregate: 'count', title: `Number of ${SCHEMA.dimensions[dims[0]].label.toLowerCase()}s` } };
+      y: { aggregate: 'count', title: 'Lukumäärä' } };
   } else if (t === 'boxplot') {
     const cat = dims.find((d) => d !== time) ?? dims[0];
     spec.mark = { type: 'boxplot', extent: 'min-max' };
@@ -237,7 +237,7 @@ export function build({ result, intent }: { result: QueryResult; intent: ChartIn
       x: { field: 'step', type: 'ordinal', sort: null, title: SCHEMA.dimensions[key].label },
       y: { field: 'start', type: 'quantitative', title: enc({ result, name: m }).title }, y2: { field: 'end' },
       color: { field: 'kind', type: 'nominal', title: null, legend: null },
-      tooltip: [{ field: 'step', type: 'ordinal' }, { field: 'delta', type: 'quantitative', format: ',.0f', title: 'Change' }],
+      tooltip: [{ field: 'step', type: 'ordinal' }, { field: 'delta', type: 'quantitative', format: ',.0f', title: 'Muutos' }],
     };
   } else if (t === 'kpi') {
     const row = result.rows[0];

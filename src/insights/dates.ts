@@ -1,7 +1,8 @@
 // Calendar helpers on ISO dates (YYYY-MM-DD), in UTC, matching Python's `date` and strftime as the source uses them.
 
+import { WEEKDAYS_FI } from './fi';
+
 const DAY_MS = 86_400_000;
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export interface Ymd { year: number; month: number; day: number }
 
@@ -42,9 +43,9 @@ export function weekday(iso: string): number {
   return (fromYmd(parseIso(iso)).getUTCDay() + 6) % 7;
 }
 
-/** strftime('%a'). */
+/** The Finnish short weekday name (ma, ti, ke, to, pe, la, su). */
 export function weekdayName(iso: string): string {
-  return WEEKDAYS[weekday(iso)];
+  return WEEKDAYS_FI[weekday(iso)];
 }
 
 /** strftime('%Y-W%W'): weeks start on Monday; days before the year's first Monday are week 00. */

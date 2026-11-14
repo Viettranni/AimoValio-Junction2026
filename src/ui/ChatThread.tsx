@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import type { UiLang } from '@/contracts';
 import { CheckInCard } from './CheckInCard';
+import { ConnectCard } from './ConnectCard';
 import { ChoiceButtons } from './ChoiceButtons';
 import { t, type UiKey } from './i18n';
 import { SendIcon } from './icons';
@@ -122,6 +123,12 @@ export function ChatThread({
                     onSubmit={(text) => onCheckIn(item.id, text)}
                     onConfirm={(entries) => onCheckInConfirm(item.id, entries)}
                   />
+                </motion.div>
+              );
+            case 'connect':
+              return (
+                <motion.div key={item.id} {...enter} className="pr-4">
+                  <ConnectCard info={item.event} lang={lang} />
                 </motion.div>
               );
             case 'error':

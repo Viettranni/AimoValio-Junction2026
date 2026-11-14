@@ -5,9 +5,9 @@ The Aimo agent gateway is one MCP server, `aimo-gateway`, with two ways in:
 | Transport | Where | Identity |
 | --- | --- | --- |
 | stdio | `npx tsx src/mcp/stdio.ts` (run from the repo root) | `AIMO_AGENT_KEY` environment variable |
-| Streamable HTTP | `POST http://localhost:3100/api/mcp` (the Next.js app, any port you run it on) | `Authorization: Bearer <key>` |
+| Streamable HTTP | `POST http://localhost:3100/api/mcp` (the Next.js app, any port you run it on) | `Authorization: Bearer <key>`, or `?key=<key>` in the URL for clients that take only a URL |
 
-The demo key is `aimo-demo-agent-key`. It acts as `procurement-agent` buying for `helsinki-juhlapalvelu`, whose policy auto-approves orders up to €1,000 excl. VAT and sends the rest to Anna Virtanen (Purchasing manager). Set your own keys with `AIMO_AGENT_KEYS` (see `.env.example`). The customer always comes from the key, never from tool input.
+The demo keys are `aimo-demo-agent-key` and the connect key `sakdnkfbwjklebfkjABF` (`AIMO_CONNECT_KEY` overrides it), the one in the copy-paste link. It acts as `procurement-agent` buying for `helsinki-juhlapalvelu`, whose policy auto-approves orders up to €1,000 excl. VAT and sends the rest to Anna Virtanen (Purchasing manager). Set your own keys with `AIMO_AGENT_KEYS` (see `.env.example`). The customer always comes from the key, never from tool input.
 
 Both transports serve MCP 2026-07-28 clients and 2025-era clients (the ones that open with `initialize`); `src/mcp/stdio.test.ts` checks the stdio side. The stdio entry depends on a Mastra internal, pinned to `@mastra/mcp` 2.9.0 / `@modelcontextprotocol/server` 2.4.0; re-run that test after upgrading either. The stdio server reads `VALIO_API_KEY`, `VALIO_API_BASE` and `ANTHROPIC_API_KEY` from `.env.local` in the repo root when the client doesn't pass them.
 
@@ -16,10 +16,16 @@ What each check below was verified with is noted in the section. "Not verified" 
 ## Run the server
 
 ```bash
-npm install && npm run seed     # once
-npm run dev -- -p 3100          # HTTP endpoint at http://localhost:3100/api/mcp, approval page at /approvals
+npm install
+npm run dev                     # seeds on first run, app on :3100, public tunnel; prints every link
 npx tsx src/mcp/stdio.ts        # or: stdio only (an MCP client normally starts this for you)
 ```
+
+## claude.ai and Claude Desktop (copy-paste link)
+
+Claude's custom connectors call from Anthropic's cloud and take only a URL, so `npm run dev` opens a cloudflared quick tunnel (`brew install cloudflared`; `AIMO_TUNNEL=0` turns it off) in front of `scripts/mcp-only-proxy.ts`, which forwards only `/api/mcp`, so `/approvals` and the other routes stay local. The link carries the connect key: `https://<random>.trycloudflare.com/api/mcp?key=sakdnkfbwjklebfkjABF`.
+
+Copy it from the `npm run dev` banner, the **Aimo Claudessa** section on `/demo-host`, or the chat ("How do I connect Claude?"). In Claude: Settings → Connectors → Add custom connector → paste the URL. The tunnel URL changes on every `npm run dev`, so update the connector after a restart. A key in a URL ends up in proxy logs; this is for the demo key only.
 
 ## Claude Code
 

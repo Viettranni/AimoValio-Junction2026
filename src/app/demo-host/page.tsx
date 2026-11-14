@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { ConnectClaude } from './ConnectClaude';
 import { OpenAssistantButton } from './OpenAssistantButton';
 
 export const metadata: Metadata = {
@@ -179,6 +180,20 @@ export default function DemoHostPage() {
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      {/* Connect Claude over MCP */}
+      <section className="bg-white">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-14 md:px-6 md:py-16 lg:grid-cols-[1fr_1.2fr]">
+          <div>
+            <h2 className="font-display text-[36px] font-extrabold uppercase leading-none text-navy md:text-[44px]">Aimo Claudessa</h2>
+            <p className="mt-4 max-w-md text-[16px] leading-[1.6] text-ink-soft">
+              Yhdistä oma tekoälyavustajasi Valio Aimoon: se suunnittelee tilaisuudet kalenterisi pohjalta, tilaa kiintein hinnoin valtuuksiesi
+              rajoissa ja kirjaa hävikin.
+            </p>
+          </div>
+          <ConnectClaude />
         </div>
       </section>
 

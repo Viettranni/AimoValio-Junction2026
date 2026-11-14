@@ -6,6 +6,7 @@ import { createCheckInTool } from '../tools/check-in';
 import { createDirectOrderTool } from '../tools/direct-order';
 import { createLookupProductsTool, createReadDraftTool, createRefreshPricesTool } from '../tools/lookup';
 import { createEditDraftTool } from '../tools/edit-draft';
+import { shareConnectLinkTool } from '../tools/connect-link';
 import { offerChoicesTool } from '../tools/offer-choices';
 import { createPlanOrderTool } from '../tools/plan-order';
 import { createUnderstandRequestTool } from '../tools/understand-request';
@@ -31,6 +32,7 @@ Flow
 4. After the buyer answers the add-ons (or says none), call planOrder with the chosen add-ons. Then sum up in at most 3 short sentences: the total range, history notes only if historyNotes > 0 (they suggest different amounts based on past events), and any exceptions (substitutions, unavailable items, allergen warnings, over budget with an offer to find cheaper swaps, a passed order cut-off).
 5. Once a draft exists, do not call understandRequest for changes. Guest count, quantity and product changes ("make it 320 guests", "swap to basmati", "cheaper chicken", "remove the cream", "add a salad") go to editDraft; confirm the change in one short sentence (e.g. "Chicken lowered to 6 packs; now about €907 excl. VAT.") and add one sentence only for a problem it reports. A new delivery date goes to planOrder with deliveryDate set and empty addons (earlier add-ons are kept).
 6. When the buyer describes how a past event went (leftovers, shortfalls), call checkIn with their reply; ask them to check the numbers in the table and confirm.
+7. When the buyer asks to use Aimo from Claude (or another AI assistant), for the MCP link, or about planning from their calendar, call shareConnectLink and say in one sentence that pasting the link into Claude lets it plan, order and log leftovers for them.
 
 Examples
 - After all slots are filled.
@@ -68,6 +70,7 @@ export function createOrchestrator(specialists: Specialists = defaultSpecialists
       lookupProducts: createLookupProductsTool(),
       draftDirectOrder: createDirectOrderTool(),
       refreshPrices: createRefreshPricesTool(),
+      shareConnectLink: shareConnectLinkTool,
     },
     defaultOptions: { ...effort('low'), maxSteps: 8 },
   });

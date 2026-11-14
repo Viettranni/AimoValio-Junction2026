@@ -32,6 +32,15 @@ describe('deriveThread', () => {
     expect(items[2]).toMatchObject({ text: 'Two things:' });
   });
 
+  it('shows the connect link card after the assistant text', () => {
+    const connect = { mcpUrl: 'https://x.trycloudflare.com/api/mcp?key=k', localMcpUrl: 'http://localhost:3100/api/mcp?key=k', isPublic: true };
+    const items = deriveThread(input({
+      messages: [user('u1', 'connect claude'), { id: 'a1', role: 'assistant', parts: [{ type: 'data-connect', data: connect }, { type: 'text', text: 'Paste this.' }] }],
+    }));
+    expect(items.map((i) => i.kind)).toEqual(['greeting', 'user', 'assistant', 'connect']);
+    expect(items[3]).toMatchObject({ event: connect });
+  });
+
   it('shows progress under the user turn it belongs to', () => {
     const items = deriveThread(input({
       messages: [user('u1', 'a'), { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'ok' }] }, user('u2', 'b')],

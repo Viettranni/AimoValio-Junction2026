@@ -5,7 +5,7 @@ import { EventEmitter } from 'node:events';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Readable } from 'node:stream';
 import type { MCPServer } from '@mastra/mcp';
-import { AuthError, bearerToken, resolveAgent } from '@/gateway/agents';
+import { AuthError, requestKey, resolveAgent } from '@/gateway/agents';
 
 const NO_BODY = new Set([101, 204, 205, 304]);
 /** Largest JSON-RPC body accepted (an offer of 100 lines is a few kB). */
@@ -88,7 +88,7 @@ class StreamingResponse extends EventEmitter {
 }
 
 /**
- * Handles one MCP request with a bearer agent key. The key's identity becomes the request's authInfo,
+ * Handles one MCP request with an agent key (bearer header, or `?key=` for URL-only clients such as Claude connectors). The key's identity becomes the request's authInfo,
  * which the tools read (src/mcp/identity.ts); the customer is never taken from tool input.
  */
 /**
@@ -111,13 +111,13 @@ export async function handleMcpRequest(request: Request, server: MCPServer): Pro
   if (!originAllowed(request.headers.get('origin'), request.url)) {
     return rpcError(403, -32003, 'Forbidden origin: browser pages on other sites may not call the Aimo gateway');
   }
-  const token = bearerToken(request.headers.get('authorization'));
+  const token = requestKey(request.headers.get('authorization'), request.url);
   let agent;
   try {
     agent = resolveAgent(token);
   } catch (e) {
     if (!(e instanceof AuthError)) throw e;
-    return rpcError(401, -32001, `${e.message}: send Authorization: Bearer <agent key>`, { 'WWW-Authenticate': 'Bearer realm="aimo-gateway"' });
+    return rpcError(401, -32001, `${e.message}: send Authorization: Bearer <agent key> or ?key=<agent key>`, { 'WWW-Authenticate': 'Bearer realm="aimo-gateway"' });
   }
 
   const url = new URL(request.url);

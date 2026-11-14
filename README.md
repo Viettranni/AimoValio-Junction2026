@@ -11,7 +11,7 @@ Stack: Next.js 16 + TypeScript · MCP (Mastra `MCPServer`, stdio + Streamable HT
 
 ## The 3-minute demo
 
-Start the app on port 3100 (`npm run dev -- -p 3100`, see Run it). Everything below uses `http://localhost:3100`; scripts take `AIMO_BASE_URL` if you run it elsewhere.
+Start everything with `npm run dev` (port 3100, see Run it). Everything below uses `http://localhost:3100`; scripts take `AIMO_BASE_URL` if you run it elsewhere.
 
 1. **An external agent plans and orders an event, using only MCP.** From Claude Code (or Claude Desktop, ChatGPT, Cursor; see [`docs/CONNECT.md`](docs/CONNECT.md)): "Plan a wedding for 300 guests on 5 December, chicken and rice, 12 gluten-free, then check out." Claude calls `planEvent` (the same pipeline as the widget: menu, products, allergen checks per diet group, live Valio prices and stock, history notes from this caterer's past leftovers), optionally `updateDraft`, then `checkoutDraft`. Or, without a model on the client side:
 
@@ -41,10 +41,10 @@ Requirements: Node 22 and npm.
 
 ```bash
 npm install
-cp .env.example .env.local     # then fill in the three variables below
-npm run seed                   # creates data/aimo.sqlite with the demo customer and past orders
-npm run dev -- -p 3100         # http://localhost:3100/demo-host?demo=1 (the docs use port 3100)
+npm run dev                    # http://localhost:3100/demo-host?demo=1
 ```
+
+`npm run dev` (scripts/dev.ts) does the rest: it creates `.env.local` from `.env.example` when missing (fill in the variables below), seeds `data/aimo.sqlite` on the first run (`npm run seed` re-seeds), starts Next.js on port 3100 (`-p` or `PORT` to change it) and, if `cloudflared` is installed (`brew install cloudflared`), a public tunnel to the MCP endpoint for claude.ai connectors. The banner prints the widget, approvals and MCP links; the static page and the chat show the same copy-paste link. `npm run dev:next` is plain `next dev`.
 
 `.env.local` needs:
 
@@ -76,7 +76,7 @@ One MCP server, `aimo-gateway`, two transports:
 
 ```bash
 npx tsx src/mcp/stdio.ts       # stdio, run from the project root; identity from AIMO_AGENT_KEY
-# Streamable HTTP: POST http://localhost:3100/api/mcp with Authorization: Bearer <agent key> (runs with npm run dev -- -p 3100)
+# Streamable HTTP: POST http://localhost:3100/api/mcp with Authorization: Bearer <agent key> or ?key=<agent key> (runs with npm run dev)
 ```
 
 Tools by group: catalogue (`searchProducts`, `getProduct`, `getAlternatives`, `getIngredients`, `checkAllergens`), pricing (`getPriceAndAvailability`), offers (`requestOffer`), drafts (`planEvent`, `getDraft`, `updateDraft`, `checkoutDraft`), orders (`placeOrder`, `getOrderStatus`, `listOrders`, `getOrder`, `getDeliveryStatus`, `reportLeftovers`), policy (`getAuthorityPolicy`) and assistant (`chatWithAimo`). Resources `aimo://policy` and `aimo://playbook`, prompt `order-request`. The demo key is `aimo-demo-agent-key` (set your own with `AIMO_AGENT_KEYS`, see `.env.example`). Setup for each client: [`docs/CONNECT.md`](docs/CONNECT.md).

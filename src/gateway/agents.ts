@@ -6,12 +6,19 @@ import type { AgentIdentity } from './types';
 /** Documented in .env.example. Override all keys with AIMO_AGENT_KEYS (JSON object: key → identity). */
 export const DEMO_AGENT_KEY = 'aimo-demo-agent-key';
 
-const DEFAULT_KEYS: Record<string, AgentIdentity> = {
-  [DEMO_AGENT_KEY]: {
-    agentId: 'procurement-agent',
-    customerId: 'helsinki-juhlapalvelu',
-    displayName: 'Helsinki Juhlapalvelu purchasing agent',
-  },
+/**
+ * The preset key shown in the copy-paste connect link (static page and chat, see src/gateway/connect.ts). Claude's
+ * custom connectors take only a URL, so this key travels as `?key=` (src/mcp/http.ts). Override with AIMO_CONNECT_KEY.
+ */
+export const PRESET_CONNECT_KEY = 'sakdnkfbwjklebfkjABF';
+
+export const connectKey = (env: Record<string, string | undefined> = process.env) =>
+  env.AIMO_CONNECT_KEY && env.AIMO_CONNECT_KEY.length >= 8 ? env.AIMO_CONNECT_KEY : PRESET_CONNECT_KEY;
+
+const DEMO_IDENTITY: AgentIdentity = {
+  agentId: 'procurement-agent',
+  customerId: 'helsinki-juhlapalvelu',
+  displayName: 'Helsinki Juhlapalvelu purchasing agent',
 };
 
 /**
@@ -42,10 +49,13 @@ function isIdentity(v: unknown): v is AgentIdentity {
     && typeof o.displayName === 'string';
 }
 
-/** Keys from AIMO_AGENT_KEYS; the demo key only when it is unset. Invalid config fails closed (no keys). */
+/**
+ * Keys from AIMO_AGENT_KEYS; when it is unset, the demo key and the connect key (preset or AIMO_CONNECT_KEY).
+ * Invalid config fails closed (no keys).
+ */
 export function agentKeys(env: Record<string, string | undefined> = process.env): Record<string, AgentIdentity> {
   const raw = env.AIMO_AGENT_KEYS;
-  if (!raw) return DEFAULT_KEYS;
+  if (!raw) return { [DEMO_AGENT_KEY]: DEMO_IDENTITY, [connectKey(env)]: DEMO_IDENTITY };
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const entries = Object.entries(parsed).filter((e): e is [string, AgentIdentity] => e[0].length >= 8 && isIdentity(e[1]));
@@ -66,6 +76,13 @@ export function resolveAgent(key: string | null | undefined, env: Record<string,
     if (timingSafeEqual(digest(k), wanted)) return identity;
   }
   throw new AuthError();
+}
+
+/** The caller's key: `Authorization: Bearer <key>`, else the URL's `?key=` (for clients that take only a URL). */
+export function requestKey(authorization: string | null | undefined, url: string): string | null {
+  const bearer = bearerToken(authorization);
+  if (bearer) return bearer;
+  try { return new URL(url).searchParams.get('key')?.trim() || null; } catch { return null; }
 }
 
 /** `Authorization: Bearer <key>` → key, or null. */

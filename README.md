@@ -91,7 +91,7 @@ The script adds a launcher and an isolated iframe (`/embed`) that grows from a c
 
 ## Architecture
 
-One **orchestrator** agent talks to the buyer and delegates through five tools (`understandRequest`, `offerChoices`, `planOrder`, `editDraft`, `checkIn`). Behind them, seven **specialists** each own one judgment:
+One **orchestrator** agent talks to the buyer and delegates through six tools (`understandRequest`, `offerChoices`, `askDiets`, `planOrder`, `editDraft`, `checkIn`). Behind them, seven **specialists** each own one judgment:
 
 | Specialist | Job | How it runs |
 | --- | --- | --- |

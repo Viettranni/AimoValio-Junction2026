@@ -1,156 +1,198 @@
 import type { Metadata } from 'next';
-import { Fraunces } from 'next/font/google';
-
-const serif = Fraunces({ subsets: ['latin', 'latin-ext'], weight: ['400', '600'], style: ['normal', 'italic'] });
+import type { ReactNode } from 'react';
+import { OpenAssistantButton } from './OpenAssistantButton';
 
 export const metadata: Metadata = {
-  title: 'Helsinki Juhlapalvelu · Catering (fictional demo site)',
-  description: 'The fictional demo customer’s website, embedding the Aimo Planner widget with one script tag.',
+  title: 'Valio Aimo · Helsinki Juhlapalvelu Oy (prototyyppi)',
+  description: 'Static, simplified Valio Aimo-style webshop page used to demo the Aimo Planner widget. Not the official site.',
 };
 
-const SERVICES = [
-  { title: 'Weddings', text: 'Seated dinners and long-table buffets for 60 to 400 guests, planned with you from tasting to the last coffee.', price: 'from €46 / guest' },
-  { title: 'Company lunches', text: 'Warm lunch buffets delivered to the office, with a vegetarian main every day and allergies marked on every dish.', price: 'from €19 / guest' },
-  { title: 'Christmas parties', text: 'Pikkujoulu menus with our own gravlax, root vegetable casserole and rice porridge with plum kissel.', price: 'from €38 / guest' },
+const DISCLAIMER = 'Prototyyppi Junction 2026 -hackathoniin — ei Valio Aimon virallinen sivusto.';
+
+const UTILITY_TABS = ['Valioaimo.fi', 'Pikatukku', 'Toimitustukku', 'VALO Tilauspalvelu', 'Minun Aimo'];
+const NAV = ['Asiakkaaksi', 'Inspiroidu', 'Tuotteet', 'Reseptit', 'Ajankohtaista', 'Yritys'];
+
+// Mirrors the seeded demo history (src/ui/fixtures.ts); totals are excl. VAT.
+const RECENT_ORDERS = [
+  { id: 'VA-2026-03187', event: 'Häät', date: '8.8.2026', guests: 220, total: '565,58 €' },
+  { id: 'VA-2026-02544', event: 'Juhannusjuhlat', date: '19.6.2026', guests: 280, total: '754,64 €' },
+  { id: 'VA-2025-09902', event: 'Pikkujoulut', date: '12.12.2025', guests: 160, total: '629,49 €' },
 ];
 
-const MENU = [
-  ['Smoked whitefish, rye crumb, dill cream', 'Savusiika, ruismuru, tillikerma'],
-  ['Roast chicken, chanterelle sauce, jasmine rice', 'Paahdettu broileri, kanttarellikastike'],
-  ['Beetroot, goat cheese, toasted hazelnut', 'Punajuuri, vuohenjuusto, hasselpähkinä'],
-  ['Lingonberry cream cake', 'Puolukkakermakakku'],
+const icon = (body: ReactNode, size = 22) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {body}
+  </svg>
+);
+
+const QUICK_ORDER = [
+  { title: 'Tuoreet', text: 'Hedelmät, vihannekset, liha ja kala', icon: icon(<><path d="M5 19C5 11 11 5 19 5c0 8-6 14-14 14z" /><path d="M5 19l8-8" /></>, 26) },
+  { title: 'Pakasteet', text: 'Pakastetut raaka-aineet ja valmisruoat', icon: icon(<><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9" /><path d="M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5" /></>, 26) },
+  { title: 'Kuivatuotteet', text: 'Riisit, jauhot, pastat ja mausteet', icon: icon(<><path d="M6 8h12l-1 12H7z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></>, 26) },
+  { title: 'Maitotuotteet', text: 'Maidot, kermat, juustot ja voi', icon: icon(<><path d="M9 3h6v3l2 3v12H7V9l2-3z" /><path d="M7 13h10" /></>, 26) },
 ];
 
-const SNIPPET = '<script src="https://aimo.example/widget.js"\n        data-customer="helsinki-juhlapalvelu" defer></script>';
+const BOT = <img src="/aimo-bot.svg" alt="" width={28} height={28} className="shrink-0" />;
 
 export default function DemoHostPage() {
   return (
-    <div className="min-h-screen bg-[#f4efe6] text-[#1e2b26]">
-      <div className="bg-[#1e2b26] px-4 py-2 text-center text-[12px] text-[#e8e1d3]">
-        Fictional demo customer site. The Valio Aimo ordering assistant in the corner is added with a single script tag.
-      </div>
+    <div className="min-h-screen overflow-x-hidden bg-white text-ink">
+      <p className="bg-lilac px-4 py-1.5 text-center text-[12px] leading-snug text-ink">{DISCLAIMER}</p>
 
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <a href="#" className="flex items-baseline gap-2">
-          <span className={`${serif.className} text-[24px] font-semibold tracking-[-0.01em]`}>Helsinki Juhlapalvelu</span>
-          <span className="text-[12px] uppercase tracking-[0.18em] text-[#3e5b4a]">Catering</span>
-        </a>
-        <div className="hidden items-center gap-8 text-[14px] md:flex">
-          <a href="#services" className="hover:text-[#3e5b4a]">Events</a>
-          <a href="#menu" className="hover:text-[#3e5b4a]">Winter menu</a>
-          <a href="#about" className="hover:text-[#3e5b4a]">About</a>
-          <a href="#contact" className="rounded-full border border-[#1e2b26] px-4 py-2 hover:bg-[#1e2b26] hover:text-[#f4efe6]">
-            Request a quote
-          </a>
-        </div>
-      </nav>
-
-      <header className="mx-auto grid max-w-6xl items-center gap-12 px-6 pb-20 pt-10 md:grid-cols-[1.15fr_1fr]">
-        <div>
-          <p className="text-[13px] uppercase tracking-[0.18em] text-[#3e5b4a]">Helsinki · since 2009</p>
-          <h1 className={`${serif.className} mt-4 text-[44px] leading-[1.05] tracking-[-0.02em] md:text-[60px]`}>
-            Seasonal food for weddings and gatherings <em className="text-[#b4593a]">by the sea.</em>
-          </h1>
-          <p className="mt-6 max-w-xl text-[17px] leading-[1.6] text-[#45524c]">
-            We cook for 30 to 400 guests from our kitchen on the north shore, with Finnish produce, honest portions and
-            nothing left to chance on allergies.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a href="#contact" className="rounded-full bg-[#3e5b4a] px-6 py-3 text-[15px] font-medium text-white hover:bg-[#344d3f]">
-              Plan your event
-            </a>
-            <a href="#menu" className="rounded-full px-6 py-3 text-[15px] font-medium text-[#1e2b26] underline-offset-4 hover:underline">
-              See the winter menu
-            </a>
+      {/* Utility bar */}
+      <div className="bg-navy text-white">
+        <div className="mx-auto flex max-w-7xl items-stretch justify-between gap-4 px-4 text-[13px] md:px-6">
+          <ul className="flex items-stretch">
+            {UTILITY_TABS.map((tab, i) => (
+              <li
+                key={tab}
+                className={
+                  i === 0
+                    ? 'flex items-center bg-white px-3 py-2 font-semibold text-navy'
+                    : 'hidden items-center px-3 py-2 text-white/85 lg:flex'
+                }
+              >
+                {tab}
+              </li>
+            ))}
+          </ul>
+          <div className="flex min-w-0 items-center gap-3 py-1.5">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-lime text-[11px] font-bold text-lime-ink" aria-hidden="true">
+              HJ
+            </span>
+            <span className="min-w-0 truncate">
+              <span className="font-semibold">Helsinki Juhlapalvelu Oy</span>
+              <span className="hidden text-white/80 sm:inline"> · Asiakasnro 100482</span>
+            </span>
+            <span className="border-l border-white/30 pl-3 font-semibold">FI</span>
           </div>
         </div>
+      </div>
 
-        <div className="relative">
-          <div className="absolute -left-6 -top-6 h-40 w-40 rounded-full bg-[#dfe6dc]" aria-hidden="true" />
-          <div className="absolute -bottom-8 right-4 h-24 w-24 rounded-full bg-[#ecd5c4]" aria-hidden="true" />
-          <div className="relative rotate-[1.5deg] rounded-sm bg-[#fbf8f2] px-8 py-9 shadow-[0_20px_50px_rgba(30,43,38,0.12)]">
-            <p className={`${serif.className} text-center text-[13px] uppercase tracking-[0.3em] text-[#3e5b4a]`}>Wedding dinner</p>
-            <p className={`${serif.className} mt-1 text-center text-[22px] italic`}>Aino &amp; Mikael</p>
-            <div className="mx-auto my-5 h-px w-16 bg-[#c9bfae]" />
-            <ul className="space-y-4 text-center">
-              {MENU.map(([en, fi]) => (
-                <li key={en}>
-                  <div className="text-[15px]">{en}</div>
-                  <div className="text-[12.5px] italic text-[#7a7468]">{fi}</div>
-                </li>
+      {/* Header */}
+      <header className="border-b border-line bg-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-4 md:px-6">
+          <span className="shrink-0 whitespace-nowrap font-display text-[26px] font-extrabold italic leading-none tracking-[-0.01em] text-navy sm:text-[30px] md:text-[34px]">
+            Valio Aimo
+          </span>
+          <nav aria-label="Päävalikko" className="hidden xl:block">
+            <ul className="flex gap-7 font-display text-[18px] font-bold uppercase tracking-[0.02em] text-navy">
+              {NAV.map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
+          </nav>
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
+            <span className="p-1.5 text-navy sm:p-2" aria-label="Haku" role="img">
+              {icon(<><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></>)}
+            </span>
+            <span className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-lime px-3 py-2 font-display text-[15px] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-[17px] font-bold uppercase tracking-[0.02em] text-lime-ink">
+              {icon(<><circle cx="9" cy="20" r="1.3" /><circle cx="17" cy="20" r="1.3" /><path d="M3 4h2l2.4 11h11l2-8H6.2" /></>, 20)}
+              Ostoskori (0)
+            </span>
+            <span className="p-1.5 text-navy sm:p-2 xl:hidden" aria-label="Valikko" role="img">
+              {icon(<path d="M4 7h16M4 12h16M4 17h16" />)}
+            </span>
           </div>
         </div>
       </header>
 
-      <section id="services" className="border-t border-[#ddd4c4] bg-[#fbf8f2]">
-        <div className="mx-auto grid max-w-6xl gap-10 px-6 py-20 md:grid-cols-3">
-          {SERVICES.map((s) => (
-            <article key={s.title}>
-              <h2 className={`${serif.className} text-[26px] tracking-[-0.01em]`}>{s.title}</h2>
-              <p className="mt-3 text-[15px] leading-[1.65] text-[#45524c]">{s.text}</p>
-              <p className="mt-4 text-[13px] font-medium uppercase tracking-[0.12em] text-[#b4593a]">{s.price}</p>
-            </article>
-          ))}
+      {/* Hero */}
+      <section
+        className="relative overflow-hidden text-white"
+        style={{
+          backgroundColor: '#005670',
+          backgroundImage:
+            'radial-gradient(rgba(255,255,255,0.07) 1.5px, transparent 1.5px), linear-gradient(135deg, #005670 0%, #003f52 100%)',
+          backgroundSize: '22px 22px, 100% 100%',
+        }}
+      >
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 md:px-6 md:py-24 lg:grid-cols-[1.4fr_1fr]">
+          <div>
+            <p className="font-display text-[18px] font-bold uppercase tracking-[0.08em] text-lime">Minun Aimo</p>
+            <h1 className="mt-3 font-display text-[46px] font-extrabold uppercase leading-[0.95] tracking-[-0.005em] sm:text-[64px] lg:text-[84px]">
+              Hyvää päivää, Helsinki Juhlapalvelu
+            </h1>
+            <p className="mt-6 max-w-xl text-[17px] leading-[1.6] text-white/90 md:text-[19px]">
+              Kerro tilaisuudestasi — Aimo-avustaja kokoaa tilauksen puolestasi.
+            </p>
+            <OpenAssistantButton className="mt-8 inline-flex items-center gap-3 rounded-full bg-lime px-6 py-3.5 font-display text-[20px] font-bold uppercase tracking-[0.02em] text-lime-ink transition-colors hover:bg-lime-hover">
+              {BOT}
+              Avaa Aimo-avustaja
+            </OpenAssistantButton>
+          </div>
+
+          <aside className="rounded-2xl bg-white p-6 text-ink shadow-card">
+            <div className="flex items-center gap-3">
+              <img src="/aimo-bot.svg" alt="" width={44} height={44} />
+              <div>
+                <p className="font-display text-[22px] font-extrabold uppercase leading-none text-navy">Aimo-avustaja</p>
+                <p className="mt-1 text-[13px] text-muted">Tilaus yhdellä lauseella</p>
+              </div>
+            </div>
+            <p className="mt-5 rounded-xl bg-ice px-4 py-3 text-[15px] leading-[1.55]">
+              ”Meillä on häät 6.12., 300 vierasta, halutaan kanaa ja riisiä.”
+            </p>
+            <ul className="mt-4 space-y-2 text-[14px] text-ink-soft">
+              <li>✓ Määrät menun ja vierasmäärän mukaan</li>
+              <li>✓ Hinnat ja saatavuus toimituspäivälle</li>
+              <li>✓ Allergiat ja aiemmat tilaukset huomioitu</li>
+            </ul>
+          </aside>
         </div>
       </section>
 
-      <section id="menu" className="mx-auto max-w-6xl px-6 py-20">
-        <div className="grid gap-12 md:grid-cols-[1fr_1.3fr]">
-          <div>
-            <h2 className={`${serif.className} text-[36px] leading-tight tracking-[-0.01em]`}>The winter menu</h2>
-            <p className="mt-4 text-[15px] leading-[1.65] text-[#45524c]">
-              Built around what Finnish farms and fishermen have in December. Every dish can be made gluten-free or
-              lactose-free; tell us the numbers and we plan the rest.
-            </p>
+      {/* Recent orders */}
+      <section className="bg-lilac">
+        <div className="mx-auto max-w-7xl px-4 py-14 md:px-6 md:py-16">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <h2 className="font-display text-[36px] font-extrabold uppercase leading-none text-navy md:text-[44px]">Viimeisimmät tilaukset</h2>
+            <span className="text-[15px] font-semibold text-navy underline underline-offset-4">Kaikki tilaukset</span>
           </div>
-          <ol className="divide-y divide-[#ddd4c4] border-y border-[#ddd4c4]">
-            {MENU.map(([en, fi], i) => (
-              <li key={en} className="flex items-baseline gap-5 py-4">
-                <span className={`${serif.className} w-6 text-[15px] text-[#b4593a]`}>{String(i + 1).padStart(2, '0')}</span>
-                <span className="flex-1">
-                  <span className="block text-[16px]">{en}</span>
-                  <span className="block text-[13px] italic text-[#7a7468]">{fi}</span>
+          <ul className="mt-8 space-y-3">
+            {RECENT_ORDERS.map((order) => (
+              <li key={order.id} className="grid grid-cols-[1fr_auto] items-center gap-x-6 gap-y-1 rounded-xl bg-white px-5 py-4 md:grid-cols-[9rem_1fr_7rem_8rem_auto]">
+                <span className="order-2 text-[14px] text-muted md:order-none md:text-[15px] md:text-ink">{order.date}</span>
+                <span className="order-1 font-display text-[22px] font-bold uppercase leading-tight text-navy md:order-none">{order.event}</span>
+                <span className="hidden text-[15px] text-ink-soft md:block">{order.guests} henkeä</span>
+                <span className="hidden text-[13px] text-muted md:block">{order.id}</span>
+                <span className="order-1 text-right text-[16px] font-semibold md:order-none">
+                  {order.total}
+                  <span className="block text-[12px] font-normal text-muted">alv 0 %</span>
                 </span>
               </li>
             ))}
-          </ol>
+          </ul>
         </div>
       </section>
 
-      <section id="about" className="bg-[#3e5b4a] text-[#f4efe6]">
-        <figure className="mx-auto max-w-3xl px-6 py-20 text-center">
-          <blockquote className={`${serif.className} text-[28px] leading-[1.35] tracking-[-0.01em] md:text-[32px]`}>
-            “Three hundred guests, twelve of them gluten-free, and not one plate came back wrong.”
-          </blockquote>
-          <figcaption className="mt-6 text-[13px] uppercase tracking-[0.18em] text-[#c9d6cb]">A wedding couple, Espoo</figcaption>
-        </figure>
-      </section>
-
-      <section id="contact" className="mx-auto grid max-w-6xl gap-12 px-6 py-20 md:grid-cols-2">
-        <div>
-          <h2 className={`${serif.className} text-[36px] leading-tight tracking-[-0.01em]`}>Tell us about your event</h2>
-          <p className="mt-4 text-[15px] leading-[1.65] text-[#45524c]">
-            Call or write and we will send a menu proposal within a day.
-          </p>
-          <p className="mt-6 text-[15px]">
-            hello@juhlapalvelu.example
-            <br />
-            +358 00 000 0000
-          </p>
-        </div>
-        <div className="rounded-lg bg-[#1e2b26] p-6 text-[#e8e1d3]">
-          <p className="text-[12px] uppercase tracking-[0.16em] text-[#9fb3a6]">Under the hood</p>
-          <p className="mt-2 text-[14px] leading-[1.6]">
-            Our kitchen orders from Valio Aimo through the assistant in the corner. It is embedded with this one line:
-          </p>
-          <pre className="mt-4 overflow-x-auto rounded bg-black/30 p-4 font-mono text-[12.5px] leading-[1.6] text-[#f4efe6]">{SNIPPET}</pre>
+      {/* Quick order */}
+      <section className="bg-ice">
+        <div className="mx-auto max-w-7xl px-4 py-14 md:px-6 md:py-16">
+          <h2 className="font-display text-[36px] font-extrabold uppercase leading-none text-navy md:text-[44px]">Pikatilaus</h2>
+          <ul className="mt-8 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+            {QUICK_ORDER.map((tile) => (
+              <li key={tile.title} className="rounded-xl border border-line bg-white p-5">
+                <span className="grid h-12 w-12 place-items-center rounded-full bg-sky text-navy">{tile.icon}</span>
+                <p className="mt-4 font-display text-[24px] font-extrabold uppercase leading-none text-navy">{tile.title}</p>
+                <p className="mt-2 text-[14px] leading-snug text-ink-soft">{tile.text}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
-      <footer className="border-t border-[#ddd4c4] px-6 py-8 text-center text-[12px] text-[#7a7468]">
-        Helsinki Juhlapalvelu Oy is a fictional company made for the Aimo Planner demo.
+      <footer className="bg-navy text-white">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-10 pr-24 md:flex-row md:items-center md:justify-between md:pl-6">
+          <span className="font-display text-[28px] font-extrabold italic leading-none">Valio Aimo</span>
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 text-[14px] text-white/85">
+            <li>Asiakaspalvelu</li>
+            <li>Toimitusehdot</li>
+            <li>Tietosuoja</li>
+            <li>Evästeasetukset</li>
+          </ul>
+        </div>
+        <p className="border-t border-white/15 px-4 py-4 text-center text-[12px] text-white/80">{DISCLAIMER}</p>
       </footer>
 
       <script src="/widget.js" data-customer="helsinki-juhlapalvelu" defer />

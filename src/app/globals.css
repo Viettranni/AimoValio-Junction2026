@@ -1,15 +1,25 @@
 @import "tailwindcss";
 
-/* Valio Aimo-inspired tokens (spec §6.2). One accent colour: --blue. */
+/*
+ * Valio Aimo tokens, measured from valioaimo.fi (Nov 2026): petrol #005670 (headings, bars),
+ * lime #C0E021 with petrol text (primary CTAs), ink #23282D (body), lilac/ice section bands.
+ * Token names predate the re-theme (--navy, --blue) and are kept so src/ui keeps compiling.
+ * All text pairs below are WCAG AA (>= 4.5:1), e.g. petrol on lime 5.4:1, muted on sky 4.7:1.
+ */
 :root {
-  --navy: #00205b;
-  --blue: #0057b8;
-  --blue-hover: #004a9c;
-  --sky: #e8f1fb;
-  --ice: #f5f9fd;
-  --line: #d5e3f3;
-  --muted: #6a7a96;
-  --ink-soft: #4d5f80;
+  --navy: #005670;
+  --blue: #005670;
+  --blue-hover: #00435a;
+  --ink: #23282d;
+  --lime: #c0e021;
+  --lime-hover: #b0cf14;
+  --lime-ink: #005670;
+  --lilac: #eee8f5;
+  --sky: #e3eef1;
+  --ice: #f2f7f8;
+  --line: #d3e2e6;
+  --muted: #5b6b70;
+  --ink-soft: #3e4f55;
   --warm: #fff6e8;
   --warm-soft: #fffbf4;
   --warm-icon: #c98a1b;
@@ -18,16 +28,21 @@
   --ok: #1e8c5a;
   --warn: #c77700;
   --danger: #b42318;
-  --flash: #eaf3ff;
-  --wash: linear-gradient(135deg, #eef4fb, #f9fbfe);
-  --shadow-card: 0 14px 40px rgba(0, 32, 91, 0.12);
-  --shadow-soft: 0 8px 30px rgba(0, 32, 91, 0.08);
+  --flash: #e6f2f4;
+  --wash: linear-gradient(135deg, #eef5f6, #fafcfc);
+  --shadow-card: 0 14px 40px rgba(0, 61, 80, 0.12);
+  --shadow-soft: 0 8px 30px rgba(0, 61, 80, 0.08);
 }
 
 @theme inline {
   --color-navy: var(--navy);
   --color-blue: var(--blue);
   --color-blue-hover: var(--blue-hover);
+  --color-ink: var(--ink);
+  --color-lime: var(--lime);
+  --color-lime-hover: var(--lime-hover);
+  --color-lime-ink: var(--lime-ink);
+  --color-lilac: var(--lilac);
   --color-sky: var(--sky);
   --color-ice: var(--ice);
   --color-line: var(--line);
@@ -42,6 +57,7 @@
   --color-danger: var(--danger);
   --color-flash: var(--flash);
   --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-barlow-condensed), "Arial Narrow", system-ui, sans-serif;
   --shadow-card: var(--shadow-card);
   --shadow-soft: var(--shadow-soft);
 }
@@ -53,7 +69,7 @@
 
   body {
     margin: 0;
-    color: var(--navy);
+    color: var(--ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
@@ -110,7 +126,7 @@
   100% { background-position: 160px 0; }
 }
 .aimo-shimmer {
-  background: linear-gradient(90deg, var(--sky) 0%, #f4f8fd 50%, var(--sky) 100%);
+  background: linear-gradient(90deg, var(--sky) 0%, #f5f9fa 50%, var(--sky) 100%);
   background-size: 320px 100%;
   animation: aimo-shimmer 1.3s linear infinite;
 }

@@ -15,6 +15,12 @@ vi.mock('@/valio/client', async () => {
   };
 });
 
+vi.mock('@/mcp/client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/mcp/client')>();
+  const { checkAllergens } = await import('@/catalog');
+  return { ...actual, getProductTools: vi.fn(async () => ({})), checkAllergensViaMcp: vi.fn(async (ids: string[], c: object) => checkAllergens(ids, c)) };
+});
+
 import { computeTotals } from '@/domain/totals';
 import { getDraftByConversation, listAudit, recordLeftovers, saveDraft, storeOrder } from '@/db/repo';
 import type { MenuComponentPlan } from '../agents/menu';
@@ -26,7 +32,9 @@ import { getAvailability, getPrices } from '@/valio/client';
 import { runEditDraft } from '../tools/edit-draft';
 import { runPlanOrder } from '../tools/plan-order';
 import { runUnderstandRequest } from '../tools/understand-request';
+import { checkAllergensViaMcp } from '@/mcp/client';
 import { applyDietRules, buildDraft, byGranularity, toComponents } from './build-draft';
+import { reasonText } from './reasons';
 
 const ctx = { conversationId: 'conv-plan', customerId: 'helsinki-juhlapalvelu' };
 
@@ -121,7 +129,7 @@ describe('buildDraft', () => {
     const rice = line('c-rice');
     expect(rice.productId).toBe('bas');
     expect(rice.tags).toContain('substitute');
-    expect(rice.substituteFor).toEqual({ productId: 'jas', productName: 'Jasmiiniriisi 5kg', reason: `Not deliverable on ${DATE}` });
+    expect(rice.substituteFor).toEqual({ productId: 'jas', productName: 'Jasmiiniriisi 5kg', reason: 'Ei toimitettavissa su 6.12.' });
     expect(rice.unitPrice).toBe(13.4);
     expect(listAudit({ conversationId: ctx.conversationId }).some((a) => a.actor === 'pricing' && a.action === 'substitute')).toBe(true);
   });
@@ -216,6 +224,17 @@ describe('edits and re-plans on a ready draft', () => {
     expect(lineOf('c-chicken').tags).toEqual(expect.arrayContaining(['in_stock', 'may_deliver_short', 'updated']));
   });
 
+  it('drops an agent edit when the buyer changed the draft meanwhile', async () => {
+    const chicken = lineOf('c-chicken');
+    vi.mocked(specialists.interpretEdit).mockImplementationOnce(async () => {
+      const d = getDraftByConversation(ctx2.conversationId)!;
+      saveDraft({ ...d, lines: d.lines.map((l) => (l.id === chicken.id ? { ...l, packs: 7 } : l)), updatedAt: '2099-01-01T00:00:00.000Z' });
+      return [intent({ kind: 'setPacks', lineId: chicken.id, packs: 3 })];
+    });
+    await expect(runEditDraft({ ctx: ctx2, instruction: '3 packs of chicken' }, deps)).rejects.toThrow(/changed/);
+    expect(lineOf('c-chicken').packs).toBe(7);
+  });
+
   it('a swap prices the candidates first and passes the buyer request to the product agent', async () => {
     const chicken = lineOf('c-chicken');
     vi.mocked(specialists.interpretEdit).mockResolvedValueOnce([
@@ -270,7 +289,7 @@ describe('edits and re-plans on a ready draft', () => {
     const draft = getDraftByConversation(ctx2.conversationId)!;
     const chicken = draft.lines.find((l) => l.componentId === 'c-chicken')!;
     expect(chicken.productId).toBe('chk2');
-    expect(chicken.substituteFor?.reason).toBe('Earliest delivery 2026-12-20');
+    expect(chicken.substituteFor?.reason).toBe('Aikaisintaan toimitettavissa su 20.12.'); // in the buyer's language (fi)
     // basmati: earliest 2026-12-06 with cut-off 2026-12-03 10:00 → 3 days' lead → 2026-12-09 10:00 for 12 Dec
     expect(draft.cutoff).toBe('2026-12-09T10:00:00Z');
   });
@@ -400,7 +419,7 @@ describe('substitution and stock', () => {
     expect(crumbs.alternatives).not.toContain('pizza');
     expect(crumbs.tags).toContain('unavailable');
     expect(crumbs.tags).not.toContain('substitute');
-    expect(summary.exceptions.join(' ')).toMatch(/no product of the same kind/);
+    expect(summary.exceptions.join(' ')).toMatch(/No product of the same kind/);
   });
 
   it('tops up from a same-kind alternative when stock is short', async () => {
@@ -411,9 +430,9 @@ describe('substitution and stock', () => {
     expect(main.quantity).toBeLessThanOrEqual(10); // passes the approve-time stock check
     expect(topUp).toMatchObject({ productId: 'chk2', packs: 6 }); // 56 guests × 0.2 kg = 11.2 kg → 6 × 2 kg
     expect(topUp.tags).toContain('substitute');
-    expect(topUp.substituteFor?.reason).toBe('only 2 packs of Broileri rintafilee n4,4kg in stock');
+    expect(topUp.substituteFor?.reason).toBe('Varastossa vain 2 pakkausta; loput korvataan vastaavalla tuotteella');
     expect(draft.components.map((c) => [c.id, c.guests])).toEqual([['c-chicken', 44], ['c-chicken-more', 56]]);
-    expect(summary.exceptions.join(' ')).toMatch(/only 2 packs/);
+    expect(summary.exceptions.join(' ')).toMatch(/Varastossa vain 2 pakkausta/);
   });
 
   it('caps the line and reports it when no alternative has stock', async () => {
@@ -483,5 +502,63 @@ describe('substitution and stock', () => {
     expect(draft.lines).toEqual([]);
     expect(draft.components).toEqual([]);
     expect(summary.exceptions.join(' ')).toMatch(/line is left out/);
+  });
+});
+
+describe('resilience and allergen safety', () => {
+  const run = async (conversationId: string, menuPlan: MenuComponentPlan[]) => {
+    vi.mocked(specialists.planMenu).mockResolvedValueOnce(menuPlan);
+    const d = { ...startDraft, id: `draft-${conversationId}`, conversationId };
+    saveDraft(d);
+    return buildDraft({ draft: d, addons: [], ctx: { conversationId, customerId: ctx.customerId } }, { specialists, emit: async () => {} });
+  };
+  const chicken = [component({ id: 'c-chicken', label: 'Kana', category: 'poultry_main', searchTerms: { fi: 'broileri', en: 'chicken' } })];
+
+  it('runs the allergen screening through the aimo-products MCP client', async () => {
+    vi.mocked(checkAllergensViaMcp).mockClear();
+    await run('conv-mcp', chicken);
+    expect(checkAllergensViaMcp).toHaveBeenCalled();
+  });
+
+  it('never selects a conflicting product: the component is left out and reported', async () => {
+    vi.mocked(checkAllergensViaMcp).mockImplementationOnce(async (ids) =>
+      ids.map((productId) => ({ productId, verdict: 'fail' as const, conflicts: ['gluten' as const], unmetDiets: [] })));
+    const { draft, summary } = await run('conv-fail', chicken);
+    expect(draft.lines).toHaveLength(0);
+    expect(summary.exceptions.join(' ')).toMatch(/Kana: kaikki löydetyt tuotteet/);
+    expect(listAudit({ conversationId: 'conv-fail' }).some((a) => a.action === 'noSafeProduct')).toBe(true);
+  });
+
+  it('degrades to the best catalogue match when the product agent fails', async () => {
+    vi.mocked(specialists.pickProducts).mockRejectedValueOnce(new Error('model down'));
+    const { draft } = await run('conv-pick-down', chicken);
+    expect(draft.lines).toHaveLength(1);
+    expect(listAudit({ conversationId: 'conv-pick-down' }).find((a) => a.action === 'pickProducts' && a.actor === 'product')?.summary)
+      .toBe('Product agent unavailable, used best match');
+  });
+
+  it('keeps the first unknown candidate when the allergen agent fails', async () => {
+    vi.mocked(specialists.chooseUnknownFallback).mockRejectedValueOnce(new Error('model down'));
+    const { draft } = await run('conv-allergen-down', [
+      component({ id: 'c-bread', label: 'Leipä', category: 'bread', excludeAllergens: ['gluten'], requiredDiet: ['gluten_free'], searchTerms: { fi: 'leipä', en: 'bread' } }),
+    ]);
+    expect(draft.lines[0]?.allergen.verdict).toBe('unknown');
+    expect(listAudit({ conversationId: 'conv-allergen-down' }).some((a) => a.action === 'chooseUnknownFallback')).toBe(true);
+  });
+
+  it('turns a menu agent failure into a friendly error', async () => {
+    vi.mocked(specialists.planMenu).mockRejectedValueOnce(new Error('overloaded'));
+    const d = { ...startDraft, id: 'draft-menu-down', conversationId: 'conv-menu-down' };
+    saveDraft(d);
+    await expect(buildDraft({ draft: d, addons: [], ctx: { conversationId: 'conv-menu-down', customerId: ctx.customerId } }, { specialists, emit: async () => {} }))
+      .rejects.toThrow(/menu planner is unavailable/);
+  });
+});
+
+describe('reasonText', () => {
+  it('writes short reasons in fi / sv / en and falls back to English', () => {
+    expect(reasonText({ kind: 'shortStock', packs: 6, label: 'Chicken breast' }, 'en')).toBe('Only 6 packs in stock; the rest is a similar chicken breast');
+    expect(reasonText({ kind: 'late', date: '2026-12-09' }, 'sv')).toMatch(/^Tidigast leverans/);
+    expect(reasonText({ kind: 'salesBlock' }, 'et')).toBe('The product has a sales block');
   });
 });

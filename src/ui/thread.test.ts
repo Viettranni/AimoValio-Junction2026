@@ -66,6 +66,17 @@ describe('deriveThread', () => {
     expect(items[4]).toMatchObject({ answer: 'fine' });
   });
 
+  it('shows a choice answer once: on the answered card, not again as a user message', () => {
+    const messages: ThreadMessage[] = [
+      user('u1', 'Wedding'),
+      { id: 'a1', role: 'assistant', parts: [{ type: 'data-choices', data: choices }] },
+      user('u2', 'about 4000 euros'),
+      user('u3', 'about 4000 euros'),
+    ];
+    const items = deriveThread(input({ messages, answers: { 'q-budget': { ids: [], freeText: 'about 4000 euros' } } }));
+    expect(items.map((i) => i.id)).toEqual(['greet', 'u1', 'a1-0', 'u3']);
+  });
+
   it('ends with a retryable error when the chat failed', () => {
     const items = deriveThread(input({ messages: [user('u1', 'a')], errorText: 'Could not reach' }));
     expect(items.at(-1)).toEqual({ id: 'chat-error', kind: 'error', text: 'Could not reach', retry: true });

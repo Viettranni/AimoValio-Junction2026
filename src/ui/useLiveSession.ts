@@ -10,7 +10,7 @@ import type {
 import { describeEdit } from './editNote';
 import { t, uiLangFor, type UiKey } from './i18n';
 import type { ApproveResult, OrderDetails, WidgetSession } from './session';
-import { deriveThread, messageText, type ChoiceAnswer, type LocalItem, type ProgressRuns, type ThreadItem } from './thread';
+import { answerText, deriveThread, messageText, type ChoiceAnswer, type LocalItem, type ProgressRuns, type ThreadItem } from './thread';
 
 type AimoData = {
   progress: ProgressEvent;
@@ -235,15 +235,15 @@ export function useLiveSession({
   const choose = (itemId: string, ids: string[], freeText?: string) => {
     const item = items.find((i) => i.id === itemId);
     if (item?.kind !== 'choices' || item.answer || busy) return;
-    const labels = item.event.options.filter((o) => ids.includes(o.id)).map((o) => o.label);
-    const text = [...labels, freeText?.trim()].filter(Boolean).join(', ');
+    const answer = { ids, freeText: freeText?.trim() || undefined };
+    const text = answerText(item.event, answer);
     if (!text) return;
-    setAnswers((a) => ({ ...a, [item.event.id]: { ids, freeText: freeText?.trim() || undefined } }));
+    setAnswers((a) => ({ ...a, [item.event.id]: answer }));
     send(text);
   };
 
   const change = (c: DraftChange) => {
-    if (!draft || draft.status === 'submitted') return;
+    if (!draft || draft.status === 'submitted' || busy) return;
     const forConversation = conversationId;
     editQueue.current = editQueue.current.then(async () => {
       try {
@@ -262,8 +262,8 @@ export function useLiveSession({
     });
   };
 
-  const approve = async (): Promise<ApproveResult> => {
-    const result = await api<ApproveResult>('/api/order/approve', { method: 'POST', body: { conversationId } });
+  const approve = async (confirmedUnknownLineIds: string[]): Promise<ApproveResult> => {
+    const result = await api<ApproveResult>('/api/order/approve', { method: 'POST', body: { conversationId, confirmedUnknownLineIds } });
     if (result.receipt) {
       const sent = result.receipt;
       setReceipt(sent);

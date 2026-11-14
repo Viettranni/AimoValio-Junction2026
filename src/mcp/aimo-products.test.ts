@@ -25,7 +25,7 @@ describe('aimo-products MCP tools', () => {
 
   it('getIngredients returns the ingredient text and parsed allergens', async () => {
     expect(await call('getIngredients', { id: 'bread' })).toEqual({
-      productId: 'bread', found: true, ingredientsText: 'WHEAT flour, water', allergens: ['gluten'], dietFlags: ['lactose_free'],
+      productId: 'bread', found: true, ingredientsText: 'WHEAT flour, water', allergens: ['gluten'], ingredientData: true, dietFlags: ['lactose_free'],
     });
     expect(await call('getIngredients', { id: 'nope' })).toMatchObject({ found: false, allergens: 'unknown' });
   });

@@ -458,6 +458,7 @@ function toCatalogProduct(p: FixtureProduct): CatalogProduct {
     temperature: p.temperature,
     vendor: '',
     allergens: p.allergens,
+    ingredientData: p.allergens !== 'unknown',
     dietFlags: p.dietFlags,
     reliability: p.reliability,
     co2PerKg: p.co2PerKg,

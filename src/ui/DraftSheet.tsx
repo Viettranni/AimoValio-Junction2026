@@ -44,6 +44,7 @@ export function DraftSheet({
   onChange,
   onReview,
   problems,
+  locked,
   lang,
 }: {
   draft: Draft;
@@ -52,6 +53,8 @@ export function DraftSheet({
   onReview: () => void;
   /** Reasons from a failed approval, by line id, shown on the rows until the draft changes. */
   problems?: Record<string, string>;
+  /** True while the assistant is answering: its edit could otherwise overwrite a click (or the reverse). */
+  locked?: boolean;
   lang: UiLang;
 }) {
   const { intake } = draft;
@@ -110,7 +113,7 @@ export function DraftSheet({
                     line={line}
                     lang={lang}
                     onChange={onChange}
-                    readOnly={draft.status === 'submitted'}
+                    readOnly={draft.status === 'submitted' || locked}
                     flashKey={changed.has(line.id) ? draft.updatedAt : undefined}
                     problem={problems?.[line.id]}
                   />

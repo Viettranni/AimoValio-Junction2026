@@ -10,7 +10,7 @@ dist/
 .env.*
 !.env.example
 
-# local data (raw Valio product file is 87 MB; generated index is rebuilt by script)
+# local data: the raw Valio files (87 MB) stay local; data/catalog.index.json is committed
 data/raw/
 *.sqlite
 *.sqlite-*

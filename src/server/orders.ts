@@ -1,9 +1,9 @@
-import type { Draft, DraftLine, Receipt } from '@/contracts';
+import type { AvailabilityInfo, Draft, DraftLine, PriceInfo, Receipt } from '@/contracts';
 import { getProduct } from '@/catalog';
 import { getDb, type Db } from '@/db/client';
 import { appendAudit, getDraftByConversation, getReceipt, insertOrder, listAudit, nextOrderId, now, saveDraft } from '@/db/repo';
-import { effectiveCutoff } from '@/domain/cutoff';
-import { getAvailability } from '@/valio/client';
+import { deliverableOn, effectiveCutoff } from '@/domain/cutoff';
+import { getAvailability, getPrices } from '@/valio/client';
 
 export type Problem = { lineId: string; reason: string };
 export type ApproveResult = { receipt?: Receipt; problems?: Problem[] };
@@ -12,18 +12,26 @@ export class NotFoundError extends Error {}
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+/** Older than the price cache TTL: getPrices only returns such a price when the refresh failed. */
+const STALE_PRICE_MS = 10 * 60 * 1000;
+
+const clock = (iso: string) =>
+  new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Helsinki' });
+
+interface Fresh { avail: Map<string, AvailabilityInfo>; prices: Map<string, PriceInfo>; nowMs: number; realNowMs: number }
+
 export const minutesSaved = (lineCount: number) => Math.min(60, 5 + 3 * lineCount);
 
-/** Rejection reasons for one line against fresh availability; empty when it can be ordered. */
-function lineProblems(
-  line: DraftLine, avail: Awaited<ReturnType<typeof getAvailability>>, nowMs: number, deliveryDate: string,
-): string[] {
+/** Rejection reasons for one line against fresh Valio data; empty when it can be ordered. */
+function lineProblems(line: DraftLine, fresh: Fresh, deliveryDate: string, confirmedUnknown: ReadonlySet<string>): string[] {
   const reasons: string[] = [];
-  const a = avail.get(line.productId);
-  if (!a || !a.deliverable) reasons.push('no longer deliverable on the delivery date');
-  else {
+  const a = fresh.avail.get(line.productId);
+  if (line.tags.includes('unavailable')) reasons.push('not deliverable on the delivery date');
+  else if (!a || !a.deliverable || a.salesBlock) reasons.push('no longer deliverable on the delivery date');
+  else if (!deliverableOn(a, deliveryDate)) reasons.push(`earliest delivery ${a.availableDate}`);
+  if (a && deliverableOn(a, deliveryDate)) {
     const cutoff = effectiveCutoff(a, deliveryDate);
-    if (cutoff && Date.parse(cutoff) < nowMs) reasons.push('order cut-off has passed');
+    if (cutoff && Date.parse(cutoff) < fresh.nowMs) reasons.push('order cut-off has passed');
     if (a.availableAmount !== null) {
       const product = getProduct(line.productId);
       // KG-sold products report availability in kg, other products in packs.
@@ -32,7 +40,15 @@ function lineProblems(
       } else if (a.availableAmount < line.packs) reasons.push(`only ${a.availableAmount} packs available`);
     }
   }
-  if (line.unitPrice === null || line.unitPriceWithTax === null) reasons.push('price unavailable');
+  const price = fresh.prices.get(line.productId);
+  if (line.unitPrice === null || line.unitPriceWithTax === null || (price && !price.ok)) reasons.push('price unavailable');
+  else if (price && fresh.realNowMs - Date.parse(price.fetchedAt) > STALE_PRICE_MS) {
+    reasons.push(`price from ${clock(price.fetchedAt)} could not be refreshed`);
+  }
+  if (line.allergen.verdict === 'fail') reasons.push('conflicts with a diet or allergy');
+  else if (line.allergen.verdict === 'unknown' && !confirmedUnknown.has(line.id)) {
+    reasons.push('allergens unknown: confirm this line before approving');
+  }
   return reasons;
 }
 
@@ -68,8 +84,13 @@ function existingReceipt(conversationId: string, db: Db): ApproveResult {
   return receipt ? { receipt } : { problems: [{ lineId: '', reason: 'This order has already been submitted' }] };
 }
 
-/** The only path that submits an order: re-checks Valio, never silently drops a failing line. */
-export async function approveAndSubmit(conversationId: string, db: Db = getDb()): Promise<ApproveResult> {
+/**
+ * The only path that submits an order: re-checks Valio, never silently drops a failing line.
+ * Lines with unknown allergens go through only when the buyer confirmed them on the review screen.
+ */
+export async function approveAndSubmit(
+  conversationId: string, db: Db = getDb(), confirmedUnknownLineIds: string[] = [],
+): Promise<ApproveResult> {
   const draft = getDraftByConversation(conversationId, db);
   if (!draft) throw new NotFoundError('No draft for this conversation');
   if (draft.status === 'submitted') return existingReceipt(conversationId, db);
@@ -77,9 +98,14 @@ export async function approveAndSubmit(conversationId: string, db: Db = getDb())
   if (!draft.intake.deliveryDate) return { problems: [{ lineId: '', reason: 'The delivery date is missing' }] };
 
   const nowDate = now(db);
-  const avail = await getAvailability(draft.lines.map((l) => l.productId), draft.intake.deliveryDate);
+  const ids = draft.lines.map((l) => l.productId);
+  const [avail, prices] = await Promise.all([
+    getAvailability(ids, draft.intake.deliveryDate), getPrices(ids, draft.intake.deliveryDate),
+  ]);
+  const fresh: Fresh = { avail, prices, nowMs: nowDate.getTime(), realNowMs: Date.now() };
+  const confirmed = new Set(confirmedUnknownLineIds);
   const problems = draft.lines.flatMap((l) =>
-    lineProblems(l, avail, nowDate.getTime(), draft.intake.deliveryDate as string).map((reason) => ({ lineId: l.id, reason })));
+    lineProblems(l, fresh, draft.intake.deliveryDate as string, confirmed).map((reason) => ({ lineId: l.id, reason })));
   if (problems.length) {
     appendAudit({
       conversationId, actor: 'order', action: 'approveRejected',
@@ -88,18 +114,26 @@ export async function approveAndSubmit(conversationId: string, db: Db = getDb())
     return { problems };
   }
 
-  // The await above lets a double-click race in: re-read, then write synchronously.
-  const fresh = getDraftByConversation(conversationId, db);
-  if (fresh?.status === 'submitted') return existingReceipt(conversationId, db);
+  // The await above lets a double-click or an edit race in: re-read, then write synchronously.
+  const latest = getDraftByConversation(conversationId, db);
+  if (!latest) throw new NotFoundError('No draft for this conversation');
+  if (latest.status === 'submitted') return existingReceipt(conversationId, db);
+  if (latest.updatedAt !== draft.updatedAt) {
+    return { problems: [{ lineId: '', reason: 'The draft changed while it was being checked; please review it again' }] };
+  }
 
-  const receipt = buildReceipt(draft, nextOrderId(db), nowDate.toISOString());
+  const confirmedUnknown = latest.lines.filter((l) => l.allergen.verdict === 'unknown').map((l) => l.id);
+  const receipt = buildReceipt(latest, nextOrderId(db), nowDate.toISOString());
   db.transaction((tx) => {
     const t = tx as unknown as Db;
-    insertOrder(receipt, draft, t);
-    saveDraft({ ...draft, status: 'submitted', updatedAt: receipt.submittedAt }, t);
+    insertOrder(receipt, latest, t);
+    saveDraft({ ...latest, status: 'submitted', updatedAt: receipt.submittedAt }, t);
     appendAudit({
       conversationId, orderId: receipt.orderId, actor: 'buyer', action: 'approve',
-      summary: `Buyer approved the order ${receipt.orderId}`,
+      summary: confirmedUnknown.length
+        ? `Buyer approved the order ${receipt.orderId}, confirming ${confirmedUnknown.length} line(s) with unknown allergens`
+        : `Buyer approved the order ${receipt.orderId}`,
+      ...(confirmedUnknown.length ? { data: { confirmedUnknownLineIds: confirmedUnknown } } : {}),
     }, t);
     appendAudit({
       conversationId, orderId: receipt.orderId, actor: 'order', action: 'submitOrder',

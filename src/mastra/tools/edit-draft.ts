@@ -11,6 +11,7 @@ import { audit, emitterFor, type Emit } from '../events';
 import {
   attachHistory, earliestCutoff, productName, sourceComponents, toComponent, toLine,
 } from '../pipeline/build-draft';
+import { reasonText } from '../pipeline/reasons';
 import { availablePacks, repriceLine } from '../pipeline/reprice';
 import { defaultSpecialists, type Specialists } from '../specialists';
 
@@ -62,7 +63,7 @@ async function plan(
       const price = sourced.prices.get(sel.product.id);
       const availability = sourced.availability.get(sel.product.id);
       return {
-        change: { kind: 'swapProduct', lineId: line.id, product: sel.product, price, availability, allergen: sel.allergen, reason: intent.reason ?? 'Buyer asked' },
+        change: { kind: 'swapProduct', lineId: line.id, product: sel.product, price, availability, allergen: sel.allergen, reason: intent.reason ?? reasonText({ kind: 'buyerAsked' }, lang) },
         draft,
         // applyDraftChange names the product in English and takes Valio's raw price; localise and price per pack.
         after: (d) => ({
@@ -160,6 +161,12 @@ export async function runEditDraft({ ctx, instruction }: { ctx: AimoContext; ins
   draft = {
     ...draft, lines, totals: computeTotals(lines, draft.intake.budget), cutoff: earliestCutoff(lines, date), updatedAt: now().toISOString(),
   };
+  // The specialist calls above take seconds; never overwrite a change the buyer made meanwhile.
+  const latest = getDraftByConversation(ctx.conversationId);
+  if (!latest || latest.status !== 'ready' || latest.updatedAt !== start.updatedAt) {
+    audit(ctx.conversationId, 'order', 'editDraftConflict', 'Edit dropped: the draft changed while it was being prepared', { instruction });
+    throw new Error('The draft changed while this edit was being prepared, so nothing was changed. Ask the buyer to repeat the request.');
+  }
   saveDraft(draft);
   await emit({ type: 'data-draft', data: { draft, diff } });
 
@@ -178,7 +185,7 @@ export function createEditDraftTool(specialists: Specialists = defaultSpecialist
     id: 'editDraft',
     description:
       'Order specialist. Changes the existing draft from the buyer\'s words: guest count, packs, removing or adding items, swapping products ("swap to basmati", "cheaper chicken"), applying history notes. ' +
-      'Only affected rows change and flash in the sheet. Returns a one-line change summary for you to confirm briefly, and problems (no price, not deliverable, unknown allergens) you must tell the buyer about.',
+      'Only affected rows change and flash in the sheet. Returns a one-line change summary for you to confirm in ONE short sentence, and problems (no price, not deliverable, unknown allergens) you must tell the buyer about.',
     inputSchema: z.object({ instruction: z.string().describe("The buyer's edit request, verbatim") }),
     outputSchema: z.object({
       summary: z.string(),

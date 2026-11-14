@@ -5,6 +5,7 @@ import type { LeftoverRecord, Receipt, UiLang } from '@/contracts';
 import { formatDay, formatMoney, formatNumber, formatQty } from './format';
 import { t } from './i18n';
 import { ClockIcon, HistoryIcon, LeafIcon, PrintIcon } from './icons';
+import { shortName } from './productName';
 import { SECONDARY_BUTTON } from './styles';
 
 /** Order confirmation. The order number is "stamped" in; the decision log unfolds underneath. */
@@ -80,7 +81,7 @@ export function ReceiptView({
           {receipt.lines.map((l) => (
             <li key={l.lineId} className="py-1.5">
               <div className="flex items-baseline justify-between gap-3">
-                <span className="min-w-0 truncate text-navy">{l.productName}</span>
+                <span className="min-w-0 truncate text-navy" title={l.productName}>{shortName(l.productName)}</span>
                 <span className="flex flex-none items-baseline gap-4 tabular-nums">
                   <span className="text-ink-soft">{formatQty(l.quantity, l.unit, lang)}</span>
                   <span className="w-20 text-right font-medium text-navy">{money(l.lineTotal)}</span>

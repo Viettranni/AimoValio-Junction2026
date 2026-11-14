@@ -32,7 +32,7 @@ export function createPlanOrderTool(specialists: Specialists = defaultSpecialist
     id: 'planOrder',
     description:
       'Plans the whole order once all five slots are filled and add-ons were offered: menu → products → allergens → prices & stock → history → draft. ' +
-      'Also re-plans an existing draft for a new delivery date (pass deliveryDate). The draft sheet updates by itself. Returns a compact summary (line count, total range excl. VAT, budget, cut-off, exceptions) for you to phrase in 1–3 sentences.',
+      'Also re-plans an existing draft for a new delivery date (pass deliveryDate). The draft sheet updates by itself. Returns a compact summary (line count, total range excl. VAT, budget, cut-off, exceptions) for you to phrase in at most 3 short sentences, without boilerplate.',
     inputSchema: z.object({
       addons: z.array(z.string()).describe('Add-ons the buyer switched on, e.g. ["Salad", "Coffee & tea"]; empty if none (a re-plan keeps earlier add-ons)'),
       deliveryDate: z.string().optional().describe('New delivery date YYYY-MM-DD, only when the buyer changes the date of an existing draft'),

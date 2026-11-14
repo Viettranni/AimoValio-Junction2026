@@ -59,6 +59,12 @@ export interface ThreadInput {
 export const messageText = (m: ThreadMessage) =>
   m.parts.map((p) => (p.type === 'text' ? (p.text ?? '') : '')).join('').trim();
 
+/** The chat message a choice answer is sent as: the chosen labels, then any typed text. */
+export function answerText(event: ChoicesEvent, answer: ChoiceAnswer): string {
+  const labels = event.options.filter((o) => answer.ids.includes(o.id)).map((o) => o.label);
+  return [...labels, answer.freeText?.trim()].filter(Boolean).join(', ');
+}
+
 /** Turns chat messages plus local UI state into the items the chat column renders. */
 export function deriveThread({ messages, progress, local, answers, checkins, errorText }: ThreadInput): ThreadItem[] {
   const items: ThreadItem[] = [{ id: 'greet', kind: 'greeting' }];
@@ -67,12 +73,16 @@ export function deriveThread({ messages, progress, local, answers, checkins, err
     local.filter((l) => l.afterCount === count).forEach((l) => items.push(withState(l.item)));
   const lastAssistant = messages.findLastIndex((m) => m.role === 'assistant');
   let users = 0;
+  // The answered choice card already shows the reply, so the user message that carries it is not repeated.
+  let answeredText: string | null = null;
 
   pushLocal(0);
   messages.forEach((m, index) => {
     if (m.role === 'user') {
       users++;
-      items.push({ id: m.id, kind: 'user', text: messageText(m) });
+      const text = messageText(m);
+      if (text !== answeredText) items.push({ id: m.id, kind: 'user', text });
+      answeredText = null;
       const run = progress[users];
       if (run?.length) items.push({ id: `${m.id}-progress`, kind: 'progress', events: run });
     } else if (m.role === 'assistant') {
@@ -88,6 +98,7 @@ export function deriveThread({ messages, progress, local, answers, checkins, err
           const answer = answers[event.id];
           // Questions the buyer moved past by typing are dropped rather than left open.
           if (answer || index === lastAssistant) structured.push({ id, kind: 'choices', event, answer });
+          if (answer) answeredText = answerText(event, answer);
         }
       });
       items.push(...structured);

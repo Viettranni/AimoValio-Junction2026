@@ -32,7 +32,8 @@ export interface WidgetSession {
   send: (text: string) => void;
   choose: (itemId: string, ids: string[], freeText?: string) => void;
   change: (change: DraftChange) => void;
-  approve: () => Promise<ApproveResult>;
+  /** Lines with unknown allergens the buyer ticked on the review screen are sent along (the server requires them). */
+  approve: (confirmedUnknownLineIds: string[]) => Promise<ApproveResult>;
   fastForward: () => void;
   reset: () => void;
   retry: () => void;

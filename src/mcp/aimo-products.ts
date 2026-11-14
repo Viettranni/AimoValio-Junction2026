@@ -53,6 +53,7 @@ export const getIngredientsTool = createTool({
     found: z.boolean(),
     ingredientsText: z.string().nullable(),
     allergens: z.union([z.array(allergen), z.literal('unknown')]),
+    ingredientData: z.boolean().describe('false: allergens come from the product name only, not an ingredient list'),
     dietFlags: z.array(dietFlag),
   }),
   execute: async ({ id }) => {
@@ -62,6 +63,7 @@ export const getIngredientsTool = createTool({
       found: !!p,
       ingredientsText: p?.keyIngredientsText ?? null,
       allergens: p?.allergens ?? 'unknown',
+      ingredientData: p?.ingredientData ?? false,
       dietFlags: p?.dietFlags ?? [],
     };
   },

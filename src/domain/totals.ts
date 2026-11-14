@@ -28,10 +28,13 @@ export function computeTotals(lines: DraftLine[], budget: number | 'none' | unde
     }
   }
   const budgetValue = typeof budget === 'number' ? budget : null;
+  // With every history choice made, the draft is exactly what will be ordered: no safety-pack range.
+  const collapsed = !lines.some((l) => l.history?.choice === 'pending');
+  if (collapsed) { high = low; highWithTax = lowWithTax; }
   return {
-    low, high, lowWithTax, highWithTax,
-    collapsed: !lines.some((l) => l.history?.choice === 'pending'),
+    low, high, lowWithTax, highWithTax, collapsed,
     budget: budgetValue,
+    // `high` is the top of the range the buyer sees (the single figure when collapsed).
     overBudget: budgetValue !== null && high > budgetValue,
   };
 }

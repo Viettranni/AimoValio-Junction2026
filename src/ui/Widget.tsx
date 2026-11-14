@@ -125,8 +125,8 @@ function WidgetView({
     if (details) showReceipt(details);
   };
   const backFromOrders = () => (sentHere ? showReceipt({ receipt: receipt!, leftovers: [] }) : go('chat'));
-  const approve = async () => {
-    const result = await session.approve();
+  const approve = async (confirmedUnknownLineIds: string[]) => {
+    const result = await session.approve(confirmedUnknownLineIds);
     if (result.receipt) showReceipt({ receipt: result.receipt, leftovers: [] });
     else if (result.problems?.length && draft) setRejected({ at: draft.updatedAt, problems: result.problems });
     return result;
@@ -186,6 +186,7 @@ function WidgetView({
           draft={draft}
           diff={session.diff}
           problems={lineProblems}
+          locked={session.busy}
           onChange={session.change}
           onReview={() => go('review')}
           lang={lang}

@@ -16,7 +16,7 @@ export const product = (o: Partial<CatalogProduct> = {}): CatalogProduct => ({
   id: 'p-1', nameEn: 'Chicken', nameFi: 'Kana', category: '1', salesUnit: 'KI',
   salesUnitLabel: { en: 'box', fi: 'laatikko', sv: 'kartong' }, packSize: 6, packUnit: 'kg',
   packDescription: '4 × 1.5 kg box', allowedLotSize: 1, temperature: 'chilled', vendor: 'v',
-  allergens: [], dietFlags: [], reliability: null, co2PerKg: null, ...o,
+  allergens: [], ingredientData: true, dietFlags: [], reliability: null, co2PerKg: null, ...o,
 });
 
 export const draft = (o: Partial<Draft> = {}): Draft => ({

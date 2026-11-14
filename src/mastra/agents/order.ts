@@ -14,7 +14,7 @@ Kinds:
 - removeLine {lineId}
 - scaleGuests {guests}: a new total guest count ("make it 320 guests").
 - historyChoice {lineId, choice: "history" | "suggested"}: apply or keep a history note ("use last time's amounts" → history on every line with a pending note).
-- swap {lineId, searchFi, searchEn, reason}: replace a line's product ("swap to basmati", "cheaper chicken"). searchFi/searchEn: the product to search for in Finnish and English. reason: short English, e.g. "Buyer asked for basmati".
+- swap {lineId, searchFi, searchEn, reason}: replace a line's product ("swap to basmati", "cheaper chicken"). searchFi/searchEn: the product to search for in Finnish and English. reason: a few words in the buyer's language (lang), shown on the line, e.g. "Basmati at your request" / "Basmati toiveesta".
 - add {searchFi, searchEn, category, label, reason}: a new item. label in the buyer's language.
 Only use line ids from the draft. Leave unused fields null. Return an empty list if the request is not an edit.
 You never submit or send the order; only the buyer's Approve button does that.`),

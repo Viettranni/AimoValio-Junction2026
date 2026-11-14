@@ -89,6 +89,7 @@ for (const p of raw) {
     temperature: temperature(p.temperatureCondition),
     vendor: p.vendorName ?? '',
     allergens,
+    ingredientData,
     dietFlags: deriveDietFlags({ nameEn: en, nameFi: fi, allergens, ingredientData }),
     ...(keyText ? { keyIngredientsText: keyText.slice(0, 1200) } : {}),
     reliability: reliability.get(String(p.id)) ?? null,

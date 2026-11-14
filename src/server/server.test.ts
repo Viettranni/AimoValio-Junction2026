@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AvailabilityInfo, Draft, DraftLine } from '@/contracts';
+import type { AvailabilityInfo, Draft, DraftLine, PriceInfo } from '@/contracts';
 import { createDb, type Db } from '@/db/client';
 import { getDraftByConversation, getReceipt, listAudit, listOrders, listLeftoverRecords, now, saveDraft, setClockOffsetDays } from '@/db/repo';
 import { upsertCustomer } from '@/db/repo';
@@ -8,7 +8,11 @@ import { fastForward } from './demo';
 import { approveAndSubmit, minutesSaved } from './orders';
 
 const getAvailability = vi.fn();
-vi.mock('@/valio/client', () => ({ getAvailability: (...a: unknown[]) => getAvailability(...a) }));
+const getPrices = vi.fn();
+vi.mock('@/valio/client', () => ({
+  getAvailability: (...a: unknown[]) => getAvailability(...a),
+  getPrices: (...a: unknown[]) => getPrices(...a),
+}));
 vi.mock('@/catalog', () => ({ getProduct: (id: string) => (id === 'p1' ? { co2PerKg: 2 } : id === 'p3' ? { salesUnit: 'KG', packSize: 4.4 } : undefined) }));
 
 const line = (id: string, over: Partial<DraftLine> = {}): DraftLine => ({
@@ -24,11 +28,15 @@ const avail = (id: string, over: Partial<AvailabilityInfo> = {}): AvailabilityIn
   productId: id, deliverable: true, salesBlock: false, logisticModel: 'Stock', availableAmount: 100,
   availableDate: '2026-12-06', closingTime: '2099-01-01T00:00:00Z', fetchedAt: '2026-11-14T10:00:00Z', ...over,
 });
+const mockPrices = (fetchedAt = () => new Date().toISOString(), over: Record<string, Partial<PriceInfo>> = {}) =>
+  getPrices.mockImplementation(async (ids: string[]) => new Map(ids.map((id) => [id, {
+    productId: id, ok: true, price: 10, priceWithTax: 11.4, currency: 'EUR', fetchedAt: fetchedAt(), ...over[id],
+  }])));
 const mockAvail = (over: Record<string, Partial<AvailabilityInfo>> = {}) =>
   getAvailability.mockImplementation(async (ids: string[]) => new Map(ids.map((id) => [id, avail(id, over[id])])));
 
 let db: Db;
-beforeEach(() => { db = createDb(':memory:'); upsertCustomer({ id: 'cust', name: 'C' }, db); getAvailability.mockReset(); });
+beforeEach(() => { db = createDb(':memory:'); upsertCustomer({ id: 'cust', name: 'C' }, db); getAvailability.mockReset(); mockPrices(); });
 
 describe('minutesSaved', () => {
   it('is 5 + 3 per line, capped at 60', () => {
@@ -69,6 +77,53 @@ describe('approveAndSubmit', () => {
       { lineId: 'l-1', reason: 'order cut-off has passed' },
       { lineId: 'l-2', reason: 'price unavailable' },
     ]);
+  });
+});
+
+describe('approval safety checks', () => {
+  it('blocks a line Valio can only deliver after the delivery date, and a line tagged unavailable', async () => {
+    saveDraft(draft([line('l-1'), line('l-2', { tags: ['unavailable'] })]), db);
+    mockAvail({ p1: { availableDate: '2026-12-09' } });
+    expect((await approveAndSubmit('conv', db)).problems).toEqual([
+      { lineId: 'l-1', reason: 'earliest delivery 2026-12-09' },
+      { lineId: 'l-2', reason: 'not deliverable on the delivery date' },
+    ]);
+  });
+
+  it('rejects allergen conflicts always, and unknown allergens unless confirmed', async () => {
+    const unknown = { productId: 'p2', verdict: 'unknown' as const, conflicts: [], unmetDiets: ['gluten_free' as const] };
+    saveDraft(draft([line('l-1', { allergen: { productId: 'p1', verdict: 'fail', conflicts: ['milk'], unmetDiets: [] } }), line('l-2', { allergen: unknown })]), db);
+    mockAvail();
+    expect((await approveAndSubmit('conv', db, ['l-1', 'l-2'])).problems).toEqual([{ lineId: 'l-1', reason: 'conflicts with a diet or allergy' }]);
+
+    saveDraft(draft([line('l-2', { allergen: unknown })]), db);
+    expect((await approveAndSubmit('conv', db)).problems).toEqual([{ lineId: 'l-2', reason: expect.stringContaining('allergens unknown') }]);
+    const r = await approveAndSubmit('conv', db, ['l-2']);
+    expect(r.receipt).toBeDefined();
+    const approval = listAudit({ conversationId: 'conv' }, db).find((a) => a.action === 'approve');
+    expect(approval?.data).toEqual({ confirmedUnknownLineIds: ['l-2'] });
+  });
+
+  it('blocks a stale price that could not be refreshed, and a price Valio now refuses', async () => {
+    saveDraft(draft([line('l-1'), line('l-2')]), db);
+    mockAvail();
+    mockPrices(() => new Date(Date.now() - 11 * 60_000).toISOString(), { p2: { ok: false } });
+    const r = await approveAndSubmit('conv', db);
+    expect(r.problems).toEqual([
+      { lineId: 'l-1', reason: expect.stringMatching(/^price from \d\d:\d\d could not be refreshed$/) },
+      { lineId: 'l-2', reason: 'price unavailable' },
+    ]);
+  });
+
+  it('refuses when the draft changed during the Valio check', async () => {
+    saveDraft(draft([line('l-1')]), db);
+    getAvailability.mockImplementation(async (ids: string[]) => {
+      saveDraft({ ...draft([line('l-1', { packs: 3 })]), updatedAt: '2026-11-14T11:00:00Z' }, db);
+      return new Map(ids.map((id) => [id, avail(id)]));
+    });
+    const r = await approveAndSubmit('conv', db);
+    expect(r.problems?.[0].reason).toContain('changed');
+    expect(getDraftByConversation('conv', db)?.status).toBe('ready');
   });
 });
 

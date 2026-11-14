@@ -5,6 +5,7 @@ import type { CheckInEvent, UiLang } from '@/contracts';
 import { formatNumber, formatQty } from './format';
 import { t } from './i18n';
 import { HistoryIcon } from './icons';
+import { shortName } from './productName';
 import { SECONDARY_BUTTON } from './styles';
 
 const SHOWN_LINES = 5;
@@ -54,7 +55,7 @@ function ReplyForm({ event, onSubmit, answer, lang }: { event: CheckInEvent; onS
       <ul className="mt-2 space-y-0.5 text-[11.5px] text-ink-soft">
         {event.lines.slice(0, SHOWN_LINES).map((l) => (
           <li key={l.lineId} className="flex justify-between gap-3">
-            <span className="truncate">{l.productName}</span>
+            <span className="truncate" title={l.productName}>{shortName(l.productName)}</span>
             <span className="flex-none tabular-nums">{formatQty(l.quantity, l.unit, lang)}</span>
           </li>
         ))}
@@ -127,7 +128,7 @@ function LeftoverTable({
           const v = values[l.lineId];
           return (
             <li key={l.lineId} className="border-t border-warm-border/60 py-1.5 first:border-t-0">
-              <div className="truncate text-navy">{l.productName}</div>
+              <div className="truncate text-navy" title={l.productName}>{shortName(l.productName)}</div>
               <div className="mt-0.5 flex items-center justify-between gap-2">
                 <span className="tabular-nums">
                   {t('checkin.ordered', lang)} {formatQty(l.quantity, l.unit, lang)}
@@ -138,15 +139,21 @@ function LeftoverTable({
                   </span>
                 ) : (
                   <span className="flex items-center justify-end gap-1">
-                    <button
-                      type="button"
-                      onClick={() => set(l.lineId, { short: !v.short })}
-                      disabled={locked}
-                      aria-label={`${l.productName}: ${v.short ? t('checkin.short', lang) : t('checkin.left', lang)}`}
-                      className={`min-w-12 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${v.short ? 'bg-warn/10 text-warn' : 'bg-white text-warm-ink'}`}
-                    >
-                      {v.short ? `− ${t('checkin.short', lang)}` : `+ ${t('checkin.left', lang)}`}
-                    </button>
+                    <span role="radiogroup" aria-label={l.productName} className="inline-flex overflow-hidden rounded-full border border-warm-border bg-white text-[10.5px] font-semibold">
+                      {([false, true] as const).map((short) => (
+                        <button
+                          key={String(short)}
+                          type="button"
+                          role="radio"
+                          aria-checked={v.short === short}
+                          onClick={() => set(l.lineId, { short })}
+                          disabled={locked}
+                          className={`px-2 py-0.5 ${v.short === short ? (short ? 'bg-warn/15 text-warn' : 'bg-warm text-warm-ink') : 'text-muted'}`}
+                        >
+                          {short ? `− ${t('checkin.short', lang)}` : `+ ${t('checkin.left', lang)}`}
+                        </button>
+                      ))}
+                    </span>
                     <input
                       type="number"
                       min={0}

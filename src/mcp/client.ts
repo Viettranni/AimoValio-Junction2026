@@ -1,6 +1,8 @@
 import type { Tool } from '@mastra/core/tools';
 import { RequestContext } from '@mastra/core/request-context';
 import { MCPClient } from '@mastra/mcp';
+import type { Allergen, AllergenCheck, DietFlag } from '@/contracts';
+import { checkAllergens } from '@/catalog';
 import { aimoProductTools } from './aimo-products';
 
 const SERVER = 'aimo-products';
@@ -60,4 +62,27 @@ export function toolFreeContext(): RequestContext {
 /** Agent `tools` resolver: the MCP tools, connected lazily, unless the call is tool-free. */
 export function productToolsFor({ requestContext }: { requestContext: RequestContext }) {
   return requestContext.getRaw(NO_TOOLS) ? {} : getProductTools();
+}
+
+let checkFallbackWarned = false;
+
+/**
+ * The allergen step's checkAllergens, called through the aimo-products MCP client: the same tool an
+ * external purchasing agent would use. If the call fails, the in-process check runs instead (one warning).
+ */
+export async function checkAllergensViaMcp(
+  ids: string[], constraints: { excludeAllergens?: Allergen[]; requireDiet?: DietFlag[] },
+): Promise<AllergenCheck[]> {
+  try {
+    const tool = (await getProductTools()).checkAllergens;
+    const out = (await tool.execute!({ ids, ...constraints }, {})) as { checks?: AllergenCheck[] };
+    if (!Array.isArray(out?.checks)) throw new Error('unexpected checkAllergens result');
+    return out.checks;
+  } catch (err) {
+    if (!checkFallbackWarned) {
+      checkFallbackWarned = true;
+      console.warn(`[aimo-products] checkAllergens over MCP failed (${(err as Error).message}); using the in-process check`);
+    }
+    return checkAllergens(ids, constraints);
+  }
 }

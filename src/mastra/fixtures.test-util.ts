@@ -4,7 +4,7 @@ const base: CatalogProduct = {
   id: '', nameEn: '', nameFi: '', category: '1', salesUnit: 'KI',
   salesUnitLabel: { en: 'box', fi: 'laatikko', sv: 'kartong' }, packSize: 5, packUnit: 'kg',
   packDescription: '5 kg', allowedLotSize: 1, temperature: 'chilled', vendor: 'v',
-  allergens: [], dietFlags: ['gluten_free', 'lactose_free'], reliability: 0.97, co2PerKg: null,
+  allergens: [], ingredientData: true, dietFlags: ['gluten_free', 'lactose_free'], reliability: 0.97, co2PerKg: null,
 };
 const p = (o: Partial<CatalogProduct>): CatalogProduct => ({ ...base, ...o });
 
@@ -14,8 +14,8 @@ export const products: CatalogProduct[] = [
   p({ id: 'jas', nameEn: 'Jasmine rice 5kg', nameFi: 'Jasmiiniriisi 5kg', nameSv: 'Jasminris 5kg', temperature: 'ambient' }),
   p({ id: 'bas', nameEn: 'Basmati rice 5kg', nameFi: 'Basmatiriisi 5kg', temperature: 'ambient' }),
   p({ id: 'bread', nameEn: 'White bread 3kg', nameFi: 'Vaalea leipä 3kg', packSize: 3, allergens: ['gluten'], dietFlags: ['lactose_free'], keyIngredientsText: 'WHEAT flour, water' }),
-  p({ id: 'gfb1', nameEn: 'Bread rolls 2kg', nameFi: 'Sämpylä leipä 2kg', packSize: 2, allergens: 'unknown', dietFlags: [] }),
-  p({ id: 'gfb2', nameEn: 'Gluten free bread 2kg', nameFi: 'Gluteeniton leipä 2kg', packSize: 2, allergens: 'unknown', dietFlags: [] }),
+  p({ id: 'gfb1', nameEn: 'Bread rolls 2kg', nameFi: 'Sämpylä leipä 2kg', packSize: 2, allergens: 'unknown', ingredientData: false, dietFlags: [] }),
+  p({ id: 'gfb2', nameEn: 'Gluten free bread 2kg', nameFi: 'Gluteeniton leipä 2kg', packSize: 2, allergens: 'unknown', ingredientData: false, dietFlags: [] }),
   p({ id: 'crumbs', nameEn: 'Gluten free crumb coating 1kg', nameFi: 'Gluteeniton korppujauho 1kg', category: '20', packSize: 1, temperature: 'ambient' }),
   p({ id: 'pizza', nameEn: 'Gluten free pizza base 1kg', nameFi: 'Gluteeniton pizzapohja 1kg', category: '21', packSize: 1, temperature: 'frozen' }),
 ];

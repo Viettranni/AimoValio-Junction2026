@@ -3,6 +3,7 @@ import type {
   MenuComponent, PriceInfo, ProgressEvent, ProgressStepId, SearchHit,
 } from '@/contracts';
 import { checkAllergens, getProduct, searchProducts } from '@/catalog';
+import { checkAllergensViaMcp, getProductTools } from '@/mcp/client';
 import { listLeftoverRecords, now, saveDraft } from '@/db/repo';
 import { deliverableOn, effectiveCutoff } from '@/domain/cutoff';
 import { computeHistoryAdjustment } from '@/domain/history';
@@ -14,6 +15,7 @@ import type { MenuComponentPlan } from '../agents/menu';
 import type { AimoContext } from '../context';
 import { audit, progress, type Emit } from '../events';
 import type { Specialists } from '../specialists';
+import { reasonText } from './reasons';
 import { availablePacks, repriceLine } from './reprice';
 import { sameKind } from './same-kind';
 
@@ -176,11 +178,15 @@ export interface Sourced {
 
 async function rankAll(
   components: MenuComponent[], candidates: Map<string, CatalogProduct[]>, lang: Lang, specialists: Specialists,
-  extra: { prices?: Map<string, PriceInfo>; request?: string },
+  extra: { prices?: Map<string, PriceInfo>; request?: string }, ctx: AimoContext,
 ): Promise<Ranked[]> {
   const searchable = components.filter((c) => (candidates.get(c.id) ?? []).length > 0);
   if (searchable.length === 0) return [];
-  const picks = await specialists.pickProducts({ lang, components: searchable, candidates, ...extra });
+  // Without the product agent the search ranking still gives a sound pick.
+  const picks = await specialists.pickProducts({ lang, components: searchable, candidates, ...extra }).catch((err: unknown) => {
+    audit(ctx.conversationId, 'product', 'pickProducts', 'Product agent unavailable, used best match', { error: (err as Error).message });
+    return [];
+  });
   return searchable.map((component) => {
     const ids = candidates.get(component.id)!.map((p) => p.id);
     const pick = picks.find((p) => p.componentId === component.id);
@@ -190,17 +196,27 @@ async function rankAll(
   });
 }
 
-/** Takes the first verified-safe candidate; "unknown" only when nothing passes (allergen agent judges among several). */
-async function screenAllergens({ component, ranked, reason }: Ranked, specialists: Specialists): Promise<Selection> {
-  const checks = checkAllergens(ranked, constraintsOf(component));
+/**
+ * Takes the first verified-safe candidate; "unknown" only when nothing passes (allergen agent judges among several).
+ * Never a conflicting product: when every candidate fails, the component gets no product (null).
+ */
+async function screenAllergens(
+  { component, ranked, reason }: Ranked, specialists: Specialists, ctx: AimoContext,
+): Promise<Selection | null> {
+  const checks = await checkAllergensViaMcp(ranked, constraintsOf(component));
   let chosen = checks.find((c) => c.verdict === 'pass');
   if (!chosen) {
     const unknowns = checks.filter((c) => c.verdict === 'unknown');
-    chosen = unknowns[0] ?? checks[0];
+    if (!unknowns.length) return null;
+    chosen = unknowns[0];
     if (unknowns.length > 1) {
       const products = unknowns.map((c) => getProduct(c.productId)).filter((p): p is CatalogProduct => !!p);
-      const choice = await specialists.chooseUnknownFallback({ component, candidates: products });
-      const picked = unknowns.find((c) => c.productId === choice.productId);
+      const choice = await specialists.chooseUnknownFallback({ component, candidates: products }).catch((err: unknown) => {
+        audit(ctx.conversationId, 'allergen', 'chooseUnknownFallback', `Allergen agent unavailable, used best match for ${component.label}`,
+          { error: (err as Error).message });
+        return null;
+      });
+      const picked = choice && unknowns.find((c) => c.productId === choice.productId);
       if (picked) chosen = { ...picked, evidence: [picked.evidence, choice.note].filter(Boolean).join('. ') };
     }
   }
@@ -219,8 +235,11 @@ function substitute(
 ): { selection: Selection; problem?: string } {
   const a = availability.get(sel.product.id);
   if (!a || deliverableOn(a, date)) return { selection: sel };
-  const late = a.deliverable && !a.salesBlock;
-  const reason = a.salesBlock ? 'Sales block on the product' : late ? `Earliest delivery ${a.availableDate}` : `Not deliverable on ${date}`;
+  const late = a.deliverable && !a.salesBlock && !!a.availableDate;
+  const reason = reasonText(
+    a.salesBlock ? { kind: 'salesBlock' } : late ? { kind: 'late', date: a.availableDate! } : { kind: 'notDeliverable', date },
+    lang,
+  );
   for (const altId of sel.alternatives) {
     const alt = availability.get(altId);
     const product = getProduct(altId);
@@ -234,10 +253,9 @@ function substitute(
       },
     };
   }
-  const earliest = !late && a.availableDate && a.availableDate > date ? `; earliest ${a.availableDate}` : '';
   return {
     selection: sel,
-    problem: `${sel.component.label}: ${sel.product.nameEn} ${reason.toLowerCase()}${earliest}, and no product of the same kind is deliverable by ${date}; ask the buyer what to use instead`,
+    problem: `${sel.component.label}: ${productName(sel.product, lang)}: "${reason}". No product of the same kind is deliverable by ${date}; ask the buyer what to use instead`,
   };
 }
 
@@ -272,17 +290,25 @@ export async function sourceComponents(
     // On failure the pick runs without prices; the price step below reports the outage.
     candidatePrices = await getPrices(unique(found.map((p) => p.id)), date).catch(() => undefined);
   }
-  const ranked = await rankAll(components, candidates, lang, specialists, { prices: candidatePrices, request: deps.request });
+  // Connect to the aimo-products MCP server while the product agent thinks; the allergen step uses it.
+  void getProductTools();
+  const ranked = await rankAll(components, candidates, lang, specialists, { prices: candidatePrices, request: deps.request }, ctx);
   audit(ctx.conversationId, 'product', 'pickProducts', `Picked products for ${ranked.length} components`,
     ranked.map((r) => ({ componentId: r.component.id, productId: r.ranked[0], reason: r.reason })));
 
   await stage('allergens', 'start');
   let selections: Selection[] = [];
-  for (const r of ranked) selections.push(await screenAllergens(r, specialists));
+  for (const r of ranked) {
+    const sel = await screenAllergens(r, specialists, ctx);
+    if (sel) { selections.push(sel); continue; }
+    exceptions.push(`${reasonText({ kind: 'noSafeProduct', label: r.component.label }, lang)}; ask the buyer what to use instead`);
+    audit(ctx.conversationId, 'allergen', 'noSafeProduct', `${r.component.label}: every candidate conflicts with the diets; left out`,
+      { componentId: r.component.id, candidates: r.ranked });
+  }
   const constrained = selections.filter((s) => isConstrained(s.component));
   for (const s of constrained) {
     if (s.allergen.verdict !== 'pass') {
-      exceptions.push(`${s.component.label}: ${s.product.nameEn} allergens ${s.allergen.verdict === 'fail' ? 'conflict' : 'unknown'} (${s.allergen.evidence ?? 'no evidence'})`);
+      exceptions.push(`${s.component.label}: ${productName(s.product, lang)} allergens unknown (${s.allergen.evidence ?? 'no evidence'}); the buyer must confirm this line in Review`);
     }
   }
   audit(ctx.conversationId, 'allergen', 'checkAllergens',
@@ -308,9 +334,9 @@ export async function sourceComponents(
     const { selection, problem } = substitute(s, availability, date, lang);
     if (problem) exceptions.push(problem);
     if (selection.substituteFor) {
-      const summary = `Swapped ${s.product.nameEn} → ${selection.product.nameEn}: ${selection.substituteFor.reason}`;
-      exceptions.push(`${s.component.label}: ${summary}`);
-      audit(ctx.conversationId, 'pricing', 'substitute', summary, { from: s.product.id, to: selection.product.id });
+      exceptions.push(`${s.component.label}: swapped to a similar product: "${selection.substituteFor.reason}"`);
+      audit(ctx.conversationId, 'pricing', 'substitute', `Swapped ${s.product.nameEn} → ${selection.product.nameEn}: ${selection.substituteFor.reason}`,
+        { from: s.product.id, to: selection.product.id });
     }
     return selection;
   });
@@ -368,7 +394,7 @@ export function fitToStock(
   const lot = Math.max(1, p.allowedLotSize);
   const stockPacks = Math.floor(inStock / lot) * lot;
   const name = productName(p, opts.lang);
-  const reason = `only ${stockPacks} packs of ${name} in stock`;
+  const reason = reasonText({ kind: 'shortStock', packs: stockPacks, label: c.label }, opts.lang);
   const portion = c.requiredAmount / Math.max(1, c.guests);
   const servedGuests = Math.min(c.guests, Math.floor((stockPacks * p.packSize) / portion));
   const resize = (comp: MenuComponent, id: string, guests: number): MenuComponent => ({
@@ -391,7 +417,7 @@ export function fitToStock(
       substituteFor: { productId: p.id, productName: name, reason },
     };
     const topUpLine = toLine(topUp, 'l-0', opts.lang, sourced, opts.date);
-    const problem = `${c.label}: ${reason}; the rest (${rest.requiredAmount} ${rest.requiredUnit}) comes from ${alt.nameEn}`;
+    const problem = `${c.label}: "${reason}"`;
     if (servedGuests === 0) return { componentId: c.id, components: [rest], lines: [topUpLine], problem };
     const served = resize(c, c.id, servedGuests);
     return {
@@ -402,7 +428,7 @@ export function fitToStock(
     };
   }
 
-  const problem = `${c.label}: ${reason} (needed ${line.packs}) and no same-kind product has enough; ` +
+  const problem = `${c.label}: only ${stockPacks} packs in stock (needed ${line.packs}) and no same-kind product has enough; ` +
     (stockPacks > 0 ? 'the line is capped, ask the buyer how to cover the rest' : 'the line is left out, ask the buyer what to use instead');
   if (stockPacks === 0) return { componentId: c.id, components: [], lines: [], problem };
   const quantity = Math.round(stockPacks * p.packSize * 1e6) / 1e6;
@@ -474,7 +500,11 @@ export async function buildDraft(
   const stage: Stage = (step, status, extra) => progress(emit, lang, step, status, extra);
 
   await stage('understand', 'start');
-  const { components: planned, dropped } = toComponents(await specialists.planMenu({ intake, addons }), eventType);
+  const plans = await specialists.planMenu({ intake, addons }).catch((err: unknown) => {
+    audit(ctx.conversationId, 'menu', 'planMenu', `Menu agent failed: ${(err as Error).message}`);
+    throw new Error('The menu planner is unavailable right now, so no draft was made. Tell the buyer briefly and offer to try again.');
+  });
+  const { components: planned, dropped } = toComponents(plans, eventType);
   let components = applyDietRules(planned, intake.diets);
   audit(ctx.conversationId, 'menu', 'planMenu', `Planned ${components.length} components: ${components.map((c) => c.label).join(', ')}`, components);
   if (dropped.length) {

@@ -2,7 +2,9 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { checkAllergens, getAlternatives, getProduct, searchProducts } from './index';
+import type { CatalogProduct } from '@/contracts';
 import { loadCatalog } from './load';
+import { checkProduct } from './search';
 
 describe('catalogue search', () => {
   beforeAll(() => {
@@ -48,5 +50,23 @@ describe('catalogue search', () => {
     expect(b.conflicts).toEqual(['gluten']);
     expect(c.verdict).toBe('unknown');
     expect(getProduct('nope')).toBeUndefined();
+  });
+});
+
+describe('checkProduct without an ingredient list', () => {
+  const p = (o: Partial<CatalogProduct>): CatalogProduct => ({
+    id: 'x', nameEn: 'Salmon fillet', nameFi: 'Lohifilee', category: '1', salesUnit: 'KI',
+    salesUnitLabel: { en: 'box', fi: 'laatikko', sv: 'kartong' }, packSize: 1, packUnit: 'kg', packDescription: '1 kg',
+    allowedLotSize: 1, temperature: 'chilled', vendor: 'v', allergens: ['fish'], ingredientData: false,
+    dietFlags: [], reliability: null, co2PerKg: null, ...o,
+  });
+
+  it('downgrades a would-be pass to unknown when allergens come from the name only', () => {
+    expect(checkProduct(p({}), { excludeAllergens: ['milk'] })).toMatchObject({ verdict: 'unknown', evidence: expect.stringMatching(/name only/) });
+    expect(checkProduct(p({ ingredientData: true }), { excludeAllergens: ['milk'] }).verdict).toBe('pass');
+  });
+  it('still fails on a name-derived conflict and passes with no constraint', () => {
+    expect(checkProduct(p({}), { excludeAllergens: ['fish'] }).verdict).toBe('fail');
+    expect(checkProduct(p({}), {}).verdict).toBe('pass');
   });
 });

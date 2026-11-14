@@ -7,6 +7,7 @@ import { formatMoney, formatQty } from './format';
 import { t } from './i18n';
 import { CloseIcon, MinusIcon, PlusIcon } from './icons';
 import { HistoryNote } from './HistoryNote';
+import { shortName } from './productName';
 
 const TAG_TONE: Partial<Record<LineTag, string>> = {
   may_deliver_short: 'bg-warn/10 text-warn',
@@ -57,7 +58,7 @@ export function DraftRow({
       )}
       <div className={`relative ${SHEET_COLUMNS} px-4 py-2.5`}>
         <div className="min-w-0">
-          <div className="text-[13px] font-medium leading-[18px] text-navy">{line.productName}</div>
+          <div className="text-[13px] font-medium leading-[18px] text-navy" title={line.productName}>{shortName(line.productName)}</div>
           <div className="mt-1 flex flex-wrap gap-1">
             {line.tags.map((tag) => (
               <span
@@ -71,7 +72,7 @@ export function DraftRow({
           {problem && <div className="mt-1 text-[11.5px] font-medium text-warn">{problem}</div>}
           {line.substituteFor && (
             <div className="mt-1 text-[11px] text-muted">
-              ← {line.substituteFor.productName} · {line.substituteFor.reason}
+              ← <span title={line.substituteFor.productName}>{shortName(line.substituteFor.productName)}</span> · {line.substituteFor.reason}
             </div>
           )}
         </div>
@@ -103,7 +104,7 @@ export function DraftRow({
           <button
             type="button"
             onClick={() => onChange({ kind: 'removeLine', lineId: line.id })}
-            aria-label={t('row.remove', lang, { name: line.productName })}
+            aria-label={t('row.remove', lang, { name: shortName(line.productName) })}
             className="flex h-[22px] w-[22px] items-center justify-center rounded-full text-muted opacity-35 transition-opacity hover:bg-sky hover:text-navy focus-visible:opacity-100 group-hover:opacity-100"
           >
             <CloseIcon size={12} strokeWidth={2.4} />
@@ -115,7 +116,7 @@ export function DraftRow({
           <HistoryNote
             line={line}
             lang={lang}
-            onChoose={(choice) => onChange({ kind: 'historyChoice', lineId: line.id, choice })}
+            onChoose={(choice) => !readOnly && onChange({ kind: 'historyChoice', lineId: line.id, choice })}
           />
         </div>
       )}

@@ -2,11 +2,15 @@
 
 import { useState } from 'react';
 import type { Draft, DraftLine, UiLang } from '@/contracts';
-import { formatDateTime, formatDay, formatMoney, formatQty } from './format';
+import { formatDateTime, formatDay, formatMoney, formatQty, formatTime } from './format';
 import { dietLabel, t } from './i18n';
 import { ArrowLeftIcon, CheckIcon, HistoryIcon } from './icons';
+import { shortName } from './productName';
 import type { ApproveResult } from './session';
 import { PRIMARY_BUTTON } from './styles';
+
+/** Prices older than the 10-minute cache come from a failed refresh; the buyer sees when they are from. */
+const STALE_PRICE_MS = 10 * 60 * 1000;
 
 /** Everything the buyer is about to approve, on one card, with the single primary action. */
 export function ReviewSheet({
@@ -19,7 +23,8 @@ export function ReviewSheet({
   lang,
 }: {
   draft: Draft;
-  onApprove: () => Promise<unknown>;
+  /** Called with the unknown-allergen lines the buyer ticked. */
+  onApprove: (confirmedUnknownLineIds: string[]) => Promise<unknown>;
   onBack: () => void;
   onOpenAudit: () => void;
   /** The rendered decision log, shown when present. */
@@ -31,6 +36,8 @@ export function ReviewSheet({
   const [sending, setSending] = useState(false);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [failed, setFailed] = useState(false);
+  // Staleness is judged when the review opens; the approval re-checks prices anyway.
+  const [openedAt] = useState(() => Date.now());
   const { intake, totals } = draft;
   const money = (n: number, d = 0) => formatMoney(n, lang, d);
   const substitutes = draft.lines.filter((l) => l.substituteFor);
@@ -40,18 +47,23 @@ export function ReviewSheet({
   const total = draft.lines.reduce((s, l) => s + (l.unitPrice ?? 0) * l.packs, 0);
   const totalWithTax = draft.lines.reduce((s, l) => s + (l.unitPriceWithTax ?? 0) * l.packs, 0);
   const diets = intake.diets && intake.diets !== 'none' ? intake.diets : [];
-  const unknown = draft.lines.filter((l) => l.tags.includes('allergens_unknown'));
+  const isUnknown = (l: DraftLine) => l.allergen.verdict === 'unknown' || l.tags.includes('allergens_unknown');
+  const unknown = draft.lines.filter(isUnknown);
+  const conflicting = draft.lines.filter((l) => l.allergen.verdict === 'fail');
+  const staleAt = (l: DraftLine) =>
+    l.price && openedAt - Date.parse(l.price.fetchedAt) > STALE_PRICE_MS ? formatTime(l.price.fetchedAt, lang) : null;
   const unpriced = draft.lines.filter((l) => l.unitPrice === null);
   const lineProblems: Record<string, string> = Object.fromEntries((problems ?? []).filter((p) => p.lineId).map((p) => [p.lineId, p.reason]));
   const generalProblems = (problems ?? []).filter((p) => !p.lineId).map((p) => p.reason);
   const canApprove =
-    draft.lines.length > 0 && unpriced.length === 0 && unknown.every((l) => checked[l.id]) && !problems?.length;
+    draft.lines.length > 0 && unpriced.length === 0 && conflicting.length === 0 && unknown.every((l) => checked[l.id]) && !problems?.length;
+  const overBy = totals.budget !== null && total > totals.budget ? total - totals.budget : null;
 
   const approve = async () => {
     setSending(true);
     setFailed(false);
     try {
-      await onApprove();
+      await onApprove(unknown.filter((l) => checked[l.id]).map((l) => l.id));
     } catch {
       setFailed(true);
     } finally {
@@ -62,17 +74,23 @@ export function ReviewSheet({
   const lineNote = (l: DraftLine) => {
     if (lineProblems[l.id]) return <p className="text-[11.5px] font-medium text-warn">{lineProblems[l.id]}</p>;
     if (l.unitPrice === null) return <p className="text-[11.5px] font-medium text-warn">{t('review.noPriceLine', lang)}</p>;
-    if (!l.tags.includes('allergens_unknown')) return null;
+    if (l.allergen.verdict === 'fail') return <p className="text-[11.5px] font-medium text-danger">{t('review.allergenFail', lang)}</p>;
+    const stale = staleAt(l);
+    const priceNote = stale && <p className="text-[11px] text-muted">{t('review.priceFrom', lang, { time: stale })}</p>;
+    if (!isUnknown(l)) return priceNote || null;
     return (
-      <label className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-danger">
-        <input
-          type="checkbox"
-          checked={Boolean(checked[l.id])}
-          onChange={(e) => setChecked((c) => ({ ...c, [l.id]: e.target.checked }))}
-          className="h-3.5 w-3.5 accent-[var(--blue)]"
-        />
-        {t('review.confirmUnknown', lang)}
-      </label>
+      <>
+        {priceNote}
+        <label className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-danger">
+          <input
+            type="checkbox"
+            checked={Boolean(checked[l.id])}
+            onChange={(e) => setChecked((c) => ({ ...c, [l.id]: e.target.checked }))}
+            className="h-3.5 w-3.5 accent-[var(--blue)]"
+          />
+          {t('review.confirmUnknown', lang)}
+        </label>
+      </>
     );
   };
 
@@ -112,7 +130,8 @@ export function ReviewSheet({
             <ul className="mt-1 space-y-0.5 text-[12.5px] text-navy">
               {substitutes.map((l) => (
                 <li key={l.id}>
-                  {l.substituteFor!.productName} → <b className="font-semibold">{l.productName}</b>
+                  <span title={l.substituteFor!.productName}>{shortName(l.substituteFor!.productName)}</span> →{' '}
+                  <b className="font-semibold" title={l.productName}>{shortName(l.productName)}</b>
                   <span className="text-ink-soft"> · {l.substituteFor!.reason}</span>
                 </li>
               ))}
@@ -141,7 +160,7 @@ export function ReviewSheet({
           {draft.lines.map((l) => (
             <li key={l.id} className={`py-1.5 ${lineProblems[l.id] ? 'bg-warm' : ''}`}>
               <div className="flex items-baseline justify-between gap-3">
-                <span className="min-w-0 truncate text-navy">{l.productName}</span>
+                <span className="min-w-0 truncate text-navy" title={l.productName}>{shortName(l.productName)}</span>
                 <span className="flex flex-none items-baseline gap-4 tabular-nums">
                   <span className="text-ink-soft">{formatQty(l.quantity, l.unit, lang)}</span>
                   <span className="w-20 text-right font-medium text-navy">
@@ -169,9 +188,7 @@ export function ReviewSheet({
           <span className="text-[13px] font-semibold text-navy">{t('receipt.total', lang)}</span>
           <span className="text-[18px] font-semibold text-navy">{money(totalWithTax, 2)}</span>
         </div>
-        {totals.overBudget && totals.budget !== null && (
-          <p className="mt-1 text-[11.5px] font-medium text-warn">{t('totals.over', lang, { v: money(total - totals.budget) })}</p>
-        )}
+        {overBy !== null && <p className="mt-1 text-[11.5px] font-medium text-warn">{t('totals.over', lang, { v: money(overBy) })}</p>}
         <button
           type="button"
           onClick={approve}

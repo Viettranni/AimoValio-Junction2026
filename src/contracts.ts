@@ -51,6 +51,8 @@ export interface CatalogProduct {
   vendor: string;
   /** Contains these allergens; 'unknown' when no ingredient data exists. Never treat 'unknown' as safe. */
   allergens: Allergen[] | 'unknown';
+  /** false when allergens come only from the product name (no ingredient list): never enough to pass a check. */
+  ingredientData: boolean;
   dietFlags: DietFlag[];
   keyIngredientsText?: string;    // English ingredient text, allergens in CAPS as in source
   reliability: number | null;     // 0..1 from delivery reliability CSV

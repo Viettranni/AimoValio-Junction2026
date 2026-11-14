@@ -46,7 +46,13 @@ export function checkProduct(p: CatalogProduct | undefined, c: Constraints, prod
   const evidence = conflicts.length
     ? conflicts.map((a) => allergenEvidence(p.keyIngredientsText, a) ?? `contains ${a}`).join('; ')
     : undefined;
-  return { productId, verdict: hardFail ? 'fail' : unmetDiets.length ? 'unknown' : 'pass', conflicts, unmetDiets, evidence };
+  if (hardFail) return { productId, verdict: 'fail', conflicts, unmetDiets, evidence };
+  if (unmetDiets.length) return { productId, verdict: 'unknown', conflicts, unmetDiets, evidence };
+  // Allergens read from the name alone prove nothing about what else is inside.
+  if (!p.ingredientData && (exclude.length || diets.length)) {
+    return { productId, verdict: 'unknown', conflicts: exclude, unmetDiets: diets, evidence: 'No ingredient list; allergens read from the product name only' };
+  }
+  return { productId, verdict: 'pass', conflicts, unmetDiets, evidence };
 }
 
 export function checkAllergens(ids: string[], constraints: Constraints): AllergenCheck[] {

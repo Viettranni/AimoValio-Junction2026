@@ -27,6 +27,7 @@ export const productSchema = z.object({
   temperature: temperatureSchema,
   vendor: z.string(),
   allergens: z.union([z.array(allergenSchema), z.literal('unknown')]),
+  ingredientData: z.boolean(),
   dietFlags: z.array(dietFlagSchema),
   keyIngredientsText: z.string().optional(),
   reliability: z.number().nullable(),

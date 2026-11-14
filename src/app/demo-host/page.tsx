@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { ConnectClaude } from './ConnectClaude';
 import { OpenAssistantButton } from './OpenAssistantButton';
 
@@ -81,6 +82,8 @@ export default function DemoHostPage() {
               {NAV.map((item) => (
                 <li key={item}>{item}</li>
               ))}
+              <li><Link href="/insights">Insights</Link></li>
+              <li><Link href="/restaurants">Restaurants</Link></li>
             </ul>
           </nav>
           <div className="flex items-center gap-1 sm:gap-2 md:gap-4">

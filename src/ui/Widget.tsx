@@ -318,6 +318,7 @@ function WidgetView({
             onSubmit={send}
             onAttach={session.attachDocument ? (file) => { if (view !== 'orders') go('chat'); session.attachDocument?.(file); } : undefined}
             reading={session.reading}
+            speechLang={session.lang}
             disabled={session.busy || session.reading}
             focusKey={focusKey}
             lang={lang}

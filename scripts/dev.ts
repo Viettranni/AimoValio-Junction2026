@@ -89,8 +89,13 @@ void (async () => {
       console.log(`  Webshop + chat widget   ${baseUrl}/demo-host?demo=1`);
       console.log(`  Human approvals         ${baseUrl}/approvals`);
       console.log(`  MCP for Claude Code     ${info.localMcpUrl}`);
+      // On a Mac the public link goes straight to the clipboard, ready to paste into Claude.
+      const copied = info.isPublic && process.platform === 'darwin'
+        && spawnSync('pbcopy', { input: info.mcpUrl }).status === 0;
       console.log(info.isPublic
-        ? `  MCP for claude.ai       ${info.mcpUrl}\n                          (Settings → Connectors → Add custom connector → paste the URL)`
+        ? `  MCP for claude.ai       ${info.mcpUrl}${copied ? '  (copied to clipboard)' : ''}\n`
+          + `  Add it to Claude        https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Aimo&connectorUrl=${encodeURIComponent(info.mcpUrl)}\n`
+          + `                          (opens the Add custom connector dialog pre-filled; click Add)`
         : `  MCP for claude.ai       (no public tunnel${tunnelWanted ? '; see the warning above' : ': AIMO_TUNNEL=0'})`);
       console.log(`${line}\n`);
       return;

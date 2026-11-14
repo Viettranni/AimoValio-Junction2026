@@ -77,6 +77,8 @@
     frame = document.createElement('iframe');
     frame.className = 'aimo-frame';
     frame.title = 'Aimo ordering assistant';
+    // The Connect-Claude card copies its link from inside the frame.
+    frame.setAttribute('allow', 'clipboard-write');
     frame.src = origin + '/embed?' + params.toString();
     frame.setAttribute('data-open', 'false');
     applySize();

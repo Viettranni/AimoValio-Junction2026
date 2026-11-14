@@ -94,13 +94,18 @@ class StreamingResponse extends EventEmitter {
 /**
  * Browsers always send Origin; MCP clients that aren't browsers usually don't. A browser page on another site
  * must not drive the gateway with a key it got hold of (DNS rebinding, CSRF-style calls), so only the endpoint's
- * own origin, localhost, and AIMO_ALLOWED_ORIGINS (comma-separated) are accepted when Origin is present.
+ * own origin, localhost, Claude's own apps (claude.ai / claude.com, whose connectors call from there), and
+ * AIMO_ALLOWED_ORIGINS (comma-separated) are accepted when Origin is present. The agent key is still required.
  */
+/** Claude's web and desktop apps; Anthropic's connector docs warn that strict Origin checks break custom connectors. */
+const CLAUDE_HOSTS = ['claude.ai', 'claude.com'];
+
 export function originAllowed(origin: string | null, requestUrl: string, env: Record<string, string | undefined> = process.env): boolean {
   if (!origin) return true;
   let host: string;
   try { host = new URL(origin).hostname; } catch { return false; }
   const own = new URL(requestUrl).hostname;
+  if (CLAUDE_HOSTS.some((h) => host === h || host.endsWith(`.${h}`))) return true;
   const allowed = new Set([own, 'localhost', '127.0.0.1', '[::1]', ...(env.AIMO_ALLOWED_ORIGINS ?? '').split(',').map((o) => {
     try { return new URL(o.trim()).hostname; } catch { return o.trim(); }
   }).filter(Boolean)]);

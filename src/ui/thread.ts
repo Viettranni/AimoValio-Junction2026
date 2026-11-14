@@ -1,4 +1,4 @@
-import type { CheckInEvent, ChoicesEvent, ProgressEvent } from '@/contracts';
+import type { CheckInEvent, ChoicesEvent, ConnectEvent, ProgressEvent } from '@/contracts';
 
 export interface ChoiceAnswer {
   ids: string[];
@@ -13,6 +13,8 @@ export type ThreadItem =
   | { id: string; kind: 'choices'; event: ChoicesEvent; answer?: ChoiceAnswer }
   | { id: string; kind: 'progress'; events: ProgressEvent[] }
   | { id: string; kind: 'checkin'; event: CheckInEvent; answer?: string; confirmed?: boolean }
+  /** The copy-paste MCP link for Claude. */
+  | { id: string; kind: 'connect'; event: ConnectEvent }
   /** A calm inline failure; `retry` offers to resend the last request. */
   | { id: string; kind: 'error'; text: string; retry?: boolean };
 
@@ -93,6 +95,8 @@ export function deriveThread({ messages, progress, local, answers, checkins, err
         if (part.type === 'text' && part.text?.trim()) items.push({ id, kind: 'assistant', text: part.text.trim() });
         else if (part.type === 'data-checkin') {
           structured.push({ id, kind: 'checkin', event: part.data as CheckInEvent, ...checkins[id] });
+        } else if (part.type === 'data-connect') {
+          structured.push({ id, kind: 'connect', event: part.data as ConnectEvent });
         } else if (part.type === 'data-choices') {
           const event = part.data as ChoicesEvent;
           const answer = answers[event.id];

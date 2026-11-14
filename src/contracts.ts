@@ -324,10 +324,14 @@ export interface DraftEvent { draft: Draft; diff?: DraftDiff }
 export interface ReceiptEvent { receipt: Receipt }
 export interface CheckInEvent { orderId: string; eventName: string; lines: Array<{ lineId: string; productName: string; quantity: number; unit: MeasureUnit; leftoverQty?: number; deliveredShort?: { qty: number; reason: string } }> } // quantity = ordered; leftoverQty = parsed (+ left, − short) when known; deliveredShort = Valio delivered this much less (prefilled as a shortfall)
 
+/** The copy-paste MCP link for Claude (src/gateway/connect.ts). */
+export interface ConnectEvent { mcpUrl: string; localMcpUrl: string; isPublic: boolean }
+
 export type AimoDataPart =
   | { type: 'data-progress'; data: ProgressEvent }
   | { type: 'data-choices'; data: ChoicesEvent }
   | { type: 'data-slots'; data: SlotsEvent }
   | { type: 'data-draft'; data: DraftEvent }
   | { type: 'data-receipt'; data: ReceiptEvent }
-  | { type: 'data-checkin'; data: CheckInEvent };
+  | { type: 'data-checkin'; data: CheckInEvent }
+  | { type: 'data-connect'; data: ConnectEvent };

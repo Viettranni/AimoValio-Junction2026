@@ -1,0 +1,138 @@
+# Connect an agent to Aimo
+
+The Aimo agent gateway is one MCP server, `aimo-gateway`, with two ways in:
+
+| Transport | Where | Identity |
+| --- | --- | --- |
+| stdio | `npx tsx src/mcp/stdio.ts` (run from the repo root) | `AIMO_AGENT_KEY` environment variable |
+| Streamable HTTP | `POST http://localhost:3100/api/mcp` (the Next.js app, any port you run it on) | `Authorization: Bearer <key>` |
+
+The demo key is `aimo-demo-agent-key`. It acts as `procurement-agent` buying for `helsinki-juhlapalvelu`, whose policy auto-approves orders up to €1,000 excl. VAT and sends the rest to Anna Virtanen (Purchasing manager). Set your own keys with `AIMO_AGENT_KEYS` (see `.env.example`). The customer always comes from the key, never from tool input.
+
+Both transports serve MCP 2026-07-28 clients and 2025-era clients (the ones that open with `initialize`). The stdio server reads `VALIO_API_KEY`, `VALIO_API_BASE` and `ANTHROPIC_API_KEY` from `.env.local` in the repo root when the client doesn't pass them.
+
+What each check below was verified with is noted in the section. "Not verified" means we couldn't click through that product's UI from here.
+
+## Run the server
+
+```bash
+npm install && npm run seed     # once
+npm run dev -- -p 3100          # HTTP endpoint at http://localhost:3100/api/mcp, approval page at /approvals
+npx tsx src/mcp/stdio.ts        # or: stdio only (an MCP client normally starts this for you)
+```
+
+## Claude Code
+
+```bash
+# stdio, from the repo root (the server starts in the project directory)
+claude mcp add aimo --env AIMO_AGENT_KEY=aimo-demo-agent-key -- npx tsx src/mcp/stdio.ts
+
+# or remote over HTTP (needs the app running)
+claude mcp add --transport http aimo-http http://localhost:3100/api/mcp --header "Authorization: Bearer aimo-demo-agent-key"
+
+claude mcp get aimo             # Status: ✔ Connected
+```
+
+Verified: both commands, `claude mcp get` shows ✔ Connected for each, and `claude -p` called `getAuthorityPolicy` over HTTP (answer: €1,000, Anna Virtanen). Remove with `claude mcp remove aimo -s local`.
+
+## Claude Desktop
+
+Settings → Developer → Edit config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "aimo": {
+      "command": "/bin/sh",
+      "args": ["-c", "cd /path/to/Junction && npx tsx src/mcp/stdio.ts"],
+      "env": { "AIMO_AGENT_KEY": "aimo-demo-agent-key", "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" }
+    }
+  }
+}
+```
+
+`cd` is there because Claude Desktop has no `cwd` setting and the server reads `data/` and `.env.local` from the repo root. Put the directory that holds `node` and `npx` (`dirname $(which npx)`) first in `PATH`. Restart Claude Desktop, then ask: "Use aimo: I need 1,000 litres of lactose-free milk by Monday. Find an option that meets our requirements based on price and availability." The `order-request` prompt (+ menu → aimo) fills that in for you.
+
+Verified: the exact `/bin/sh -c "cd … && npx tsx src/mcp/stdio.ts"` launch, started from `/` with only `AIMO_AGENT_KEY` set, with a 2025-era (`initialize`) MCP client, including a live `getPriceAndAvailability` call. Not verified: the Claude Desktop UI itself.
+
+## Cursor
+
+`~/.cursor/mcp.json` (all projects) or `.cursor/mcp.json` (this project):
+
+```json
+{
+  "mcpServers": {
+    "aimo": {
+      "url": "http://localhost:3100/api/mcp",
+      "headers": { "Authorization": "Bearer aimo-demo-agent-key" }
+    }
+  }
+}
+```
+
+or stdio with `"command": "npx", "args": ["tsx", "src/mcp/stdio.ts"], "env": { "AIMO_AGENT_KEY": "aimo-demo-agent-key" }` in a project-level `.cursor/mcp.json`.
+
+Not verified in the Cursor UI. The HTTP endpoint answers `initialize`, `tools/list` and `tools/call` for 2025-era clients (curl below), which is what Cursor sends.
+
+## MCP Inspector
+
+```bash
+# UI: pick "Streamable HTTP", URL http://localhost:3100/api/mcp, add header Authorization: Bearer aimo-demo-agent-key
+npx @modelcontextprotocol/inspector
+
+# or stdio
+npx @modelcontextprotocol/inspector -e AIMO_AGENT_KEY=aimo-demo-agent-key npx tsx src/mcp/stdio.ts
+```
+
+Not verified here: downloading and running the Inspector was blocked in the environment we built this in. The endpoint and stdio server it would talk to are verified (curl, Claude Code, and `scripts/gateway-demo.ts`).
+
+## ChatGPT (developer mode connectors)
+
+ChatGPT connects to remote MCP servers only, over public HTTPS.
+
+1. Run the app: `npm run dev -- -p 3100`.
+2. Expose it: `cloudflared tunnel --url http://localhost:3100` (prints `https://<random>.trycloudflare.com`), or `ngrok http 3100`.
+3. In ChatGPT: Settings → Apps & Connectors → Advanced → turn on Developer mode, then Create a connector with URL `https://<random>.trycloudflare.com/api/mcp`. For authentication, use a bearer token / API key of `aimo-demo-agent-key` if your ChatGPT version offers it. If it only offers OAuth or none, the gateway will answer 401: put a reverse proxy that adds the header in front, or (demo only) run a tunnel to a separate instance with a throwaway key.
+4. In a chat, enable the connector and ask the lactose-free milk question.
+
+Not verified: we didn't open a public tunnel or use the ChatGPT UI from here. Anyone with the tunnel URL and the key can place (simulated) orders, so use a throwaway key and stop the tunnel afterwards.
+
+## curl (Streamable HTTP)
+
+```bash
+H=(-H 'Authorization: Bearer aimo-demo-agent-key' -H 'content-type: application/json' -H 'accept: application/json, text/event-stream')
+
+# initialize (2025-era handshake; each request is stateless)
+curl -s -X POST http://localhost:3100/api/mcp "${H[@]}" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1"}}}'
+
+# list tools
+curl -s -X POST http://localhost:3100/api/mcp "${H[@]}" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+
+# call a tool
+curl -s -X POST http://localhost:3100/api/mcp "${H[@]}" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"getPriceAndAvailability","arguments":{"productIds":["464306"],"deliveryDate":"2026-11-16"}}}'
+
+# read the policy resource
+curl -s -X POST http://localhost:3100/api/mcp "${H[@]}" -d '{"jsonrpc":"2.0","id":4,"method":"resources/read","params":{"uri":"aimo://policy"}}'
+
+# no key → 401 with WWW-Authenticate: Bearer
+curl -si -X POST http://localhost:3100/api/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+Responses come back as one server-sent event (`event: message`, `data: {…}`). Verified: all five against the dev server.
+
+## A headless external agent
+
+```bash
+npx tsx --env-file-if-exists=.env.local scripts/gateway-demo.ts           # 1,000 l → pending approval (Anna Virtanen)
+npx tsx --env-file-if-exists=.env.local scripts/gateway-demo.ts --small   # 100 l → ordered within authority
+npx tsx --env-file-if-exists=.env.local scripts/gateway-demo.ts --http    # same, over http://localhost:3100/api/mcp
+npx tsx --env-file-if-exists=.env.local scripts/gateway-demo.ts --llm     # Claude picks and orders through the same tools
+```
+
+Then open http://localhost:3100/approvals to approve or reject. The agent sees the result with `getOrderStatus`.
+
+## Choosing the model
+
+All Aimo agents (the orchestrator behind `chatWithAimo`, the specialists, and `gateway-demo.ts --llm`) use `AIMO_MODEL`, a Mastra model-router string. The default is `anthropic/claude-opus-5-5`. `openai/<model>` works with `OPENAI_API_KEY` set. The Opus-specific settings (the `effort` provider option and prompt caching) are only sent to Anthropic models; no agent forces a tool choice.

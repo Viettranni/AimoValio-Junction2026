@@ -10,6 +10,7 @@ import { SlidersIcon } from './icons';
 export function DemoControls({
   fast,
   onFastForward,
+  onNextStep,
   onReset,
   onToggleFast,
   lang,
@@ -17,6 +18,8 @@ export function DemoControls({
   /** Omit both to hide the fast-mode switch (live mode has none). */
   fast?: boolean;
   onFastForward: () => void;
+  /** Advances the demo clock to the next delivery state of the latest order. */
+  onNextStep: () => void;
   onReset: () => void;
   onToggleFast?: () => void;
   lang: UiLang;
@@ -59,6 +62,7 @@ export function DemoControls({
             className="absolute right-0 top-10 z-20 w-64 origin-top-right rounded-xl border border-line bg-white p-1.5 text-[12.5px] text-navy shadow-card"
           >
             <div className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">{t('demo.title', lang)}</div>
+            <MenuButton onClick={act(onNextStep)}>{t('demo.nextStep', lang)}</MenuButton>
             <MenuButton onClick={act(onFastForward)}>{t('demo.ff', lang)}</MenuButton>
             <MenuButton onClick={act(onReset)}>{t('demo.reset', lang)}</MenuButton>
             {onToggleFast && (

@@ -2,6 +2,8 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import type { LeftoverRecord, Receipt, UiLang } from '@/contracts';
+import type { DeliveryStatus } from '@/gateway/delivery';
+import { DeliveryTimeline } from './DeliveryTimeline';
 import { formatDay, formatMoney, formatNumber, formatQty } from './format';
 import { t } from './i18n';
 import { ClockIcon, HistoryIcon, LeafIcon, PrintIcon } from './icons';
@@ -15,9 +17,12 @@ export function ReceiptView({
   audit,
   leftovers,
   onReorder,
+  delivery,
   lang,
 }: {
   receipt: Receipt;
+  /** Simulated delivery from the gateway; null while loading (the timeline keeps its size). */
+  delivery?: DeliveryStatus | null;
   onOpenAudit: () => void;
   /** The rendered decision log, shown when present. */
   audit?: React.ReactNode;
@@ -28,6 +33,7 @@ export function ReceiptView({
 }) {
   const money = (n: number) => formatMoney(n, lang, 2);
   const leftoverOf = (lineId: string) => leftovers?.find((r) => r.lineId === lineId);
+  const deliveryOf = (lineId: string) => delivery?.lines.find((l) => l.lineId === lineId && l.short);
   const leftoverText = (r: LeftoverRecord) =>
     r.leftoverQty === 0
       ? t('receipt.usedUp', lang)
@@ -77,6 +83,8 @@ export function ReceiptView({
           {t('receipt.saved', lang, { n: receipt.minutesSaved })}
         </motion.div>
 
+        <DeliveryTimeline delivery={delivery} lang={lang} />
+
         <ul className="mx-5 mt-3 divide-y divide-line text-[12.5px]">
           {receipt.lines.map((l) => (
             <li key={l.lineId} className="py-1.5">
@@ -87,6 +95,14 @@ export function ReceiptView({
                   <span className="w-20 text-right font-medium text-navy">{money(l.lineTotal)}</span>
                 </span>
               </div>
+              {deliveryOf(l.lineId) && (
+                <div className="text-[11px] font-medium text-warn tabular-nums">
+                  {t('delivery.short', lang, {
+                    d: formatQty(deliveryOf(l.lineId)!.deliveredQty ?? 0, l.unit, lang),
+                    o: formatQty(l.quantity, l.unit, lang),
+                  })}
+                </div>
+              )}
               {leftoverOf(l.lineId) && (
                 <div className="flex items-center gap-1 text-[11px] text-warm-ink tabular-nums">
                   <HistoryIcon size={11} className="text-warm-icon" />

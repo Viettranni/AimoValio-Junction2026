@@ -26,7 +26,9 @@ You are a purchasing agent buying from Valio Aimo for one customer (your API key
 2. getDraft / updateDraft(draftId, changes): setPacks, removeLine, historyChoice (accept "history" or keep "suggested"), scaleGuests,
    swapProduct (same kind + diets + fresh price/stock), addProduct. chatWithAimo also returns a draftId.
 3. checkoutDraft(draftId): the draft becomes a fixed-price offer and goes through placeOrder's rules.
-4. After the event: getOrder(orderId), then reportLeftovers(orderId, entries) so the next plan learns from it. listOrders shows everything.
+4. Delivery: getDeliveryStatus(orderId): received → confirmed → picking → out_for_delivery (ETA window) → delivered, the supplier
+   track for terminal lines, late risk and short-delivered lines with reasons (simulated). getOrder and listOrders include the state.
+5. After the event: getOrder(orderId), then reportLeftovers(orderId, entries) so the next plan learns from it. listOrders shows everything.
 
 ## Outcomes of placeOrder / checkoutDraft
 - "ordered": within your authority. The receipt is a simulated order (no real order is sent in this demo).
@@ -93,7 +95,7 @@ export const aimoGatewayServer = new MCPServer({
   version: '1.0.0',
   description: 'Valio Aimo for purchasing agents: catalogue, live prices and availability, fixed-price offers, orders within authority and human approval.',
   instructions: 'Read resource aimo://playbook first. Direct flow: searchProducts → getPriceAndAvailability → requestOffer → placeOrder. ' +
-    'Event flow: planEvent → updateDraft → checkoutDraft → getOrder → reportLeftovers. ' +
+    'Event flow: planEvent → updateDraft → checkoutDraft → getDeliveryStatus → getOrder → reportLeftovers. ' +
     'Prices are fixed (no negotiation). Orders outside your authority wait for a human approver; you cannot approve.',
   tools: registryTools(),
   resources,

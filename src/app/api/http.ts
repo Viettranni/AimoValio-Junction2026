@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ZodError, type ZodType } from 'zod';
-import { NotFoundError } from '@/server/orders';
+import { GatewayError } from '@/gateway/offers';
+import { NotFoundError } from '@/server/errors';
 import { ValioUnavailableError } from '@/valio/client';
 
 export const jsonError = (message: string, status: number) => NextResponse.json({ error: message }, { status });
@@ -18,9 +19,12 @@ export function parseQuery<T>(req: Request, schema: ZodType<T>): { data: T } | {
   return r.success ? { data: r.data } : { error: jsonError('Invalid query parameters', 400) };
 }
 
+const GATEWAY_STATUS = { not_found: 404, conflict: 409, invalid: 400 } as const;
+
 /** Maps thrown errors to safe JSON; details stay in the server log. */
 export function failure(e: unknown): NextResponse {
   if (e instanceof NotFoundError) return jsonError(e.message, 404);
+  if (e instanceof GatewayError) return jsonError(e.message, GATEWAY_STATUS[e.code]);
   if (e instanceof ZodError) return jsonError('Invalid request', 400);
   if (e instanceof ValioUnavailableError) {
     console.error(e);

@@ -1,13 +1,14 @@
+// The widget's "My orders": the gateway's listOrders for the widget identity, with each order's delivery state.
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { listOrders } from '@/db/repo';
-import { failure, parseQuery } from '../http';
+import { listAgentOrders } from '@/gateway/drafts';
+import { widgetContext } from '@/gateway/widget';
+import { failure } from '../http';
 
-export async function GET(req: Request) {
-  const q = parseQuery(req, z.object({ customerId: z.string().min(1).default('helsinki-juhlapalvelu') }));
-  if ('error' in q) return q.error;
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
   try {
-    return NextResponse.json(listOrders(q.data.customerId));
+    return NextResponse.json(listAgentOrders(widgetContext(), 100).orders);
   } catch (e) {
     return failure(e);
   }

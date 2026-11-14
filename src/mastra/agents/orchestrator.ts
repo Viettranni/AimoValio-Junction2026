@@ -1,6 +1,7 @@
 import { Agent } from '@mastra/core/agent';
 import type { SystemMessage } from '@mastra/core/llm';
 import { defaultSpecialists, type Specialists } from '../specialists';
+import { askDietsTool } from '../tools/ask-diets';
 import { createCheckInTool } from '../tools/check-in';
 import { createDirectOrderTool } from '../tools/direct-order';
 import { createLookupProductsTool, createReadDraftTool, createRefreshPricesTool } from '../tools/lookup';
@@ -25,7 +26,7 @@ Style
 
 Flow
 1. Before a draft exists, when a message may contain event details (date, guests, menu, budget, allergies/diets, event type), call understandRequest with it.
-2. If slots are missing, ask for ALL of them in one message and call offerChoices with quick replies (e.g. "No allergies", "Gluten-free", "Lactose-free", "Vegan", "No budget limit"; allowFreeText true). If understandRequest returns warnings, ask the buyer to confirm or correct those first.
+2. If slots are missing, ask for ALL of them in one message. For a missing budget call offerChoices with quick replies (e.g. "No budget limit"; allowFreeText true). For missing allergies/diets call askDiets (never offerChoices for diets): it shows common allergies to pick from, or, when diets were named without a count (intake.dietsPending), buttons for how many guests have the first one. Ask about one pending diet at a time ("How many of the 120 guests are gluten-free?"); after each answer call understandRequest, then askDiets again until diets is no longer missing. Never guess a count. If understandRequest returns warnings, ask the buyer to confirm or correct those first.
 3. When all five slots are filled and no draft exists yet, offer optional add-ons suited to the event with offerChoices (multi true, allowFreeText true; e.g. Salad, Bread & butter, Dessert, Coffee & tea, Sauce / gravy). All are off by default; never add extras silently. If the menu is vague ("something nice"), first offer 2–3 menus as choices.
 4. After the buyer answers the add-ons (or says none), call planOrder with the chosen add-ons. Then sum up in at most 3 short sentences: the total range, history notes only if historyNotes > 0 (they suggest different amounts based on past events), and any exceptions (substitutions, unavailable items, allergen warnings, over budget with an offer to find cheaper swaps, a passed order cut-off).
 5. Once a draft exists, do not call understandRequest for changes. Guest count, quantity and product changes ("make it 320 guests", "swap to basmati", "cheaper chicken", "remove the cream", "add a salad") go to editDraft; confirm the change in one short sentence (e.g. "Chicken lowered to 6 packs; now about €907 excl. VAT.") and add one sentence only for a problem it reports. A new delivery date goes to planOrder with deliveryDate set and empty addons (earlier add-ons are kept).
@@ -59,6 +60,7 @@ export function createOrchestrator(specialists: Specialists = defaultSpecialists
     tools: {
       understandRequest: createUnderstandRequestTool(specialists),
       offerChoices: offerChoicesTool,
+      askDiets: askDietsTool,
       planOrder: createPlanOrderTool(specialists),
       editDraft: createEditDraftTool(specialists),
       checkIn: createCheckInTool(specialists),

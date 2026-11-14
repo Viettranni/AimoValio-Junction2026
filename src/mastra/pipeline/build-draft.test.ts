@@ -145,6 +145,29 @@ describe('buildDraft', () => {
     expect(line('c-bread').allergen.verdict).toBe('pass');
   });
 
+  it('sizes the gluten-free portion by the buyer\'s count, checks it against gluten-free, and logs why', async () => {
+    // The menu agent guessed 30 gluten-free guests; the buyer said 10, so code corrects it.
+    const c4 = { conversationId: 'conv-split', customerId: ctx.customerId };
+    vi.mocked(specialists.planMenu).mockResolvedValueOnce([
+      menu[0], menu[1],
+      { ...menu[2], guests: 70 },
+      { ...menu[3], guests: 30 },
+    ]);
+    vi.mocked(checkAllergensViaMcp).mockClear();
+    const d = { ...startDraft, id: 'draft-split', conversationId: c4.conversationId };
+    saveDraft(d);
+    const { draft: split } = await buildDraft({ draft: d, addons: ['Bread'], ctx: c4 }, { specialists, emit: async () => {} });
+    const comp = (id: string) => split.components.find((c) => c.id === id)!;
+    expect([comp('c-bread').guests, comp('c-bread-gf').guests]).toEqual([90, 10]);
+    const gfLine = split.lines.find((l) => l.componentId === 'c-bread-gf')!;
+    expect(gfLine.dietGuests).toBe(10);
+    expect(gfLine.allergen.verdict).not.toBe('pass'); // no ingredient data: never safe
+    const gfChecks = vi.mocked(checkAllergensViaMcp).mock.calls.filter(([ids]) => ids.includes(gfLine.productId));
+    expect(gfChecks.some(([, c]) => (c as { requireDiet?: string[] }).requireDiet?.includes('gluten_free'))).toBe(true);
+    const why = listAudit({ conversationId: c4.conversationId }).find((a) => a.action === 'fitDietSplit')!;
+    expect(why.summary).toBe("Portions sized by the buyer's diet counts: Leipä 90 + Gluteeniton leipä 10 (gluten_free, no gluten).");
+  });
+
   it('attaches a pending history note from seeded leftovers', () => {
     const h = line('c-chicken').history!;
     expect(h.choice).toBe('pending');

@@ -23,20 +23,55 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-/** The MCP link to paste into Claude, with a copy button. Used in the chat and on the static page. */
+/** claude.ai's connector settings. There is no documented link that pre-fills a custom connector, so this opens the page
+ * with the link already on the clipboard: Add → Add custom connector → paste. */
+export const CLAUDE_CONNECTORS_URL = 'https://claude.ai/customize/connectors';
+
+/** Claude Code adds the server with one command, no pasting in a UI. */
+export const claudeCodeCommand = (localMcpUrl: string) => `claude mcp add --transport http aimo "${localMcpUrl}"`;
+
+/**
+ * Connect Claude to Aimo: "Open in Claude" copies the link and opens claude.ai's connectors page in one click; the
+ * link and the Claude Code command can also be copied on their own. Used in the chat and on the static page.
+ */
 export function ConnectCard({ info, lang, tone = 'light' }: { info: ConnectEvent; lang: UiLang; tone?: 'light' | 'card' }) {
-  const [copied, setCopied] = useState(false);
+  const [done, setDone] = useState<'opened' | 'link' | 'code' | null>(null);
   useEffect(() => {
-    if (!copied) return;
-    const id = setTimeout(() => setCopied(false), 2000);
+    if (!done) return;
+    const id = setTimeout(() => setDone(null), done === 'opened' ? 15000 : 2000);
     return () => clearTimeout(id);
-  }, [copied]);
+  }, [done]);
+  const big = tone === 'card';
+  const small = big ? 'text-[13px]' : 'text-[11.5px]';
+
+  const openInClaude = async () => {
+    // Copy first: once the new tab has focus, this page may no longer write to the clipboard.
+    const copied = await copyText(info.mcpUrl);
+    window.open(CLAUDE_CONNECTORS_URL, '_blank', 'noopener');
+    setDone(copied ? 'opened' : null);
+  };
 
   return (
-    <div className={`rounded-xl border border-line ${tone === 'card' ? 'bg-white p-5' : 'bg-white p-3'} text-navy`}>
-      <p className={`font-semibold ${tone === 'card' ? 'text-[17px]' : 'text-[13px]'}`}>{t('connect.title', lang)}</p>
-      <p className={`mt-1 text-ink-soft ${tone === 'card' ? 'text-[14px]' : 'text-[12px] leading-[17px]'}`}>{t('connect.body', lang)}</p>
-      <div className="mt-2 flex items-center gap-2">
+    <div className={`rounded-xl border border-line bg-white ${big ? 'p-5' : 'p-3'} text-navy`}>
+      <p className={`font-semibold ${big ? 'text-[17px]' : 'text-[13px]'}`}>{t('connect.title', lang)}</p>
+      <p className={`mt-1 text-ink-soft ${big ? 'text-[14px]' : 'text-[12px] leading-[17px]'}`}>{t('connect.body', lang)}</p>
+
+      {info.isPublic ? (
+        <button
+          type="button"
+          onClick={openInClaude}
+          className={`mt-3 inline-flex items-center gap-2 rounded-full bg-lime px-4 py-2 font-semibold text-lime-ink transition-colors hover:bg-lime-hover ${big ? 'text-[15px]' : 'text-[13px]'}`}
+        >
+          {t('connect.open', lang)} ↗
+        </button>
+      ) : (
+        <p className={`mt-2 text-muted ${small}`}>{t('connect.local', lang)}</p>
+      )}
+      {done === 'opened' && (
+        <p role="status" className={`mt-2 rounded-lg bg-ice px-2.5 py-2 text-navy ${small}`}>{t('connect.openedHint', lang)}</p>
+      )}
+
+      <div className="mt-3 flex items-center gap-2">
         <input
           readOnly
           value={info.mcpUrl}
@@ -46,13 +81,23 @@ export function ConnectCard({ info, lang, tone = 'light' }: { info: ConnectEvent
         />
         <button
           type="button"
-          onClick={async () => setCopied(await copyText(info.mcpUrl))}
-          className="flex-none rounded-full bg-blue px-3 py-1.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-navy"
+          onClick={async () => setDone((await copyText(info.mcpUrl)) ? 'link' : null)}
+          className="flex-none rounded-full border border-blue px-3 py-1.5 text-[12.5px] font-semibold text-blue transition-colors hover:bg-ice"
         >
-          <span aria-live="polite">{copied ? t('connect.copied', lang) : t('connect.copy', lang)}</span>
+          <span aria-live="polite">{done === 'link' ? t('connect.copied', lang) : t('connect.copy', lang)}</span>
         </button>
       </div>
-      {!info.isPublic && <p className="mt-2 text-[11.5px] text-muted">{t('connect.local', lang)}</p>}
+
+      <div className={`mt-2 flex items-center justify-between gap-2 text-muted ${small}`}>
+        <span className="min-w-0 truncate">{t('connect.code', lang)} <code className="font-mono text-navy">claude mcp add …</code></span>
+        <button
+          type="button"
+          onClick={async () => setDone((await copyText(claudeCodeCommand(info.localMcpUrl))) ? 'code' : null)}
+          className="flex-none font-semibold text-blue hover:underline"
+        >
+          {done === 'code' ? t('connect.copied', lang) : t('connect.copyCommand', lang)}
+        </button>
+      </div>
     </div>
   );
 }

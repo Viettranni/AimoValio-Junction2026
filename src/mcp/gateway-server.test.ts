@@ -44,9 +44,9 @@ describe('tool registry', () => {
     expect(Object.keys(registryTools())).toEqual([
       'searchProducts', 'getProduct', 'getAlternatives', 'getIngredients', 'checkAllergens',
       'getPriceAndAvailability', 'requestOffer', 'readOrderDocument', 'planEvent', 'getDraft', 'updateDraft', 'checkoutDraft',
-      'placeOrder', 'getOrderStatus', 'listOrders', 'getOrder', 'getDeliveryStatus', 'reportLeftovers', 'getAuthorityPolicy', 'chatWithAimo',
+      'placeOrder', 'getOrderStatus', 'listOrders', 'getOrder', 'getDeliveryStatus', 'reportLeftovers', 'logWaste', 'getWasteReport', 'getAuthorityPolicy', 'chatWithAimo',
     ]);
-    expect(TOOL_GROUPS.map((g) => g.group)).toEqual(['catalog', 'pricing', 'offers', 'documents', 'drafts', 'orders', 'policy', 'assistant']);
+    expect(TOOL_GROUPS.map((g) => g.group)).toEqual(['catalog', 'pricing', 'offers', 'documents', 'drafts', 'orders', 'waste', 'policy', 'assistant']);
   });
 
   it('has no tool that approves, and no price input anywhere', () => {

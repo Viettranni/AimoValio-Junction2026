@@ -35,6 +35,10 @@ readOrderDocument(text | fileBase64 | fileUrl) reads it into event details and i
 missing and questions to ask. Ask them (never guess), then flow (b) with planEventArgs, or flow (a) for a shopping list with amounts.
 If you can see the photo or sheet yourself, pass what it says as text.
 
+## (d) Food waste (hävikki)
+logWaste(entries: name or productId, quantity, unit, reason) whenever the buyer says food was thrown away; getWasteReport(from, to)
+for the € value, CO₂, what is wasted most and what to order less of. Event leftovers per order line still go to reportLeftovers.
+
 ## Outcomes of placeOrder / checkoutDraft
 - "ordered": within your authority. The receipt is a simulated order (no real order is sent in this demo).
 - "pending_approval": outside your authority. Tell your user who signs off (approver) and why (reasons); poll getOrderStatus(approvalId).
@@ -102,6 +106,7 @@ export const aimoGatewayServer = new MCPServer({
   instructions: 'Read resource aimo://playbook first. Direct flow: searchProducts → getPriceAndAvailability → requestOffer → placeOrder. ' +
     'Event flow: planEvent → updateDraft → checkoutDraft → getDeliveryStatus → getOrder → reportLeftovers. ' +
     'Notes, photos or Excel lists from the buyer: readOrderDocument, ask what is missing, then planEvent. ' +
+    'Food thrown away: logWaste; waste overview: getWasteReport. ' +
     'Prices are fixed (no negotiation). Orders outside your authority wait for a human approver; you cannot approve.',
   tools: registryTools(),
   resources,

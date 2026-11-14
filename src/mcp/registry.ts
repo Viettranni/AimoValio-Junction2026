@@ -8,6 +8,7 @@ import { orderTools } from './tools/orders';
 import { policyTools } from './tools/policy';
 import { pricingTools } from './tools/pricing';
 import { safe } from './tools/safe';
+import { wasteTools } from './tools/waste';
 
 export const TOOL_GROUPS = [
   { group: 'catalog', label: 'Catalogue: search, details, alternatives, ingredients, allergen checks', tools: catalogTools },
@@ -16,6 +17,7 @@ export const TOOL_GROUPS = [
   { group: 'documents', label: "The buyer's own notes (photo, PDF, Excel, CSV) → event details, ingredients and what is missing", tools: documentTools },
   { group: 'drafts', label: 'Event planning like the widget: plan, edit, check out', tools: draftTools },
   { group: 'orders', label: 'Place within authority or route to a human; status, orders, delivery, leftovers', tools: orderTools },
+  { group: 'waste', label: 'Food waste (hävikki): log what was thrown away, and a report with € value, CO₂ and insights', tools: wasteTools },
   { group: 'policy', label: "The customer's authority policy", tools: policyTools },
   { group: 'assistant', label: 'Chat with the Aimo planning assistant', tools: chatTools },
 ] as const;

@@ -1,0 +1,69 @@
+<style>
+  .va{--navy:#00205B;--blue:#0057B8;--sky:#E8F1FB;--ice:#F5F9FD;--line:#D5E3F3;font-family:Inter,system-ui,sans-serif;color:var(--navy)}
+  .va *{box-sizing:border-box}
+  .num{font-variant-numeric:tabular-nums}
+  .sheet{background:#fff;border:1px solid var(--line);border-radius:10px;font-size:12px;box-shadow:0 14px 40px rgba(0,32,91,.12);overflow:hidden}
+  .shead{display:flex;justify-content:space-between;padding:12px 14px;border-bottom:2px solid var(--blue)}
+  .srow{display:grid;grid-template-columns:1.6fr .9fr .6fr;gap:8px;padding:9px 14px;align-items:center}
+  .bd{border-bottom:1px solid var(--line)}
+  .step{display:inline-flex;border:1px solid var(--line);border-radius:6px;width:fit-content}
+  .step span{padding:2px 7px}
+  .tag{font-size:9.5px;background:var(--sky);color:var(--blue);border-radius:4px;padding:1px 5px;margin-left:4px}
+  .ico{width:14px;height:14px;flex:none}
+
+  /* A: inline sub-line */
+  .sub{grid-column:1 / -1;display:flex;align-items:center;gap:7px;font-size:11px;color:#4d5f80;margin-top:-2px}
+  .sub b{color:var(--navy)}
+  .ghost{margin-left:auto;display:inline-flex;border:1px solid var(--line);border-radius:99px;overflow:hidden;font-weight:600;font-size:10.5px}
+  .ghost span{padding:3px 10px}
+  .ghost .on{background:var(--blue);color:#fff}
+
+  /* B: soft tinted strip */
+  .soft{grid-column:1 / -1;display:flex;align-items:center;gap:8px;font-size:11px;color:#4d5f80;background:linear-gradient(90deg,#FFF6E8 0%,#FFFBF4 55%,rgba(255,255,255,0) 100%);border-radius:8px;padding:7px 10px}
+  .soft b{color:var(--navy)}
+  .pill{margin-left:auto;background:#fff;border:1px solid #F0DDB8;color:#8a5a00;border-radius:99px;padding:3px 10px;font-weight:600;font-size:10.5px;box-shadow:0 1px 2px rgba(138,90,0,.08)}
+  .pill.alt{border-color:transparent;box-shadow:none;color:#8a7a5c;background:transparent}
+</style>
+
+<h2>A smoother "Last time" note</h2>
+<p class="subtitle">Two gentler versions. Neither has a hard yellow box or a heavy left border, and both sit inside the item they belong to. Click the one you like.</p>
+
+<div class="cards va">
+
+  <div class="card" data-choice="inline" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:linear-gradient(135deg,#EEF4FB,#F9FBFE)">
+      <div class="sheet">
+        <div class="shead"><b style="font-size:14px">Order draft</b><span style="color:#6a7a96">6 Dec · 320 pax</span></div>
+        <div class="srow num bd">
+          <span>Chicken breast fillet <span class="tag">in stock</span></span><span class="step"><span>−</span><span>50 kg</span><span>+</span></span><b style="text-align:right">€651</b>
+          <div class="sub"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#0057B8" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>Last time <b>6 kg left over</b> · history suggests <b>45 kg</b></span><span class="ghost"><span class="on">45 kg</span><span>50 kg</span></span></div>
+        </div>
+        <div class="srow num bd">
+          <span>Jasmine rice</span><span class="step"><span>−</span><span>42 kg</span><span>+</span></span><b style="text-align:right">€101</b>
+          <div class="sub"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#0057B8" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>Last time <b>2 kg short</b> · history suggests <b>44 kg</b></span><span class="ghost"><span>44 kg</span><span class="on">42 kg</span></span></div>
+        </div>
+        <div class="srow num"><span>Lactose-free cream <span class="tag">4 guests</span></span><span class="step"><span>−</span><span>10 L</span><span>+</span></span><b style="text-align:right">€38</b></div>
+      </div>
+    </div>
+    <div class="card-body"><h3>A · A quiet line inside the row</h3><p>All in blue, with a small history clock icon. The choice is a switch between two amounts (suggested vs history). It's the calmest option.</p></div>
+  </div>
+
+  <div class="card" data-choice="soft" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:linear-gradient(135deg,#EEF4FB,#F9FBFE)">
+      <div class="sheet">
+        <div class="shead"><b style="font-size:14px">Order draft</b><span style="color:#6a7a96">6 Dec · 320 pax</span></div>
+        <div class="srow num bd">
+          <span>Chicken breast fillet <span class="tag">in stock</span></span><span class="step"><span>−</span><span>50 kg</span><span>+</span></span><b style="text-align:right">€651</b>
+          <div class="soft"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#C98A1B" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span><b>Last time</b> you had 6 kg left over. History suggests <b>45 kg</b>.</span><span class="pill">Use 45 kg</span><span class="pill alt">Keep</span></div>
+        </div>
+        <div class="srow num bd">
+          <span>Jasmine rice</span><span class="step"><span>−</span><span>42 kg</span><span>+</span></span><b style="text-align:right">€101</b>
+          <div class="soft"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#C98A1B" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span><b>Last time</b> you ran 2 kg short. History suggests <b>44 kg</b>.</span><span class="pill">Use 44 kg</span><span class="pill alt">Keep</span></div>
+        </div>
+        <div class="srow num"><span>Lactose-free cream <span class="tag">4 guests</span></span><span class="step"><span>−</span><span>10 L</span><span>+</span></span><b style="text-align:right">€38</b></div>
+      </div>
+    </div>
+    <div class="card-body"><h3>B · A soft warm glow</h3><p>Keeps a touch of warmth so it still stands out, but as a gentle fade into white with rounded corners and no border.</p></div>
+  </div>
+
+</div>

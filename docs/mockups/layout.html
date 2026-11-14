@@ -1,0 +1,109 @@
+<style>
+  .va{--navy:#00205B;--blue:#0057B8;--sky:#E8F1FB;--ice:#F5F9FD;--line:#D5E3F3;--ok:#1E8C5A;--warn:#C77700;font-family:Inter,system-ui,sans-serif;color:var(--navy)}
+  .va *{box-sizing:border-box}
+  .frame{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;font-size:12px;box-shadow:0 8px 30px rgba(0,32,91,.08)}
+  .top{background:var(--navy);color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-weight:600}
+  .top small{opacity:.7;font-weight:400}
+  .bubble-u{background:var(--blue);color:#fff;padding:8px 11px;border-radius:14px 14px 4px 14px;margin:8px 0 8px auto;max-width:85%;width:fit-content}
+  .bubble-a{background:var(--ice);padding:8px 11px;border-radius:14px 14px 14px 4px;margin:8px 0;max-width:92%}
+  .step{display:flex;gap:8px;align-items:center;padding:3px 0;font-size:11px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+  .dot.run{background:var(--blue);animation:p 1s infinite}
+  @keyframes p{50%{opacity:.25;transform:scale(1.6)}}
+  .row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line)}
+  .chip{display:inline-block;background:var(--sky);color:var(--blue);border-radius:99px;padding:2px 8px;font-size:10px;margin:2px}
+  .hist{background:#FFF6E5;border:1px solid #F5D9A6;border-radius:10px;padding:7px 9px;font-size:11px;margin:6px 0}
+  .tot{font-size:16px;font-weight:700}
+  .btn{background:var(--blue);color:#fff;border:0;border-radius:99px;padding:7px 14px;font-weight:600;font-size:11px}
+  .in{border:1px solid var(--line);border-radius:99px;padding:8px 12px;color:#7b8aa3;margin:8px}
+  .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#6a7a96;margin-top:6px}
+</style>
+
+<h2>How should the main screen be laid out?</h2>
+<p class="subtitle">Same wedding request in each one (300 guests, chicken and rice). The colours are my guess at Valio Aimo's navy and blue. Click the one closest to what you have in mind.</p>
+
+<div class="cards va">
+
+  <div class="card" data-choice="split" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:10px;background:var(--ice)">
+      <div class="frame" style="display:grid;grid-template-columns:1fr 1.1fr;min-height:330px">
+        <div style="border-right:1px solid var(--line);display:flex;flex-direction:column">
+          <div class="top">Aimo Assistant</div>
+          <div style="padding:8px;flex:1">
+            <div class="bubble-u">Wedding Sat 6 Dec, 300 guests, chicken &amp; rice</div>
+            <div class="bubble-a">
+              <div class="step"><span class="dot"></span>Checked dietary needs: 12 gluten-free, 4 lactose-free</div>
+              <div class="step"><span class="dot"></span>Found 9 matching products in the catalogue</div>
+              <div class="step"><span class="dot run"></span>Checking prices &amp; stock for 6 Dec…</div>
+            </div>
+          </div>
+          <div class="in">Swap rice for basmati…</div>
+        </div>
+        <div style="padding:12px">
+          <div style="font-weight:700">Order draft · live</div>
+          <div class="lbl">Chicken</div>
+          <div class="row"><span>Chicken breast fillet 4.4 kg ×12</span><b>€612</b></div>
+          <div class="hist">Last wedding you had <b>6 kg left over</b>. Suggested 53 kg, history says 47 kg. <u>Use 47 kg</u></div>
+          <div class="lbl">Rice &amp; sides</div>
+          <div class="row"><span>Jasmine rice 10 kg ×4</span><b>€96</b></div>
+          <div class="row"><span>Cream, lactose-free 1 L ×10</span><b>€38</b></div>
+          <div style="margin-top:10px" class="lbl">Estimated total</div>
+          <div class="tot">€1,180 – €1,320</div>
+          <span class="chip">All in stock</span><span class="chip">Order by Thu 14:00</span>
+          <div style="margin-top:8px"><button class="btn">Review &amp; send to Valio Aimo</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>A · Chat + live order draft side by side</h3><p>The draft fills in on the right while the agent works. You can edit it by typing or by clicking. Needs a wide space on the host site.</p></div>
+  </div>
+
+  <div class="card" data-choice="inline" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:10px;background:var(--ice)">
+      <div class="frame" style="max-width:300px;margin:auto;min-height:330px;display:flex;flex-direction:column">
+        <div class="top">Aimo Assistant <small>● online</small></div>
+        <div style="padding:8px;flex:1">
+          <div class="bubble-u">Wedding, 300 guests, chicken &amp; rice</div>
+          <div class="bubble-a">
+            <div class="step"><span class="dot"></span>Dietary needs confirmed</div>
+            <div class="step"><span class="dot"></span>Prices &amp; stock checked</div>
+          </div>
+          <div class="frame" style="padding:9px;box-shadow:none">
+            <div style="font-weight:700">Shopping list · 7 items</div>
+            <div class="row"><span>Chicken fillet 47 kg</span><b>€612</b></div>
+            <div class="row"><span>Jasmine rice 40 kg</span><b>€96</b></div>
+            <div style="color:var(--blue);font-size:11px;margin:4px 0">+5 more ▾</div>
+            <div class="tot">€1,180 – €1,320</div>
+            <button class="btn" style="margin-top:6px">Review order</button>
+          </div>
+        </div>
+        <div class="in">Ask or change anything…</div>
+      </div>
+    </div>
+    <div class="card-body"><h3>B · Chat only, results shown as cards</h3><p>Everything happens inside the chat. The list appears as a card you can expand. Fits a small embedded widget.</p></div>
+  </div>
+
+  <div class="card" data-choice="morph" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:10px;background:var(--ice)">
+      <div style="display:grid;grid-template-columns:.8fr 1.4fr;gap:8px;align-items:end;min-height:330px">
+        <div class="frame" style="min-height:220px;display:flex;flex-direction:column">
+          <div class="top">Aimo</div>
+          <div style="padding:8px;flex:1"><div class="bubble-u">Wedding, 300…</div><div class="bubble-a"><div class="step"><span class="dot run"></span>Working…</div></div></div>
+          <div class="in" style="font-size:10px">Message</div>
+        </div>
+        <div class="frame" style="min-height:330px">
+          <div class="top">Order draft <small>expanded from the widget</small></div>
+          <div style="padding:10px">
+            <div class="row"><span>Chicken fillet</span><b>47 kg · €612</b></div>
+            <div class="row"><span>Jasmine rice</span><b>40 kg · €96</b></div>
+            <div class="row"><span>Lactose-free cream</span><b>10 L · €38</b></div>
+            <div class="hist">History: you usually over-order rice by 12%</div>
+            <div class="tot">€1,180 – €1,320</div>
+            <button class="btn" style="margin-top:6px">Approve &amp; send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>C · Small widget that opens into a full panel</h3><p>Starts as a small chat bubble on the client's site. When the plan is ready it opens into a full-screen order view (A's layout).</p></div>
+  </div>
+
+</div>

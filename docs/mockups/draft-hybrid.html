@@ -1,0 +1,58 @@
+<style>
+  .va{--navy:#00205B;--blue:#0057B8;--sky:#E8F1FB;--ice:#F5F9FD;--line:#D5E3F3;--amber:#E0A23B;font-family:Inter,system-ui,sans-serif;color:var(--navy)}
+  .va *{box-sizing:border-box}
+  .num{font-variant-numeric:tabular-nums}
+  .chat{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;font-size:12px;box-shadow:0 8px 30px rgba(0,32,91,.1);display:flex;flex-direction:column;min-height:380px}
+  .top{background:var(--navy);color:#fff;padding:10px 12px;font-weight:600}
+  .bu{background:var(--blue);color:#fff;padding:7px 10px;border-radius:14px 14px 4px 14px;margin:8px 0 8px auto;width:fit-content;max-width:90%}
+  .ba{background:var(--ice);padding:7px 10px;border-radius:14px 14px 14px 4px;margin:6px 0}
+  .in{border:1px solid var(--line);border-radius:99px;padding:8px 10px;color:#7b8aa3;margin:8px}
+  .sheet{background:#fff;border:1px solid var(--line);border-radius:10px;font-size:12px;box-shadow:0 14px 40px rgba(0,32,91,.12);overflow:hidden}
+  .shead{display:flex;justify-content:space-between;padding:12px 14px;border-bottom:2px solid var(--blue)}
+  .srow{display:grid;grid-template-columns:1.6fr .9fr .6fr;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);align-items:center}
+  .srow.hd{background:var(--ice);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#6a7a96;padding:6px 14px}
+  .grp{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#6a7a96;padding:10px 14px 2px}
+  .step{display:inline-flex;border:1px solid var(--line);border-radius:6px;width:fit-content}
+  .step span{padding:2px 7px}
+  .tag{font-size:9.5px;background:var(--sky);color:var(--blue);border-radius:4px;padding:1px 5px;margin-left:4px}
+  .last{margin:0 14px 8px;background:#FFF8EA;border-left:3px solid var(--amber);border-radius:0 6px 6px 0;padding:7px 10px;font-size:11px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .last .acts span{display:inline-block;border-radius:99px;padding:3px 9px;font-weight:600;font-size:10.5px;margin-left:4px}
+  .apply{background:var(--navy);color:#fff}
+  .keep{border:1px solid #E6CF9F;color:#8a5a00}
+  .flash{animation:f 2.2s ease-in-out infinite}
+  @keyframes f{0%,100%{background:#fff}40%{background:#EAF3FF}}
+  .btn{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:600;font-size:12px}
+</style>
+
+<h2>A mix of both: the working sheet with "Last time" notes</h2>
+<p class="subtitle">It keeps the sheet's table and + / − buttons. Under any row with relevant history, a "Last time" note in amber appears with Apply / Keep buttons. The rice row shows the flash a row gets when the agent changes it.</p>
+
+<div class="va" style="padding:18px;background:linear-gradient(135deg,#EEF4FB,#F9FBFE);border-radius:14px">
+  <div style="display:grid;grid-template-columns:.7fr 1.5fr;gap:18px;align-items:start;max-width:900px;margin:auto">
+    <div class="chat"><div class="top">Aimo Assistant</div>
+      <div style="padding:9px;flex:1">
+        <div class="bu">Wedding 6 Dec, 300 guests, chicken &amp; rice</div>
+        <div class="ba">12 gluten-free and 4 lactose-free guests noted. Here's your draft →</div>
+        <div class="bu">Make it 320 guests</div>
+        <div class="ba">Done. Chicken +3 kg, rice +2 kg.</div>
+      </div>
+      <div class="in">Message</div></div>
+
+    <div class="sheet">
+      <div class="shead"><b style="font-size:14px">Order draft</b><span style="color:#6a7a96">Wedding · 6 Dec · 320 pax</span></div>
+      <div class="srow hd"><span>Product</span><span>Qty</span><span style="text-align:right">Price</span></div>
+
+      <div class="grp">Protein</div>
+      <div class="srow num"><span>Chicken breast fillet <span class="tag">in stock</span></span><span class="step"><span>−</span><span>50 kg</span><span>+</span></span><b style="text-align:right">€651</b></div>
+      <div class="last num"><span><b>Last time</b> (Midsummer party, 300 pax) you had <b>6 kg left over</b>. History suggests <b>45 kg</b>.</span><span class="acts"><span class="apply">Use 45 kg</span><span class="keep">Keep 50</span></span></div>
+
+      <div class="grp">Sides</div>
+      <div class="srow num flash"><span>Jasmine rice <span class="tag">updated</span></span><span class="step"><span>−</span><span>42 kg</span><span>+</span></span><b style="text-align:right">€101</b></div>
+      <div class="last num"><span><b>Last time</b> you ran <b>2 kg short</b> on rice. History suggests <b>44 kg</b>.</span><span class="acts"><span class="apply">Use 44 kg</span><span class="keep">Keep 42</span></span></div>
+      <div class="srow num"><span>Lactose-free cream <span class="tag">4 guests</span></span><span class="step"><span>−</span><span>10 L</span><span>+</span></span><b style="text-align:right">€38</b></div>
+      <div class="srow num"><span>Gluten-free soy sauce <span class="tag">12 guests</span></span><span class="step"><span>−</span><span>3 L</span><span>+</span></span><b style="text-align:right">€27</b></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--ice)" class="num"><div><div style="font-size:10px;color:#6a7a96">ESTIMATED TOTAL</div><b style="font-size:18px">€1,210 – €1,350</b></div><button class="btn">Review &amp; send</button></div>
+    </div>
+  </div>
+</div>

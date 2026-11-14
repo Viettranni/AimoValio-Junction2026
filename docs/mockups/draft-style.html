@@ -1,0 +1,74 @@
+<style>
+  .va{--navy:#00205B;--blue:#0057B8;--sky:#E8F1FB;--ice:#F5F9FD;--line:#D5E3F3;--ok:#1E8C5A;font-family:Inter,system-ui,sans-serif;color:var(--navy)}
+  .va *{box-sizing:border-box}
+  .chat{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;font-size:11px;box-shadow:0 8px 30px rgba(0,32,91,.1);display:flex;flex-direction:column;min-height:300px}
+  .top{background:var(--navy);color:#fff;padding:9px 12px;font-weight:600}
+  .bu{background:var(--blue);color:#fff;padding:7px 10px;border-radius:14px 14px 4px 14px;margin:8px 0 8px auto;width:fit-content;max-width:90%}
+  .ba{background:var(--ice);padding:7px 10px;border-radius:14px 14px 14px 4px;margin:6px 0}
+  .in{border:1px solid var(--line);border-radius:99px;padding:7px 10px;color:#7b8aa3;margin:8px}
+  .num{font-variant-numeric:tabular-nums}
+  .lbl{font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:#6a7a96;margin:10px 0 3px}
+  /* receipt */
+  .rcpt{background:#FFFDF8;border-radius:4px;box-shadow:0 14px 40px rgba(0,32,91,.16);font-size:11px;position:relative;padding:16px 16px 0}
+  .rcpt:after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:radial-gradient(circle at 6px 0,transparent 5px,#FFFDF8 5.5px) 0 0/12px 8px}
+  .rrow{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:4px 0;border-bottom:1px dotted #d9d2c3}
+  .h{background:#FFF6E5;border-left:3px solid #E0A23B;padding:5px 8px;font-size:10.5px;margin:4px 0}
+  .totbar{background:var(--navy);color:#fff;margin:12px -16px 0;padding:10px 16px;display:flex;justify-content:space-between;align-items:center}
+  /* sheet */
+  .sheet{background:#fff;border:1px solid var(--line);border-radius:10px;font-size:11px;box-shadow:0 14px 40px rgba(0,32,91,.12);overflow:hidden}
+  .shead{display:flex;justify-content:space-between;padding:10px 12px;border-bottom:2px solid var(--blue)}
+  .srow{display:grid;grid-template-columns:1.6fr .9fr .7fr;gap:6px;padding:6px 12px;border-bottom:1px solid var(--line);align-items:center}
+  .srow.hd{background:var(--ice);font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:#6a7a96}
+  .step{display:inline-flex;border:1px solid var(--line);border-radius:6px}
+  .step span{padding:1px 6px}
+  .tag{font-size:9px;background:var(--sky);color:var(--blue);border-radius:4px;padding:1px 5px;margin-left:4px}
+  .btn{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:7px 12px;font-weight:600;font-size:11px}
+</style>
+
+<h2>How should the order draft look compared with the chat?</h2>
+<p class="subtitle">Both keep the same navy and blue as the chat. Only the shape and material change, so the draft reads as a document and not as another chat bubble. It slides out next to the widget.</p>
+
+<div class="cards va">
+
+  <div class="card" data-choice="receipt" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:linear-gradient(135deg,#EEF4FB,#F9FBFE)">
+      <div style="display:grid;grid-template-columns:.75fr 1.3fr;gap:14px;align-items:start">
+        <div class="chat"><div class="top">Aimo Assistant</div>
+          <div style="padding:8px;flex:1"><div class="bu">Make it 320 guests</div><div class="ba">Updated. Chicken +3 kg, rice +2 kg.</div></div>
+          <div class="in">Message</div></div>
+        <div class="rcpt">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:13px">Order draft #A-0412</b><span style="color:#6a7a96">Wedding · 6 Dec · 320 pax</span></div>
+          <div class="lbl">Protein</div>
+          <div class="rrow num"><span>Chicken breast fillet</span><span>50 kg</span><b>€651</b></div>
+          <div class="h">Last time: <b>6 kg left over</b> at 300 pax. History suggests <b>45 kg</b>. <u>Apply</u></div>
+          <div class="lbl">Sides</div>
+          <div class="rrow num"><span>Jasmine rice</span><span>42 kg</span><b>€101</b></div>
+          <div class="rrow num"><span>Lactose-free cream</span><span>10 L</span><b>€38</b></div>
+          <div class="rrow num"><span style="color:#6a7a96">+4 more</span><span></span><span></span></div>
+          <div class="totbar num"><div><div style="font-size:9.5px;opacity:.7">ESTIMATED TOTAL</div><b style="font-size:16px">€1,210 – €1,350</b></div><span style="background:#fff;color:var(--navy);border-radius:99px;padding:6px 12px;font-weight:700">Review &amp; send</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>1 · Paper receipt</h3><p>Warm off-white paper with a torn bottom edge and a navy total bar. It feels like a real document you are signing off. Rows that just changed briefly flash.</p></div>
+  </div>
+
+  <div class="card" data-choice="sheet" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:linear-gradient(135deg,#EEF4FB,#F9FBFE)">
+      <div style="display:grid;grid-template-columns:.75fr 1.3fr;gap:14px;align-items:start">
+        <div class="chat"><div class="top">Aimo Assistant</div>
+          <div style="padding:8px;flex:1"><div class="bu">Make it 320 guests</div><div class="ba">Updated. Chicken +3 kg, rice +2 kg.</div></div>
+          <div class="in">Message</div></div>
+        <div class="sheet">
+          <div class="shead"><b style="font-size:13px">Order draft</b><span style="color:#6a7a96">6 Dec · 320 pax</span></div>
+          <div class="srow hd"><span>Product</span><span>Qty</span><span style="text-align:right">Price</span></div>
+          <div class="srow num"><span>Chicken breast fillet <span class="tag">history −5 kg</span></span><span class="step"><span>−</span><span>50 kg</span><span>+</span></span><b style="text-align:right">€651</b></div>
+          <div class="srow num"><span>Jasmine rice <span class="tag">in stock</span></span><span class="step"><span>−</span><span>42 kg</span><span>+</span></span><b style="text-align:right">€101</b></div>
+          <div class="srow num"><span>Lactose-free cream <span class="tag">4 guests</span></span><span class="step"><span>−</span><span>10 L</span><span>+</span></span><b style="text-align:right">€38</b></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--ice)" class="num"><div><div style="font-size:9.5px;color:#6a7a96">ESTIMATED TOTAL</div><b style="font-size:16px">€1,210 – €1,350</b></div><button class="btn">Review &amp; send</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>2 · Working sheet</h3><p>A crisp table with quantity steppers and small tags explaining each number. More of a tool feel and quicker to tweak by hand. Less dramatic.</p></div>
+  </div>
+
+</div>

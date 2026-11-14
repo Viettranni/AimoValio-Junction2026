@@ -1,0 +1,21 @@
+# deps / build
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# local data (raw Valio product file is 87 MB; generated index is rebuilt by script)
+data/raw/
+*.sqlite
+*.db
+
+# tooling
+.superpowers/
+.mastra/
+.DS_Store

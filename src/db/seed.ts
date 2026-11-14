@@ -1,7 +1,7 @@
 import type { AuditEntry, EventType, MeasureUnit, PortionCategory, Receipt } from '@/contracts';
 import { GATEWAY_DDL, getDb, type Db } from './client';
 import { appendAudit, nextOrderId, recordLeftovers, storeOrder, upsertCustomer } from './repo';
-import { auditLog, customers, deliveries, drafts, gatewayApprovals, gatewayChats, gatewayOffers, leftovers, orderLines, orders, settings } from './schema';
+import { auditLog, customers, deliveries, drafts, gatewayApprovals, gatewayChats, gatewayOffers, leftovers, orderLines, orders, settings, wasteLog } from './schema';
 
 export const DEMO_CUSTOMER = { id: 'helsinki-juhlapalvelu', name: 'Helsinki Juhlapalvelu Oy' };
 
@@ -103,7 +103,7 @@ function seedAudit(db: Db, receipt: Receipt, e: SeedEvent, submittedAt: string, 
 export function resetAndSeed(db: Db = getDb()): { customers: number; orders: number; lines: number; leftovers: number; audit: number } {
   // A long-running server's connection may predate newer gateway tables.
   (db as unknown as { $client?: { exec: (sql: string) => void } }).$client?.exec(GATEWAY_DDL);
-  for (const table of [leftovers, orderLines, orders, drafts, auditLog, settings, customers, gatewayOffers, gatewayApprovals, gatewayChats, deliveries]) db.delete(table).run();
+  for (const table of [leftovers, orderLines, orders, drafts, auditLog, settings, customers, gatewayOffers, gatewayApprovals, gatewayChats, deliveries, wasteLog]) db.delete(table).run();
   upsertCustomer(DEMO_CUSTOMER, db);
 
   const today = Date.now();
@@ -126,6 +126,32 @@ export function resetAndSeed(db: Db = getDb()): { customers: number; orders: num
     lineCount += receipt.lines.length;
     leftoverCount += entries.length;
   }
+  seedWaste(db, today);
   const auditCount = db.select().from(auditLog).all().length;
   return { customers: 1, orders: EVENTS.length, lines: lineCount, leftovers: leftoverCount, audit: auditCount };
+}
+
+// Day-to-day food waste the kitchen logged (hävikki), so getWasteReport has a history to show. Valued like logWaste:
+// at the price per kg/l paid (the seed prices above). CO₂ uses rough product-group figures (kg CO₂e per kg).
+const WASTE: Array<{ daysAgo: number; product: keyof typeof P; quantity: number; reason: string; co2PerKg: number; note?: string }> = [
+  { daysAgo: 62, product: 'basmati', quantity: 4, reason: 'overproduction', co2PerKg: 2.7, note: 'Lunch buffet, cooked too much' },
+  { daysAgo: 48, product: 'cream', quantity: 6, reason: 'expired', co2PerKg: 2.9 },
+  { daysAgo: 40, product: 'basmati', quantity: 3.5, reason: 'overproduction', co2PerKg: 2.7 },
+  { daysAgo: 33, product: 'salad', quantity: 2.5, reason: 'spoiled', co2PerKg: 0.9 },
+  { daysAgo: 21, product: 'bread', quantity: 3, reason: 'plate_waste', co2PerKg: 1.3 },
+  { daysAgo: 12, product: 'basmati', quantity: 5, reason: 'overproduction', co2PerKg: 2.7, note: 'Wedding buffet' },
+  { daysAgo: 5, product: 'cream', quantity: 4, reason: 'expired', co2PerKg: 2.9 },
+];
+
+function seedWaste(db: Db, today: number): void {
+  WASTE.forEach((w, i) => {
+    const p = P[w.product];
+    const at = today - w.daysAgo * DAY_MS;
+    db.insert(wasteLog).values({
+      id: `WS-SEED${String(i + 1).padStart(2, '0')}`, customerId: DEMO_CUSTOMER.id, date: isoDate(at), productId: p.id,
+      productName: p.name, quantity: w.quantity, unit: p.unit, reason: w.reason,
+      orderId: null, valueEur: Math.round((p.price / p.packSize) * w.quantity * 100) / 100,
+      co2Kg: Math.round(w.quantity * w.co2PerKg * 100) / 100, note: w.note ?? null, source: 'kitchen-staff', recordedAt: new Date(at).toISOString(),
+    }).run();
+  });
 }

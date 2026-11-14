@@ -110,3 +110,21 @@ export const deliveries = sqliteTable('deliveries', {
   reason: text('reason'),
   deliveredAt: text('delivered_at').notNull(),
 }, (t) => [primaryKey({ columns: [t.orderId, t.lineId] })]);
+
+/** Food waste (hävikki) the customer logged: from Claude over MCP, the chat, or after an event. */
+export const wasteLog = sqliteTable('waste_log', {
+  id: text('id').primaryKey(),
+  customerId: text('customer_id').notNull(),
+  date: text('date').notNull(),
+  productId: text('product_id'),
+  productName: text('product_name').notNull(),
+  quantity: real('quantity').notNull(),
+  unit: text('unit').notNull(),
+  reason: text('reason').notNull(),
+  orderId: text('order_id'),
+  valueEur: real('value_eur'),
+  co2Kg: real('co2_kg'),
+  note: text('note'),
+  source: text('source').notNull(),
+  recordedAt: text('recorded_at').notNull(),
+});

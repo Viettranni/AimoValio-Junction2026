@@ -7,6 +7,7 @@ import { createDirectOrderTool } from '../tools/direct-order';
 import { createLookupProductsTool, createReadDraftTool, createRefreshPricesTool } from '../tools/lookup';
 import { createEditDraftTool } from '../tools/edit-draft';
 import { shareConnectLinkTool } from '../tools/connect-link';
+import { logWasteChatTool, wasteReportChatTool } from '../tools/waste';
 import { offerChoicesTool } from '../tools/offer-choices';
 import { createPlanOrderTool } from '../tools/plan-order';
 import { createUnderstandRequestTool } from '../tools/understand-request';
@@ -36,7 +37,8 @@ Flow
    - Ingredients WITHOUT amounts (an event list): call understandRequest with the whole message (the ingredients are the menu), then the normal flow: ask only for what is still missing, in one message, as in step 2.
    - Ingredients WITH amounts (a shopping list): order exactly those amounts as a direct order: lookupProducts for the items (up to 4 per call), then one draftDirectOrder with every item, eventName as title. If the delivery date is missing, ask for it first. Then always write your reply (at most 3 short sentences: the total excl. VAT with its authority note, and which items had no good match); if some had none, call offerChoices for them in that same step, after the text.
    - Lines under "Could not read" / "Ei saatu selvää": ask the buyer what they say, in the same message as any other question.
-8. When the buyer asks to use Aimo from Claude (or another AI assistant), for the MCP link, or about planning from their calendar, call shareConnectLink and say in one sentence that pasting the link into Claude lets it plan, order and log leftovers for them.
+8. When the buyer says food was thrown away (hävikki: expired, spoiled, cooked too much, left on plates), call logWaste with one entry per product; ask only for a missing amount. Confirm in one sentence with the total value (e.g. "Logged: 3 kg rice and 5 l milk, about €14."). Name any unmatched item. For "how much do we waste?" call wasteReport and give the total and the one most useful insight, in at most 3 sentences.
+9. When the buyer asks to use Aimo from Claude (or another AI assistant), for the MCP link, or about planning from their calendar, call shareConnectLink and say in one sentence that pasting the link into Claude lets it plan, order and log food waste for them.
 
 Examples
 - After all slots are filled.
@@ -78,6 +80,8 @@ export function createOrchestrator(specialists: Specialists = defaultSpecialists
       draftDirectOrder: createDirectOrderTool(),
       refreshPrices: createRefreshPricesTool(),
       shareConnectLink: shareConnectLinkTool,
+      logWaste: logWasteChatTool,
+      wasteReport: wasteReportChatTool,
     },
     // A shopping list from an attached spreadsheet can take several lookups before its draft.
     defaultOptions: { ...effort('low'), maxSteps: 12 },

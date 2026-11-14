@@ -26,9 +26,11 @@ async function connect(): Promise<Record<string, AnyTool>> {
   });
   try {
     const toolsets = await Promise.race([client.listToolsets(), timeout]);
-    const tools = toolsets[SERVER];
-    if (!tools || Object.keys(tools).length === 0) throw new Error('server listed no tools');
-    return tools as Record<string, AnyTool>;
+    // The server is the full agent gateway; the planning agents only get the catalogue tools.
+    const listed = (toolsets[SERVER] ?? {}) as Record<string, AnyTool>;
+    const tools = Object.fromEntries(Object.entries(listed).filter(([name]) => name in aimoProductTools));
+    if (Object.keys(tools).length === 0) throw new Error('server listed no catalogue tools');
+    return tools;
   } catch (err) {
     void client.disconnect().catch(() => {});
     throw err;
@@ -38,7 +40,7 @@ async function connect(): Promise<Record<string, AnyTool>> {
 }
 
 /**
- * The aimo-products tools as seen through our own MCP client (one stdio server per process),
+ * The catalogue tools (aimo-products) of the agent gateway as seen through our own MCP client (one stdio server per process),
  * so agents use the same interface an external purchasing agent would. Falls back to the
  * in-process tool objects if the server can't be reached.
  */

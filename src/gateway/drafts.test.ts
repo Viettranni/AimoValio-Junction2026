@@ -27,6 +27,7 @@ import type { PickProductsInput } from '@/mastra/agents/product';
 import { DATE } from '@/mastra/fixtures.test-util';
 import type { Specialists } from '@/mastra/specialists';
 import { decideApproval } from './approvals';
+import { getOrderStatus, placeOrder } from './orders';
 import { checkoutDraft, getDraft, getOrder, listAgentOrders, planEvent, reportLeftovers, updateDraft } from './drafts';
 import type { AgentIdentity, GatewayContext } from './types';
 
@@ -53,8 +54,8 @@ const specialists: Specialists = {
   parseCheckIn: vi.fn(),
 };
 
-const event = (guests: number, date = DATE) => planEvent(
-  { deliveryDate: date, guests, menu: ['chicken', 'rice'], eventType: 'wedding', eventName: 'Wedding' }, ctx, { specialists },
+const event = (guests: number, date = DATE, diets?: Array<{ diet: 'vegan'; guests: number }>) => planEvent(
+  { deliveryDate: date, guests, menu: ['chicken', 'rice'], eventType: 'wedding', eventName: 'Wedding', ...(diets ? { diets } : {}) }, ctx, { specialists },
 );
 
 beforeEach(() => {
@@ -138,5 +139,34 @@ describe('event flow over the gateway', () => {
     expect(line.history!.historyPacks).toBeLessThan(line.history!.suggestedPacks);
     const accepted = await updateDraft(next.draftId, [{ kind: 'historyChoice', lineId: line.lineId, choice: 'history' }], ctx);
     expect(accepted.lines.find((l) => l.lineId === line.lineId)?.packs).toBe(line.history!.historyPacks);
+  });
+
+  it('keeps the per-dish allergen verdict through requotes: an unverified line never auto-orders', async () => {
+    // Vegan guests make every shared dish require vegan; the fixtures can't prove it → "unknown" on the draft,
+    // although the offer's own check (customer default: no peanuts) passes.
+    const d = await event(20, '2026-12-10', [{ diet: 'vegan', guests: 2 }]);
+    expect(d.lines.every((l) => l.allergen === 'unknown')).toBe(true);
+    valio.priceOver = { bas: { price: 14, priceWithTax: 15.89 } };
+    const first = await checkoutDraft({ draftId: d.draftId }, ctx);
+    if (first.status !== 'requote') throw new Error(first.status);
+    expect(first.newOffer.lines.every((l) => l.allergen?.verdict === 'unknown')).toBe(true);
+    valio.priceOver = { bas: { price: 14.5, priceWithTax: 16.46 } };
+    const again = await placeOrder({ offerId: first.newOffer.offerId }, ctx);
+    if (again.status !== 'requote') throw new Error(again.status);
+    expect(await placeOrder({ offerId: again.newOffer.offerId }, ctx)).toMatchObject({
+      status: 'pending_approval', reasons: expect.arrayContaining([expect.objectContaining({ rule: 'allergen_unverified' })]),
+    });
+    await expect(updateDraft(d.draftId, [{ kind: 'setPacks', lineId: d.lines[0].lineId, packs: 3 }], ctx)).rejects.toThrow(/waiting for approval/);
+  });
+
+  it('orders a draft only once: a leftover open quote of it is void', async () => {
+    const d = await event(20, '2026-12-11');
+    valio.priceOver = { bas: { price: 14, priceWithTax: 15.89 } };
+    const requote = await checkoutDraft({ draftId: d.draftId }, ctx);
+    if (requote.status !== 'requote') throw new Error(requote.status);
+    const ordered = await checkoutDraft({ draftId: d.draftId }, ctx);
+    if (ordered.status !== 'ordered') throw new Error(ordered.status);
+    expect(await placeOrder({ offerId: requote.newOffer.offerId }, ctx)).toMatchObject({ status: 'rejected', message: expect.stringContaining('void') });
+    expect(getOrderStatus(ordered.receipt.orderId, ctx)).toMatchObject({ status: 'ordered', offer: { offerId: ordered.offerId } });
   });
 });

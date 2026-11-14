@@ -3,7 +3,7 @@
 // edits (the agent says exactly what to change), so no model call except the menu/product planning in planEvent.
 import { randomUUID } from 'node:crypto';
 import type {
-  AllergenCheck, CatalogProduct, DietNeed, Draft, DraftChange, DraftDiff, DraftLine, EventType, Intake, LineTag, PortionCategory,
+  CatalogProduct, DietNeed, Draft, DraftChange, DraftDiff, DraftLine, EventType, Intake, LineTag, PortionCategory,
 } from '@/contracts';
 import { checkAllergens, getProduct } from '@/catalog';
 import { getDb } from '@/db/client';
@@ -27,7 +27,7 @@ import { fetchValio, STALE_PRICE_MS } from './lookup';
 import { actorFor, GatewayError, quote } from './offers';
 import { placeOrder } from './orders';
 import { listApprovalRows, listOffers, saveOffer } from './store';
-import type { Change, GatewayContext, OfferLine, OrderPreferences, PlaceOrderResult, Requirements } from './types';
+import type { Change, GatewayContext, OrderPreferences, PlaceOrderResult, Requirements } from './types';
 
 const MAX_GUESTS = 5000;
 const catalog = { getProduct };
@@ -231,11 +231,18 @@ async function planAdd(c: Extract<AgentDraftChange, { kind: 'addProduct' }>, dra
   return { change: { kind: 'addLine', line }, draft: { ...draft, components } };
 }
 
+function pendingOfferFor(draft: Draft) {
+  return listOffers(draft.customerId).find((o) => o.draftId === draft.id && o.status === 'pending_approval');
+}
+
 /** updateDraft: deterministic edits, all or nothing. Swaps and adds are validated (same kind, diets, fresh price and stock). */
 export async function updateDraft(draftId: string, changes: AgentDraftChange[], ctx: GatewayContext) {
   const start = getOwnDraft(draftId, ctx);
   if (start.status !== 'ready') throw new GatewayError(start.status === 'submitted' ? 'This draft was already ordered' : 'The draft is not planned yet', 'conflict');
   if (!changes.length) throw new GatewayError('No changes given');
+  // While a human is looking at this draft's order, it stays as they see it.
+  const pending = pendingOfferFor(start);
+  if (pending) throw new GatewayError(`The draft is waiting for approval ${pending.approvalId}; it can't change until the approver decides (a rejection unlocks it)`, 'conflict');
 
   let draft = start;
   const changed = new Set<string>();
@@ -302,8 +309,6 @@ export async function updateDraft(draftId: string, changes: AgentDraftChange[], 
   return { ...draftView(draft), diff, problems };
 }
 
-const RANK: Record<AllergenCheck['verdict'], number> = { pass: 0, unknown: 1, fail: 2 };
-
 /**
  * checkoutDraft: the draft's lines become a fixed-price offer (fresh Valio prices), then placeOrder applies the policy.
  * A price that differs from the draft is never taken silently: the draft is re-priced and `requote` returned.
@@ -315,24 +320,28 @@ export async function checkoutDraft(
   const draft = getOwnDraft(input.draftId, ctx);
   if (draft.status === 'submitted') throw new GatewayError('This draft was already ordered', 'conflict');
   if (draft.status !== 'ready' || !draft.intake.deliveryDate) throw new GatewayError('The draft is not planned yet', 'conflict');
-  const pending = listOffers(ctx.agent.customerId).find((o) => o.draftId === draft.id && o.status === 'pending_approval');
-  if (pending) return { ...(await placeOrder({ offerId: pending.offerId }, ctx)), draftId: draft.id };
+  const pending = pendingOfferFor(draft);
+  if (pending) {
+    const same = pending.lines.length === draft.lines.filter((l) => l.packs > 0).length
+      && pending.lines.every((ol) => draft.lines.some((l) => l.id === ol.lineId && l.productId === ol.productId && l.packs === ol.packs));
+    if (!same) {
+      throw new GatewayError(`The draft changed since approval ${pending.approvalId} was requested; ask the approver to reject it, then check out again`, 'conflict');
+    }
+    return { ...(await placeOrder({ offerId: pending.offerId }, ctx)), draftId: draft.id };
+  }
   const lines = draft.lines.filter((l) => l.packs > 0);
   if (!lines.length) throw new GatewayError('The draft has no lines to order');
 
   const offer = await quote({
     deliveryDate: draft.intake.deliveryDate,
-    lines: lines.map((l) => ({ productId: l.productId, quantity: l.packs, unit: 'packs' as const, ref: l.id })),
+    lines: lines.map((l) => ({
+      productId: l.productId, quantity: l.packs, unit: 'packs' as const, ref: l.id,
+      // A pipeline substitution is a substitute line for the policy too (pre-approve with preferences.allowSubstitutes).
+      ...(l.substituteFor ? { substituteFor: l.substituteFor.productId } : {}),
+    })),
     ...(input.requirements ? { requirements: input.requirements } : {}),
-  }, ctx, { draftId: draft.id });
-  // The event's diets were checked per dish at planning time; keep the stricter of that verdict and the offer's.
+  }, ctx, { draftId: draft.id }); // quote keeps the stricter per-dish allergen verdicts (withDraftVerdicts)
   const byId = new Map(lines.map((l) => [l.id, l]));
-  offer.lines = offer.lines.map((ol): OfferLine => {
-    const dl = byId.get(ol.lineId);
-    if (!dl) return ol;
-    const worse = !ol.allergen || RANK[dl.allergen.verdict] > RANK[ol.allergen.verdict] ? dl.allergen : ol.allergen;
-    return { ...ol, allergen: worse };
-  });
 
   const changes: Change[] = offer.lines.flatMap((ol) => {
     const dl = byId.get(ol.lineId)!;

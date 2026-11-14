@@ -93,7 +93,8 @@ export interface OfferLine {
   alternatives?: Alternative[];
 }
 
-export type OfferStatus = 'open' | 'ordered' | 'pending_approval' | 'rejected' | 'superseded';
+/** void: an open quote of a draft that was ordered through another offer. */
+export type OfferStatus = 'open' | 'ordered' | 'pending_approval' | 'rejected' | 'superseded' | 'void';
 
 export interface Offer {
   offerId: string;

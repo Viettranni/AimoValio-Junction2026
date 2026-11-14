@@ -74,12 +74,19 @@ export function writeOrder(offer: Offer, by: { actor: `agent:${string}` | `appro
   const orderable = offer.lines.filter((l) => l.available);
   if (!orderable.length) throw new GatewayError('Nothing in this offer can be delivered; request a new offer', 'conflict');
   const draft = offer.draftId ? getDraftById(offer.draftId, db) : null;
+  if (draft?.status === 'submitted') throw new GatewayError(`Draft ${draft.id} was already ordered; this offer can't be placed`, 'conflict');
   const receipt = buildReceipt(offer, nextOrderId(db), clockNow(db).toISOString(), draft);
   const groups = new Map(draft?.lines.map((l) => [l.id, l.group]) ?? []);
   const categories = new Map(orderable.map((l) => [l.lineId, groups.get(l.lineId) ?? categoryOf(getProduct(l.productId))]));
   storeOrder(receipt, categories, db);
   saveOffer({ ...offer, status: 'ordered', orderId: receipt.orderId }, db);
-  if (draft) saveDraft({ ...draft, status: 'submitted', updatedAt: receipt.submittedAt }, db);
+  if (draft) {
+    saveDraft({ ...draft, status: 'submitted', updatedAt: receipt.submittedAt }, db);
+    // Other open quotes of the same draft (e.g. from a requote) can never be placed now.
+    for (const o of listOffers(offer.customerId, db)) {
+      if (o.draftId === draft.id && o.offerId !== offer.offerId && o.status === 'open') saveOffer({ ...o, status: 'void', orderId: receipt.orderId }, db);
+    }
+  }
   appendAudit({
     conversationId: offer.offerId, orderId: receipt.orderId, actor: by.actor, action: 'submitOrder',
     summary: `${by.summary}: simulated order ${receipt.orderId}, ${receipt.lines.length} line(s), €${receipt.total.toFixed(2)} excl. VAT`,
@@ -135,6 +142,9 @@ function settled(offer: Offer, db?: Db): PlaceOrderResult {
     const newOffer = getOffer(offer.supersededBy, db);
     if (newOffer) return { status: 'requote', offerId: offer.offerId, newOffer, changes: [], message: `Offer ${offer.offerId} was replaced by ${newOffer.offerId}` };
   }
+  if (offer.status === 'void') {
+    return { status: 'rejected', offerId: offer.offerId, message: `Offer ${offer.offerId} is void: its draft was already ordered${offer.orderId ? ` (${offer.orderId})` : ''}` };
+  }
   return { status: 'rejected', offerId: offer.offerId, ...(offer.approvalId ? { approvalId: offer.approvalId } : {}), message: `Offer ${offer.offerId} was rejected` };
 }
 
@@ -161,47 +171,48 @@ export async function placeOrder(input: { offerId: string; preferences?: OrderPr
   if (offer.status !== 'open') return settled(offer, db);
 
   const fresh = await quote(offer.request, ctx, { draftId: offer.draftId });
-  const nowDate = clockNow(db);
-  // The await lets a concurrent placeOrder in: re-read and decide synchronously from here on.
-  const latest = getOwnOffer(input.offerId, ctx);
-  if (latest.status !== 'open') return settled(latest, db);
-
-  const changes = diffOffers(latest, fresh, nowDate);
-  if (changes.length) {
-    const newOffer = db.transaction((tx) => supersede(latest, fresh, changes, 'gateway', tx as unknown as Db));
-    return { status: 'requote', offerId: latest.offerId, newOffer, changes, message: 'Prices, availability or validity changed: review the new offer and place it instead. Nothing was ordered.' };
-  }
-
-  const orderable = latest.lines.filter((l) => l.available);
-  if (!orderable.length) {
-    const reasons = latest.lines.map((l) => `${l.productName}: ${l.reason ?? l.status}`);
-    appendAudit({ conversationId: latest.offerId, actor: 'gateway', action: 'notOrderable', summary: `Nothing in offer ${latest.offerId} can be delivered`, data: { reasons } }, db);
-    return { status: 'not_orderable', offerId: latest.offerId, reasons, message: 'No line of this offer can be delivered in full on the date; nothing was ordered and no approval was requested. Use the alternatives or another date.' };
-  }
-
-  const decision = evaluatePolicy(latest, { preferences: input.preferences, now: nowDate, committedEur: committedToday(latest, nowDate, db) });
-  appendAudit({
-    conversationId: latest.offerId, actor: 'gateway', action: 'evaluatePolicy',
-    summary: decision.decision === 'auto'
-      ? `Within ${ctx.agent.displayName}'s authority: ordering automatically`
-      : `Needs sign-off: ${decision.reasons.map((r) => r.message).join('; ')}`,
-    data: { decision: decision.decision, reasons: decision.reasons, preferences: input.preferences ?? null },
-  }, db);
-
-  if (decision.decision === 'auto') {
-    const receipt = submitOffer(latest, { actor: actorFor(ctx), summary: `${ctx.agent.displayName} placed offer ${latest.offerId} within its authority` }, db);
-    // (submitOffer refuses an offer that a concurrent call already ordered.)
-    return { status: 'ordered', offerId: latest.offerId, receipt, excludedLines: excluded(latest) };
-  }
-
-  const policy = policyFor(latest.customerId);
-  const approval: Approval = {
-    approvalId: newId('AP'), offerId: latest.offerId, customerId: latest.customerId, agentId: ctx.agent.agentId,
-    agentName: ctx.agent.displayName, approver: policy.approver, reasons: decision.reasons,
-    ...(input.preferences ? { preferences: input.preferences } : {}), status: 'pending', createdAt: nowDate.toISOString(),
-  };
-  db.transaction((tx) => {
+  // From here on everything is one synchronous transaction: the re-read, the split-order total, the decision and
+  // its writes, so a concurrent placeOrder can neither order the same offer twice nor slip under the limit.
+  return db.transaction((tx): PlaceOrderResult => {
     const t = tx as unknown as Db;
+    const tctx: GatewayContext = { ...ctx, db: t };
+    const nowDate = clockNow(t);
+    const latest = getOwnOffer(input.offerId, tctx);
+    if (latest.status !== 'open') return settled(latest, t);
+
+    const changes = diffOffers(latest, fresh, nowDate);
+    if (changes.length) {
+      const newOffer = supersede(latest, fresh, changes, 'gateway', t);
+      return { status: 'requote', offerId: latest.offerId, newOffer, changes, message: 'Prices, availability or validity changed: review the new offer and place it instead. Nothing was ordered.' };
+    }
+
+    const orderable = latest.lines.filter((l) => l.available);
+    if (!orderable.length) {
+      const reasons = latest.lines.map((l) => `${l.productName}: ${l.reason ?? l.status}`);
+      appendAudit({ conversationId: latest.offerId, actor: 'gateway', action: 'notOrderable', summary: `Nothing in offer ${latest.offerId} can be delivered`, data: { reasons } }, t);
+      return { status: 'not_orderable', offerId: latest.offerId, reasons, message: 'No line of this offer can be delivered in full on the date; nothing was ordered and no approval was requested. Use the alternatives or another date.' };
+    }
+
+    const decision = evaluatePolicy(latest, { preferences: input.preferences, now: nowDate, committedEur: committedToday(latest, nowDate, t) });
+    appendAudit({
+      conversationId: latest.offerId, actor: 'gateway', action: 'evaluatePolicy',
+      summary: decision.decision === 'auto'
+        ? `Within ${ctx.agent.displayName}'s authority: ordering automatically`
+        : `Needs sign-off: ${decision.reasons.map((r) => r.message).join('; ')}`,
+      data: { decision: decision.decision, reasons: decision.reasons, preferences: input.preferences ?? null },
+    }, t);
+
+    if (decision.decision === 'auto') {
+      const receipt = writeOrder(latest, { actor: actorFor(ctx), summary: `${ctx.agent.displayName} placed offer ${latest.offerId} within its authority` }, t);
+      return { status: 'ordered', offerId: latest.offerId, receipt, excludedLines: excluded(latest) };
+    }
+
+    const policy = policyFor(latest.customerId);
+    const approval: Approval = {
+      approvalId: newId('AP'), offerId: latest.offerId, customerId: latest.customerId, agentId: ctx.agent.agentId,
+      agentName: ctx.agent.displayName, approver: policy.approver, reasons: decision.reasons,
+      ...(input.preferences ? { preferences: input.preferences } : {}), status: 'pending', createdAt: nowDate.toISOString(),
+    };
     saveApproval(approval, t);
     saveOffer({ ...latest, status: 'pending_approval', approvalId: approval.approvalId }, t);
     appendAudit({
@@ -209,8 +220,8 @@ export async function placeOrder(input: { offerId: string; preferences?: OrderPr
       summary: `${ctx.agent.displayName} asked ${policy.approver.name} to sign off offer ${latest.offerId} (approval ${approval.approvalId})`,
       data: { approvalId: approval.approvalId },
     }, t);
+    return pendingResult(latest, approval);
   });
-  return pendingResult(latest, approval);
 }
 
 /** getOrderStatus: an order id (VA-…), approval id (AP-…) or offer id (OF-…) of the caller's own customer. */
@@ -231,7 +242,7 @@ export function getOrderStatus(id: string, ctx: GatewayContext) {
   } else {
     receipt = getReceipt(id, db);
     if (!receipt || receipt.customerId !== ctx.agent.customerId) throw notFound();
-    const offerId = /^Agent order (OF-\w+)$/.exec(receipt.eventName)?.[1];
+    const offerId = /\b(OF-[0-9A-F]+)\b/.exec(receipt.eventName)?.[1];
     offer = offerId ? getOffer(offerId, db) : null;
     approval = offer?.approvalId ? getApproval(offer.approvalId, db) : null;
   }

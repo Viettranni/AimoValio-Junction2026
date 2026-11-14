@@ -1,9 +1,9 @@
 // Offers: an agent's inquiry turned into a binding quote at fixed Valio catalogue prices.
 // There is no negotiation input: prices come only from Valio, quantities only round up to whole packs.
-import type { AvailabilityInfo, CatalogProduct, ISODate, PriceInfo } from '@/contracts';
+import type { AllergenCheck, AvailabilityInfo, CatalogProduct, Draft, ISODate, PriceInfo } from '@/contracts';
 import { checkAllergens, getAlternatives, getProduct } from '@/catalog';
 import { getDb } from '@/db/client';
-import { appendAudit, now as clockNow } from '@/db/repo';
+import { appendAudit, getDraftById, now as clockNow } from '@/db/repo';
 import { packsFor } from '@/domain/quantities';
 import { availabilityFor, fetchValio, pricingFor } from './lookup';
 import { policyFor } from './policies';
@@ -71,7 +71,8 @@ export function buildLines(
     } as const;
     const p = getProduct(req.productId);
     if (!p) return unavailableLine(base, 'unknown product id');
-    if (req.substituteFor && opts.substitutesSameKindOnly) {
+    // Draft lines (ref) were matched to their dish by the planning pipeline's own same-kind check.
+    if (req.substituteFor && opts.substitutesSameKindOnly && !req.ref) {
       const original = getProduct(req.substituteFor);
       if (!original || !sameKindAs(original, p)) {
         return unavailableLine(base, `the customer only accepts substitutes of the same kind as ${original?.nameEn ?? req.substituteFor}`, p);
@@ -167,6 +168,22 @@ function validate(request: OfferRequest, today: ISODate): void {
   }
 }
 
+const RANK: Record<AllergenCheck['verdict'], number> = { pass: 0, unknown: 1, fail: 2 };
+
+/**
+ * Lines of an event draft keep the stricter of their per-dish allergen verdict (diet groups, checked at planning)
+ * and the offer's own check. Applied on every quote of a draft, so a requote can't lose an "unknown".
+ */
+export function withDraftVerdicts(lines: OfferLine[], draft: Draft | null): OfferLine[] {
+  if (!draft) return lines;
+  const byId = new Map(draft.lines.map((l) => [l.id, l]));
+  return lines.map((ol) => {
+    const dl = byId.get(ol.lineId);
+    if (!dl || dl.productId !== ol.productId) return ol;
+    return !ol.allergen || RANK[dl.allergen.verdict] > RANK[ol.allergen.verdict] ? { ...ol, allergen: dl.allergen } : ol;
+  });
+}
+
 /** Builds (and does not save) an offer from fresh Valio data. */
 export async function quote(request: OfferRequest, ctx: GatewayContext, opts: { draftId?: string } = {}): Promise<Offer> {
   const db = ctx.db ?? getDb();
@@ -177,7 +194,10 @@ export async function quote(request: OfferRequest, ctx: GatewayContext, opts: { 
   const effective: OfferRequest = { ...request, ...(requirements ? { requirements } : {}) };
   const ids = [...new Set(request.lines.map((l) => l.productId).filter((id) => getProduct(id)))];
   const fresh = ids.length ? await fetchValio(ids, request.deliveryDate) : { prices: new Map(), avail: new Map() };
-  const lines = buildLines(effective, fresh, nowDate.getTime(), Date.now(), { substitutesSameKindOnly: policy.defaults.substitutesSameKindOnly });
+  const lines = withDraftVerdicts(
+    buildLines(effective, fresh, nowDate.getTime(), Date.now(), { substitutesSameKindOnly: policy.defaults.substitutesSameKindOnly }),
+    opts.draftId ? getDraftById(opts.draftId, db) : null,
+  );
   await addAlternatives(lines, effective, nowDate.getTime());
   const orderable = lines.filter((l) => l.available);
   const total = round2(orderable.reduce((s, l) => s + l.lineTotal, 0));

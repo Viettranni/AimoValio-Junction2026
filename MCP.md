@@ -209,6 +209,8 @@ What is exposed over MCP: catalogue, live price and availability, offers, orders
 | orders | `getOrder` | `orderId` | Receipt, recorded leftovers and the delivery status |
 | orders | `getDeliveryStatus` | `orderId` | Simulated delivery: state (`received` → `confirmed` → `picking` → `out_for_delivery` → `delivered`) with times, ETA window, cut-off, late risk, supplier/terminal track, per-line delivered quantity and short-delivery reasons |
 | orders | `reportLeftovers` | `orderId`, `entries[]` (`lineId`, `leftoverQty` + left / − short), optional `note` | The widget's check-in: unmentioned lines count as used up; only after the delivery date; feeds future history notes |
+| waste | `logWaste` | `entries[]` (`productId` or `name` in any language, `quantity`, `unit` kg/l/pcs/packs, `reason` expired/spoiled/overproduction/plate_waste/damaged/other), optional `date`, `orderId` | Each entry matched to a product (this customer's past orders first, then the catalogue), valued at the price last paid (excl. VAT) with a CO₂ estimate; `unmatched` names |
+| waste | `getWasteReport` | optional `from`, `to` (default the last 90 days) | Logged waste by reason and product (€, CO₂), leftovers after events, and insights (e.g. the product thrown away most often) |
 | policy | `getAuthorityPolicy` | none | The caller's customer policy as JSON |
 | assistant | `chatWithAimo` | `message`, optional `conversationId` | The orchestrator's reply (narration before work tools removed; questions asked with offerChoices kept), `draftId` and a compact draft summary; check it out with `checkoutDraft` |
 

@@ -8,7 +8,7 @@ type Chunk = { type: string; toolName?: string };
 /** Tools that do work after which the orchestrator writes its real reply; text before them is narration. */
 export const WORK_TOOLS: ReadonlySet<string> = new Set([
   'understandRequest', 'planOrder', 'editDraft', 'checkIn', 'readDraft', 'lookupProducts', 'draftDirectOrder', 'refreshPrices',
-  'logWaste', 'wasteReport',
+  'logWaste', 'wasteReport', 'findPastOrders', 'draftFromPastOrder',
 ]);
 
 const TEXT = new Set(['text-start', 'text-delta', 'text-end']);
@@ -18,17 +18,29 @@ const FLUSH = new Set(['finish-step', 'finish', 'error', 'abort']);
 /**
  * UI message stream filter: holds a step's text until the step ends or a tool call starts. A work tool call discards it;
  * any other tool call (offerChoices) or the end of the step releases it. Everything else passes through.
+ * Once a step has written its reply together with offerChoices, a later text-only step in the same turn is a second
+ * copy of that reply (the model sometimes answers again after the buttons) and is dropped.
  */
 export function suppressPreToolText<T extends Chunk>(): TransformStream<T, T> {
   let held: T[] = [];
+  let stepText = false;
+  let stepTool = false;
+  let answeredWithChoices = false;
   return new TransformStream<T, T>({
     transform(chunk, controller) {
-      if (TEXT.has(chunk.type)) { held.push(chunk); return; }
+      if (chunk.type === 'start-step') { stepText = false; stepTool = false; }
+      if (TEXT.has(chunk.type)) { held.push(chunk); stepText = true; return; }
       if (TOOL_START.has(chunk.type)) {
+        stepTool = true;
         if (!WORK_TOOLS.has(chunk.toolName ?? '')) held.forEach((c) => controller.enqueue(c));
+        if (chunk.toolName === 'offerChoices' && stepText) answeredWithChoices = true;
         held = [];
       }
-      if (FLUSH.has(chunk.type)) { held.forEach((c) => controller.enqueue(c)); held = []; }
+      if (FLUSH.has(chunk.type)) {
+        const duplicate = chunk.type === 'finish-step' && answeredWithChoices && !stepTool;
+        if (!duplicate) held.forEach((c) => controller.enqueue(c));
+        held = [];
+      }
       controller.enqueue(chunk);
     },
     flush(controller) {

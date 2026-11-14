@@ -23,6 +23,24 @@ describe('suppressPreToolText', () => {
     expect(out.at(-1)?.type).toBe('finish');
   });
 
+  it('drops a second reply written after the buttons when the reply came with offerChoices', async () => {
+    const out = await run([
+      { type: 'start-step' }, { type: 'tool-input-start', toolName: 'findPastOrders' }, { type: 'tool-input-available', toolName: 'findPastOrders' }, { type: 'finish-step' },
+      { type: 'start-step' }, ...text('Found your Midsummer party. Which date?'),
+      { type: 'tool-input-start', toolName: 'offerChoices' }, { type: 'tool-input-available', toolName: 'offerChoices' }, { type: 'finish-step' },
+      { type: 'start-step' }, ...text('I found it: your Midsummer party. Which date?'), { type: 'finish-step' }, { type: 'finish' },
+    ]);
+    expect(out.filter((c) => c.type === 'text-delta').map((c) => c.delta)).toEqual(['Found your Midsummer party. Which date?']);
+  });
+
+  it('keeps the reply after offerChoices when the buttons came without text', async () => {
+    const out = await run([
+      { type: 'start-step' }, { type: 'tool-input-start', toolName: 'offerChoices' }, { type: 'tool-input-available', toolName: 'offerChoices' }, { type: 'finish-step' },
+      { type: 'start-step' }, ...text('Pick one below.'), { type: 'finish-step' }, { type: 'finish' },
+    ]);
+    expect(out.filter((c) => c.type === 'text-delta').map((c) => c.delta)).toEqual(['Pick one below.']);
+  });
+
   it('keeps the question asked together with offerChoices, in order before the choices', async () => {
     const out = await run([
       { type: 'start-step' }, ...text("What's your budget, and any allergies?"),

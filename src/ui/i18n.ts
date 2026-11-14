@@ -214,7 +214,7 @@ const en = {
   'note.removed': '{name} removed',
   'note.added': '{name} added',
   'note.total': 'total {v}',
-  'reorder.message': 'Reorder {event} for {n} guests',
+  'reorder.message': 'Reorder {event} ({id}) for {n} guests',
 
   'actor.carrier': 'Carrier',
   'demo.nextStep': 'Next delivery step',
@@ -503,7 +503,7 @@ const fi: Dict = {
   'note.removed': '{name} poistettu',
   'note.added': '{name} lisätty',
   'note.total': 'yhteensä {v}',
-  'reorder.message': 'Tilaa {event} uudelleen {n} vieraalle',
+  'reorder.message': 'Tilaa {event} ({id}) uudelleen {n} vieraalle',
 
   'actor.carrier': 'Kuljetus',
   'demo.nextStep': 'Seuraava toimitusvaihe',
@@ -789,7 +789,7 @@ const sv: Dict = {
   'note.removed': '{name} borttagen',
   'note.added': '{name} tillagd',
   'note.total': 'totalt {v}',
-  'reorder.message': 'Beställ {event} igen för {n} gäster',
+  'reorder.message': 'Beställ {event} ({id}) igen för {n} gäster',
 
   'actor.carrier': 'Transport',
   'demo.nextStep': 'Nästa leveranssteg',

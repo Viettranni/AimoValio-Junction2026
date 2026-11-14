@@ -13,6 +13,8 @@ export type Reason =
   | { kind: 'notDeliverable'; date: ISODate }
   | { kind: 'shortStock'; packs: number; label: string }
   | { kind: 'buyerAsked' }
+  | { kind: 'coversRestStock'; packs: number; product: string }
+  | { kind: 'coversRest'; product: string }
   | { kind: 'noSafeProduct'; label: string };
 
 const TEMPLATES: Record<UiLang, { [K in Reason['kind']]: (r: Extract<Reason, { kind: K }>, day: (d: ISODate) => string) => string }> = {
@@ -22,6 +24,8 @@ const TEMPLATES: Record<UiLang, { [K in Reason['kind']]: (r: Extract<Reason, { k
     notDeliverable: (r, day) => `Not deliverable on ${day(r.date)}`,
     shortStock: (r) => `Only ${r.packs} packs in stock; the rest is a similar ${r.label.toLowerCase()}`,
     buyerAsked: () => 'Swapped at your request',
+    coversRestStock: (r) => `Covers the rest: only ${r.packs} packs of ${r.product} in stock`,
+    coversRest: (r) => `Covers the rest of ${r.product}`,
     noSafeProduct: (r) => `${r.label}: every product found conflicts with the diets`,
   },
   fi: {
@@ -30,6 +34,8 @@ const TEMPLATES: Record<UiLang, { [K in Reason['kind']]: (r: Extract<Reason, { k
     notDeliverable: (r, day) => `Ei toimitettavissa ${day(r.date)}`,
     shortStock: (r) => `Varastossa vain ${r.packs} pakkausta; loput korvataan vastaavalla tuotteella`,
     buyerAsked: () => 'Vaihdettu pyynnöstäsi',
+    coversRestStock: (r) => `Kattaa loput: tuotetta ${r.product} varastossa vain ${r.packs} pakkausta`,
+    coversRest: (r) => `Kattaa loput tuotteen ${r.product} määrästä`,
     noSafeProduct: (r) => `${r.label}: kaikki löydetyt tuotteet ovat ristiriidassa ruokavalioiden kanssa`,
   },
   sv: {
@@ -38,6 +44,8 @@ const TEMPLATES: Record<UiLang, { [K in Reason['kind']]: (r: Extract<Reason, { k
     notDeliverable: (r, day) => `Kan inte levereras ${day(r.date)}`,
     shortStock: (r) => `Bara ${r.packs} förpackningar i lager; resten ersätts med en liknande produkt`,
     buyerAsked: () => 'Bytt på din begäran',
+    coversRestStock: (r) => `Täcker resten: bara ${r.packs} förpackningar av ${r.product} i lager`,
+    coversRest: (r) => `Täcker resten av ${r.product}`,
     noSafeProduct: (r) => `${r.label}: alla produkter som hittades strider mot specialkosten`,
   },
 };

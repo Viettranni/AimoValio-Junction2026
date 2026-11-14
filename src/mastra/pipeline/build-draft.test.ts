@@ -562,3 +562,84 @@ describe('reasonText', () => {
     expect(reasonText({ kind: 'salesBlock' }, 'et')).toBe('The product has a sales block');
   });
 });
+
+describe('editDraft: covering the rest of a stock-capped line', () => {
+  const chicken300 = [component({ id: 'c-chicken', label: 'Chicken', category: 'poultry_main', guests: 300, searchTerms: { fi: 'broileri', en: 'chicken breast' } })];
+  // 30 kg of chk = 6 pieces of 4.4 kg; chk2 not deliverable while planning, so the line is capped (no split).
+  const capped = async (conversationId: string) => {
+    const c = { conversationId, customerId: 'cust-topup' };
+    vi.mocked(specialists.planMenu).mockResolvedValueOnce(chicken300);
+    vi.mocked(getAvailability).mockImplementationOnce(async (ids) => {
+      const f = await import('../fixtures.test-util');
+      return new Map([...f.fakeAvailability(ids)].map(([id, a]) => [id, id === 'chk' ? { ...a, availableAmount: 30 } : id === 'chk2' ? { ...a, deliverable: false, availableAmount: 0 } : a]));
+    });
+    const d: Draft = { ...startDraft, id: `draft-${conversationId}`, conversationId, customerId: c.customerId, intake: { ...startDraft.intake, guests: 300, diets: 'none', lang: 'en' } };
+    saveDraft(d);
+    const { summary } = await buildDraft({ draft: d, addons: [], ctx: c }, { specialists, emit: async () => {} });
+    expect(summary.exceptions.join(' ')).toMatch(/line is capped/);
+    return c;
+  };
+  const chickenKg = (id: string) => getDraftByConversation(id)!.lines.filter((l) => l.group === 'poultry_main').reduce((s, l) => s + l.quantity, 0);
+  const deps = { specialists, emit: async () => {} };
+
+  for (const kind of ['topUp', 'add'] as const) {
+    it(`"Add a similar chicken breast to cover the rest" (${kind}) adds only the remainder, tagged substitute`, async () => {
+      const c = await capped(`conv-topup-${kind}`);
+      const start = getDraftByConversation(c.conversationId)!;
+      const main = start.lines[0];
+      expect(main).toMatchObject({ productId: 'chk', packs: 6 });
+      vi.mocked(specialists.interpretEdit).mockResolvedValueOnce([kind === 'topUp'
+        ? intent({ kind: 'topUp', lineId: main.id, searchFi: 'broileri rintafilee', searchEn: 'chicken breast' })
+        : intent({ kind: 'add', searchFi: 'broileri rintafilee', searchEn: 'chicken breast', category: 'poultry_main', label: 'Chicken breast' })]);
+      const res = await runEditDraft({ ctx: c, instruction: 'Add a similar chicken breast to cover the rest' }, deps);
+
+      const after = getDraftByConversation(c.conversationId)!;
+      expect(after.lines).toHaveLength(2);
+      const added = after.lines[1];
+      expect(added).toMatchObject({ productId: 'chk2', componentId: main.componentId, packs: 17, quantity: 34 }); // 60 − 26.4 = 33.6 kg → 17 × 2 kg
+      expect(added.tags).toContain('substitute');
+      expect(added.tags).not.toContain('addon');
+      expect(added.history).toBeUndefined();
+      expect(added.substituteFor?.reason).toBe('Covers the rest: only 6 packs of Chicken breast fillet ca4,4kg in stock');
+      expect(after.components).toHaveLength(1);
+      const total = chickenKg(c.conversationId);
+      expect(total).toBeGreaterThanOrEqual(60);
+      expect(total).toBeLessThan(60 + 2);
+      expect(res.summary).toMatch(/added/);
+    });
+  }
+
+  it('an already covered component gets no new line, only a problem (topUp and add)', async () => {
+    const c = await capped('conv-topup-covered');
+    const main = getDraftByConversation(c.conversationId)!.lines[0];
+    vi.mocked(specialists.interpretEdit).mockResolvedValueOnce([intent({ kind: 'topUp', lineId: main.id, searchEn: 'chicken breast' })]);
+    await runEditDraft({ ctx: c, instruction: 'cover the rest' }, deps);
+    expect(getDraftByConversation(c.conversationId)!.lines).toHaveLength(2);
+
+    vi.mocked(specialists.interpretEdit).mockResolvedValueOnce([intent({ kind: 'topUp', lineId: main.id, searchEn: 'chicken breast' })]);
+    const again = await runEditDraft({ ctx: c, instruction: 'cover the rest' }, deps);
+    expect(again.problems.join(' ')).toMatch(/already covered/);
+    expect(getDraftByConversation(c.conversationId)!.lines).toHaveLength(2);
+
+    vi.mocked(specialists.interpretEdit).mockResolvedValueOnce([
+      intent({ kind: 'add', searchFi: 'broileri', searchEn: 'chicken breast', category: 'poultry_main', label: 'Chicken' }),
+    ]);
+    const dup = await runEditDraft({ ctx: c, instruction: 'add chicken breast' }, deps);
+    expect(dup.problems.join(' ')).toMatch(/already covered/);
+    expect(getDraftByConversation(c.conversationId)!.lines).toHaveLength(2);
+    expect(chickenKg(c.conversationId)).toBeLessThan(62);
+  });
+
+  it('caps the top-up by its own stock and reports what is still missing', async () => {
+    const c = await capped('conv-topup-short');
+    const main = getDraftByConversation(c.conversationId)!.lines[0];
+    vi.mocked(specialists.interpretEdit).mockResolvedValueOnce([intent({ kind: 'topUp', lineId: main.id, searchEn: 'chicken breast' })]);
+    vi.mocked(getAvailability).mockImplementationOnce(async (ids) => {
+      const f = await import('../fixtures.test-util');
+      return new Map([...f.fakeAvailability(ids)].map(([id, a]) => [id, id === 'chk2' ? { ...a, logisticModel: 'Stock' as const, availableAmount: 10 } : a]));
+    });
+    const res = await runEditDraft({ ctx: c, instruction: 'cover the rest' }, deps);
+    expect(getDraftByConversation(c.conversationId)!.lines[1]).toMatchObject({ productId: 'chk2', packs: 10, quantity: 20 });
+    expect(res.problems.join(' ')).toMatch(/only 10 packs of Chicken thigh fillet 2kg in stock/);
+  });
+});

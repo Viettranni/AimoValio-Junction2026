@@ -48,6 +48,15 @@ export function toComponent(plan: MenuComponentPlan, id: string, eventType: Even
 }
 
 /**
+ * What the component's guests need by the portion rule. A stock-capped component asks only for what is
+ * ordered (see fitToStock), so covering "the rest" must measure against this, never against requiredAmount alone.
+ */
+export function neededAmount(c: MenuComponent, eventType: EventType): number {
+  const rule = requiredAmount(c.category, eventType, c.guests);
+  return rule.unit === c.requiredUnit ? Math.max(c.requiredAmount, rule.amount) : c.requiredAmount;
+}
+
+/**
  * Menu agent output → components with unique ids and portion amounts from the rules.
  * A diet variant of a component that doesn't exist is dropped: on its own it would be served to nobody.
  */
@@ -268,6 +277,8 @@ export async function sourceComponents(
     request?: string;
     /** Fetch candidate prices before the pick so the product agent can compare them (edits only). */
     priceCandidates?: boolean;
+    /** Products that must not be picked (already on the draft, e.g. when covering the rest of a line). */
+    excludeProductIds?: ReadonlySet<string>;
   },
 ): Promise<Sourced> {
   const { specialists, ctx } = deps;
@@ -277,7 +288,8 @@ export async function sourceComponents(
   const exceptions: string[] = [];
 
   await stage('search', 'start');
-  const candidates = new Map(components.map((c) => [c.id, findCandidates(c)]));
+  const excluded = deps.excludeProductIds;
+  const candidates = new Map(components.map((c) => [c.id, findCandidates(c).filter((p) => !excluded?.has(p.id))]));
   for (const c of components) if (!candidates.get(c.id)!.length) exceptions.push(`${c.label}: no matching product in the catalogue`);
   const found = [...candidates.values()].flat();
   await stage('search', 'done', {

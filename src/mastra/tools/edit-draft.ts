@@ -1,29 +1,138 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import type { Draft, DraftChange, DraftDiff, DraftLine, LineTag } from '@/contracts';
-import { getProduct } from '@/catalog';
+import type { CatalogProduct, Draft, DraftChange, DraftDiff, DraftLine, LineTag, MenuComponent } from '@/contracts';
+import { checkAllergens, getProduct } from '@/catalog';
 import { getDraftByConversation, now, saveDraft } from '@/db/repo';
+import { deliverableOn } from '@/domain/cutoff';
 import { applyDraftChange } from '@/domain/draft';
+import { packsFor } from '@/domain/quantities';
 import { computeTotals } from '@/domain/totals';
 import type { EditIntent } from '../agents/order';
 import { getAimoContext, type AimoContext } from '../context';
 import { audit, emitterFor, type Emit } from '../events';
 import {
-  attachHistory, earliestCutoff, productName, sourceComponents, toComponent, toLine,
+  attachHistory, earliestCutoff, neededAmount, productName, sourceComponents, toComponent, toLine,
 } from '../pipeline/build-draft';
 import { reasonText } from '../pipeline/reasons';
 import { availablePacks, repriceLine } from '../pipeline/reprice';
+import { sameKind } from '../pipeline/same-kind';
 import { defaultSpecialists, type Specialists } from '../specialists';
 
 const MAX_GUESTS = 5000;
 const catalog = { getProduct };
 
 interface Deps { specialists: Specialists; emit: Emit }
-type Planned = { change: DraftChange; draft: Draft; after?: (d: Draft) => Draft; problems?: string[] } | { note: string };
+type Planned = { change: DraftChange; draft: Draft; after?: (d: Draft) => Draft; problems?: string[] } | { note: string; problems?: string[] };
 
 function nextLineId(draft: Draft): string {
   const max = Math.max(0, ...draft.lines.map((l) => Number(l.id.replace(/^l-/, '')) || 0));
   return `l-${max + 1}`;
+}
+
+const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
+const fmt = (n: number) => `${Math.round(n * 100) / 100}`;
+
+/**
+ * How much of a component the draft already covers. A stock split (fitToStock) puts the rest on a
+ * `<id>-more` component, so both halves count as one dish.
+ */
+function coverage(draft: Draft, c: MenuComponent) {
+  const root = c.id.replace(/-more$/, '');
+  const family = draft.components.filter((x) => x.id === root || x.id === `${root}-more`);
+  const ids = new Set([c.id, ...family.map((x) => x.id)]);
+  const eventType = draft.intake.eventType ?? 'other';
+  const needed = round6((family.length ? family : [c]).reduce((sum, x) => sum + neededAmount(x, eventType), 0));
+  const lines = draft.lines.filter((l) => ids.has(l.componentId));
+  const covered = round6(lines.filter((l) => l.unit === c.requiredUnit).reduce((sum, l) => sum + l.quantity, 0));
+  return { needed, covered, remaining: round6(needed - covered), lines };
+}
+
+/**
+ * Covers what a component still lacks (e.g. after a stock cap) with another same-kind product: sized for the
+ * remainder only, same diet constraints, tagged substitute and linked to the same component, capped by its own stock.
+ * No history note: the component's history concerns the whole amount, not this share.
+ */
+async function planTopUp(
+  c: MenuComponent, anchor: DraftLine | undefined, searchTerms: { fi: string; en: string } | null,
+  draft: Draft, ctx: AimoContext, specialists: Specialists, instruction: string,
+): Promise<Planned> {
+  const lang = draft.intake.lang ?? 'en';
+  const date = draft.intake.deliveryDate ?? '';
+  const { needed, covered, remaining, lines } = coverage(draft, c);
+  if (remaining <= 1e-9) {
+    const msg = `${c.label} is already covered (${fmt(covered)} ${c.requiredUnit} for ${fmt(needed)} ${c.requiredUnit} needed); nothing added. Change the packs on the line if the buyer wants more`;
+    return { note: msg, problems: [msg] };
+  }
+  const base = anchor ?? lines[0];
+  const original = base && getProduct(base.productId);
+  const onDraft = new Set(lines.map((l) => l.productId));
+  const source = (terms: { fi: string; en: string }) => sourceComponents([{ ...c, requiredAmount: remaining, searchTerms: terms }], draft.intake, {
+    specialists, ctx, request: instruction, priceCandidates: true, excludeProductIds: onDraft,
+  });
+  // The buyer's words first; when they only find what is already on the line, the dish's own search terms.
+  let sourced = await source(searchTerms?.en ? searchTerms : c.searchTerms);
+  const sameTerms = !searchTerms?.en || (searchTerms.en === c.searchTerms.en && searchTerms.fi === c.searchTerms.fi);
+  if (!sourced.selections[0] && !sameTerms) sourced = await source(c.searchTerms);
+  const sel = sourced.selections[0];
+  if (!sel) {
+    const msg = `${c.label}: no other product of the same kind found to cover the remaining ${fmt(remaining)} ${c.requiredUnit}; ask the buyer what to use instead`;
+    return { note: msg, problems: [...sourced.exceptions, msg] };
+  }
+  const share = sel.component;
+
+  const constraints = { excludeAllergens: c.excludeAllergens, requireDiet: c.requiredDiet };
+  const constrained = !!(c.excludeAllergens?.length || c.requiredDiet?.length);
+  let pick: { product: CatalogProduct; allergen: typeof sel.allergen } | undefined;
+  for (const id of [sel.product.id, ...sel.alternatives]) {
+    const product = getProduct(id);
+    if (!product || onDraft.has(id)) continue;
+    if (original && !sameKind(c, original, product)) continue;
+    const a = sourced.availability.get(id);
+    if (a && !deliverableOn(a, date)) continue;
+    const allergen = id === sel.product.id ? sel.allergen : checkAllergens([id], constraints)[0];
+    if (allergen.verdict === 'fail' || (constrained && sel.allergen.verdict === 'pass' && allergen.verdict !== 'pass')) continue;
+    pick = { product, allergen };
+    break;
+  }
+  if (!pick) {
+    const msg = `${c.label}: no other product of the same kind is available to cover the remaining ${fmt(remaining)} ${c.requiredUnit}; ask the buyer what to use instead`;
+    return { note: msg, problems: [...sourced.exceptions, msg] };
+  }
+
+  const anchorName = base?.productName ?? c.label;
+  const anchorStock = original && base?.availability?.logisticModel === 'Stock' ? availablePacks(original, base.availability) : null;
+  // "Only N in stock" only when the line really is at its stock limit (less than one more lot fits).
+  const atStockLimit = anchorStock !== null && !!base && base.packs + Math.max(1, original!.allowedLotSize) > anchorStock;
+  const reason = reasonText(
+    atStockLimit
+      ? { kind: 'coversRestStock', packs: base.packs, product: anchorName }
+      : { kind: 'coversRest', product: anchorName },
+    lang,
+  );
+  const { product } = pick;
+  let line = toLine({
+    component: share, product, allergen: pick.allergen, reason: sel.reason,
+    alternatives: sel.alternatives.filter((id) => id !== product.id && !onDraft.has(id)),
+    ...(base ? { substituteFor: { productId: base.productId, productName: anchorName, reason } } : {}),
+  }, nextLineId(draft), lang, sourced, date);
+  // A share of an existing dish, not a new item.
+  line = { ...line, tags: [...line.tags.filter((t) => t !== 'addon' && t !== 'substitute'), 'substitute'] };
+
+  const problems = [...sourced.exceptions];
+  const a = sourced.availability.get(product.id);
+  const inStock = a?.logisticModel === 'Stock' ? availablePacks(product, a) : null;
+  if (inStock !== null && inStock < line.packs) {
+    const lot = Math.max(1, product.allowedLotSize);
+    const packs = Math.floor(inStock / lot) * lot;
+    const name = productName(product, lang);
+    if (packs === 0) {
+      const msg = `${c.label}: ${name} has no stock either; the remaining ${fmt(remaining)} ${c.requiredUnit} is still uncovered, ask the buyer what to use instead`;
+      return { note: msg, problems: [...problems, msg] };
+    }
+    line = repriceLine({ ...line, packs, quantity: round6(packs * product.packSize) }, product, line.price, line.availability, date);
+    problems.push(`${c.label}: only ${packs} packs of ${name} in stock, so ${fmt(remaining - line.quantity)} ${c.requiredUnit} is still uncovered; ask the buyer how to cover it`);
+  }
+  return { change: { kind: 'addLine', line }, draft, problems };
 }
 
 const queryOf = (i: EditIntent) => ({ fi: i.searchFi ?? i.searchEn ?? '', en: i.searchEn ?? i.searchFi ?? '' });
@@ -79,6 +188,12 @@ async function plan(
         problems: sourced.exceptions,
       };
     }
+    case 'topUp': {
+      const component = line && draft.components.find((c) => c.id === line.componentId);
+      if (!line || !component) return { note: 'Could not tell which line to cover the rest of' };
+      const searchTerms = queryOf(intent);
+      return planTopUp(component, line, searchTerms.en ? searchTerms : null, draft, ctx, specialists, instruction);
+    }
     case 'add': {
       const searchTerms = queryOf(intent);
       if (!searchTerms.en) return { note: 'Could not tell what to add' };
@@ -91,6 +206,23 @@ async function plan(
       const sourced = await sourceComponents([component], draft.intake, { specialists, ctx, request: instruction, priceCandidates: true });
       const sel = sourced.selections[0];
       if (!sel) return { note: `No product found for "${searchTerms.en}"` };
+      // The same dish again (same category, same kind as a line already on it) must not double the requirement.
+      const duplicate = draft.components.find((c) => c.category === component.category && draft.lines.some((l) => {
+        const p = l.componentId === c.id && getProduct(l.productId);
+        return !!p && sameKind(c, p, sel.product);
+      }));
+      if (duplicate) {
+        const { needed, covered, remaining, lines } = coverage(draft, duplicate);
+        if (remaining > 1e-9) {
+          return planTopUp(duplicate, lines.find((l) => l.componentId === duplicate.id), searchTerms, draft, ctx, specialists, instruction);
+        }
+        const extra = packsFor(component.requiredAmount, sel.product).quantity;
+        if (covered + extra > needed + sel.product.packSize) {
+          const msg = `${duplicate.label} is already covered (${fmt(covered)} ${duplicate.requiredUnit} for ${fmt(needed)} ${duplicate.requiredUnit} needed); ` +
+            `adding ${productName(sel.product, lang)} for every guest would order ${fmt(covered + extra)} ${duplicate.requiredUnit}. Nothing added; ask the buyer whether to raise the packs instead`;
+          return { note: msg, problems: [msg] };
+        }
+      }
       const [newLine] = attachHistory([toLine(sel, nextLineId(draft), lang, sourced, date)], [component], eventType, ctx.customerId, date);
       return {
         change: { kind: 'addLine', line: newLine },
@@ -131,7 +263,7 @@ export async function runEditDraft({ ctx, instruction }: { ctx: AimoContext; ins
   const problems: string[] = [];
   for (const intent of intents) {
     const planned = await plan(intent, draft, ctx, specialists, instruction);
-    if ('note' in planned) { notes.push(planned.note); continue; }
+    if ('note' in planned) { notes.push(planned.note); problems.push(...(planned.problems ?? [])); continue; }
     problems.push(...(planned.problems ?? []));
     const result = applyDraftChange(planned.draft, planned.change, catalog);
     draft = planned.after ? planned.after(result.draft) : result.draft;
@@ -184,7 +316,8 @@ export function createEditDraftTool(specialists: Specialists = defaultSpecialist
   return createTool({
     id: 'editDraft',
     description:
-      'Order specialist. Changes the existing draft from the buyer\'s words: guest count, packs, removing or adding items, swapping products ("swap to basmati", "cheaper chicken"), applying history notes. ' +
+      'Order specialist. Changes the existing draft from the buyer\'s words: guest count, packs, removing or adding items, swapping products ("swap to basmati", "cheaper chicken"), ' +
+      'covering the rest of a short line with a similar product ("add a similar chicken breast to cover the rest"), applying history notes. ' +
       'Only affected rows change and flash in the sheet. Returns a one-line change summary for you to confirm in ONE short sentence, and problems (no price, not deliverable, unknown allergens) you must tell the buyer about.',
     inputSchema: z.object({ instruction: z.string().describe("The buyer's edit request, verbatim") }),
     outputSchema: z.object({

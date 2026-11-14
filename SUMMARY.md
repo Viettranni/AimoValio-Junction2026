@@ -50,6 +50,7 @@ Quality gates: 180 automated tests and a clean type check. Every task was review
 ## Known limits
 
 - Changing the delivery date rebuilds the draft and loses manual edits.
+- Changing the guest count after a dish was split or topped up across two products recomputes each line from the full amount and can over-order; re-check the sheet after such a change.
 - The demo reset and fast-forward have no auth. Fine locally; protect them before any public deploy.
 - The cut-off can be an hour off across a daylight-saving change.
 - Finnish search for very short words ("kana") is noisy; the product agent picks among the candidates.

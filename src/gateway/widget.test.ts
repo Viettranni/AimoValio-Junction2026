@@ -32,7 +32,7 @@ import { decideApproval } from './approvals';
 import { getDeliveryStatus } from './deliveries';
 import { shortfall } from './delivery';
 import { getDraft, getOrder, listAgentOrders, planEvent, quoteDraft, updateDraft } from './drafts';
-import { placeOrder } from './orders';
+import { getOrderStatus, placeOrder } from './orders';
 import { getOffer } from './store';
 import type { AgentIdentity, GatewayContext } from './types';
 import { widgetContext, widgetOffer, widgetOrderStatus, widgetPlaceOrder } from './widget';
@@ -137,6 +137,16 @@ describe('Approve = placeOrder through the gateway', () => {
     ]));
     // Opening Review again shows the order.
     expect(await widgetOffer(w.conversationId)).toMatchObject({ status: 'ordered' });
+  });
+
+  it("keeps the buyer's event name on the receipt; the order still resolves to its offer by order id", async () => {
+    const w = await widgetDraft(20, '2026-12-16');
+    const r = await widgetOffer(w.conversationId);
+    if (r.status !== 'offer') throw new Error(r.status);
+    const placed = await widgetPlaceOrder({ conversationId: w.conversationId, offerId: r.offer.offerId });
+    if (placed.status !== 'ordered') throw new Error(placed.status);
+    expect(placed.receipt.eventName).toBe('Wedding');
+    expect(getOrderStatus(placed.receipt.orderId, widget)).toMatchObject({ status: 'ordered', offer: { offerId: r.offer.offerId } });
   });
 
   it("counts the buyer's allergen ticks as the sign-off for the widget only; an external agent's are ignored", async () => {

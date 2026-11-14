@@ -61,7 +61,7 @@ function buildReceipt(offer: Offer, orderId: string, submittedAt: string, draft:
   }
   return {
     orderId, simulated: true, customerId: offer.customerId,
-    eventName: draft?.intake.eventName ? `${draft.intake.eventName} (${offer.offerId})` : `Agent order ${offer.offerId}`,
+    eventName: draft?.intake.eventName ?? 'Agent order',
     eventType: draft?.intake.eventType ?? 'other', deliveryDate: offer.deliveryDate, guests: draft?.intake.guests ?? 0, lines, total, totalWithTax, vat: round2(totalWithTax - total),
     co2Kg: co2 === null ? null : round2(co2), minutesSaved: minutesSaved(lines.length), submittedAt,
     cutoff: offer.cutoff,
@@ -267,8 +267,7 @@ export function getOrderStatus(id: string, ctx: GatewayContext) {
   } else {
     receipt = getReceipt(id, db);
     if (!receipt || receipt.customerId !== ctx.agent.customerId) throw notFound();
-    const offerId = /\b(OF-[0-9A-F]+)\b/.exec(receipt.eventName)?.[1];
-    offer = offerId ? getOffer(offerId, db) : null;
+    offer = listOffers(receipt.customerId, db).find((o) => o.status === 'ordered' && o.orderId === receipt!.orderId) ?? null;
     approval = offer?.approvalId ? getApproval(offer.approvalId, db) : null;
   }
   const orderId = receipt?.orderId ?? approval?.orderId ?? offer?.orderId;

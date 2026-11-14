@@ -272,7 +272,9 @@ export interface OrderSummary {
   checkInDone: boolean;
 }
 
-export type Actor = 'buyer' | 'orchestrator' | 'intake' | 'menu' | 'product' | 'allergen' | 'pricing' | 'history' | 'order' | 'system';
+export type Actor = 'buyer' | 'orchestrator' | 'intake' | 'menu' | 'product' | 'allergen' | 'pricing' | 'history' | 'order' | 'system'
+  // Agent gateway (src/gateway): an external purchasing agent, the gateway's own policy engine, a human approver.
+  | `agent:${string}` | 'gateway' | `approver:${string}`;
 
 export interface AuditEntry {
   id: string;

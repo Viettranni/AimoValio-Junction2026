@@ -68,3 +68,34 @@ export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),
 });
+
+// ── Agent gateway ──
+
+export const gatewayOffers = sqliteTable('gateway_offers', {
+  id: text('id').primaryKey(),
+  customerId: text('customer_id').notNull(),
+  agentId: text('agent_id').notNull(),
+  status: text('status').notNull(),
+  json: text('json').notNull(),
+  createdAt: text('created_at').notNull(),
+  validUntil: text('valid_until').notNull(),
+});
+
+export const gatewayApprovals = sqliteTable('gateway_approvals', {
+  id: text('id').primaryKey(),
+  offerId: text('offer_id').notNull(),
+  customerId: text('customer_id').notNull(),
+  agentId: text('agent_id').notNull(),
+  status: text('status').notNull(),
+  json: text('json').notNull(),
+  createdAt: text('created_at').notNull(),
+  decidedAt: text('decided_at'),
+});
+
+export const gatewayChats = sqliteTable('gateway_chats', {
+  conversationId: text('conversation_id').primaryKey(),
+  customerId: text('customer_id').notNull(),
+  agentId: text('agent_id').notNull(),
+  messagesJson: text('messages_json').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});

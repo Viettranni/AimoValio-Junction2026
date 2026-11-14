@@ -1,0 +1,18 @@
+/* Glowing border + sparkle badge for AI-powered menu entries (AiNavLink). */
+@keyframes ai-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--lime), 0 0 8px 1px rgb(192 224 33 / 0.5); }
+  50% { box-shadow: 0 0 0 2px var(--lime), 0 0 16px 4px rgb(192 224 33 / 0.85); }
+}
+.ai-glow {
+  box-shadow: 0 0 0 2px var(--lime), 0 0 12px 2px rgb(192 224 33 / 0.65);
+  animation: ai-glow-pulse 2.4s ease-in-out infinite;
+}
+.ai-glow-star {
+  position: absolute; top: -9px; right: -9px;
+  display: grid; place-items: center; width: 20px; height: 20px;
+  border-radius: 999px; background: var(--navy); color: var(--lime);
+  box-shadow: 0 0 0 2px #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-glow { animation: none; }
+}

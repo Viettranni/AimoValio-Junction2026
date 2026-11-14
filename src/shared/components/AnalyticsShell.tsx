@@ -8,11 +8,11 @@ import '../analytics.css';
 const SECTIONS = [
   { href: '/analytiikka/oivallukset', label: 'Analytiikka' },
   { href: '/analytiikka/ravintolat', label: 'Ravintolat' },
+  { href: '/approvals', label: 'Hyväksynnät' },
 ];
 
 const OTHER = [
   { href: '/demo-host', label: '← Verkkokauppa' },
-  { href: '/approvals', label: 'Hyväksynnät' },
 ];
 
 /** Page frame for Analytiikka: petrol title, links back to the rest of the app, and the section menu. */

@@ -1,4 +1,5 @@
-// Agent identity: API key → { agentId, customerId, displayName }. The customer always comes from the key.
+// Agent identity: API key → { agentId, customerId, displayName }. The customer always comes from the key;
+// the widget has no key and gets its identity server-side (WIDGET_AGENT).
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { AgentIdentity } from './types';
 
@@ -12,6 +13,21 @@ const DEFAULT_KEYS: Record<string, AgentIdentity> = {
     displayName: 'Helsinki Juhlapalvelu purchasing agent',
   },
 };
+
+/**
+ * The Aimo chat widget: a gateway client like any other agent, bound to the demo customer. It has no API key; the
+ * widget's own API routes resolve it server-side, so the browser never holds an agent key. humanInTheLoop: a buyer
+ * reviews every order on screen, so their per-line allergen tick may count as the allergen sign-off. Nothing else
+ * in the policy changes for it.
+ */
+export const WIDGET_AGENT: Readonly<AgentIdentity> = Object.freeze({
+  agentId: 'aimo-widget',
+  customerId: 'helsinki-juhlapalvelu',
+  displayName: 'Aimo chat (Helsinki Juhlapalvelu)',
+  humanInTheLoop: true,
+});
+
+export const widgetAgent = (): AgentIdentity => ({ ...WIDGET_AGENT });
 
 export class AuthError extends Error {
   constructor(message = 'Unknown or missing agent API key') {
@@ -33,7 +49,8 @@ export function agentKeys(env: Record<string, string | undefined> = process.env)
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const entries = Object.entries(parsed).filter((e): e is [string, AgentIdentity] => e[0].length >= 8 && isIdentity(e[1]));
-    if (entries.length) return Object.fromEntries(entries);
+    // A key is never a human in the loop: only the widget's server-side identity is.
+    if (entries.length) return Object.fromEntries(entries.map(([k, v]) => [k, { agentId: v.agentId, customerId: v.customerId, displayName: v.displayName }]));
   } catch { /* fall through */ }
   console.error('[gateway] AIMO_AGENT_KEYS is set but is not a JSON object of key (≥ 8 chars) → {agentId, customerId, displayName}; no agent key is accepted');
   return {};

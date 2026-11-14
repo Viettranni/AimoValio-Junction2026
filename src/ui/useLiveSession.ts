@@ -10,7 +10,9 @@ import type {
 import { describeEdit } from './editNote';
 import { showShelfCard, toolRunning } from './shelf';
 import { t, uiLangFor, type UiKey } from './i18n';
-import type { ApproveResult, OrderDetails, WidgetSession } from './session';
+import type { DeliveryStatus } from '@/gateway/delivery';
+import type { WidgetOffer, WidgetPlaceResult, WidgetStatus } from '@/gateway/widget';
+import type { Checkout, OrderDetails, WidgetSession } from './session';
 import { answerText, deriveThread, messageText, type ChoiceAnswer, type LocalItem, type ProgressRuns, type ThreadItem } from './thread';
 
 type AimoData = {
@@ -24,6 +26,8 @@ type AimoData = {
 type AimoMessage = UIMessage<unknown, AimoData>;
 
 const TYPING_DELAY_MS = 600;
+/** How often a pending approval is checked. */
+const APPROVAL_POLL_MS = 3000;
 /** Saved transcripts are trimmed to stay well inside sessionStorage limits. */
 const MAX_SAVED_MESSAGES = 60;
 const MAX_SAVED_CHARS = 400_000;
@@ -123,6 +127,7 @@ export function useLiveSession({
   const [quietKey, setQuietKey] = useState('');
   const [pendingEdits, setPendingEdits] = useState<string[]>([]);
   const [attempt, setAttempt] = useState(0);
+  const [checkout, setCheckout] = useState<Checkout>({ kind: 'idle' });
   const localId = useRef(0);
   // Draft edits run one at a time, each against the draft the previous one returned.
   const editQueue = useRef<Promise<void>>(Promise.resolve());
@@ -171,7 +176,7 @@ export function useLiveSession({
   const busy = status === 'submitted' || status === 'streaming';
 
   const refreshOrders = () =>
-    api<OrderSummary[]>(`/api/orders?customerId=${encodeURIComponent(customerId)}`).then(setOrders, () => {});
+    api<OrderSummary[]>('/api/orders').then(setOrders, () => {});
 
   // A reload keeps the conversation id, so bring back its transcript, draft and the order list.
   useEffect(() => {
@@ -189,7 +194,7 @@ export function useLiveSession({
     });
     api<Draft | null>(`/api/draft?conversationId=${encodeURIComponent(conversationId)}`)
       .then((d) => d && commitDraft(d), () => {});
-    api<OrderSummary[]>(`/api/orders?customerId=${encodeURIComponent(customerId)}`).then(setOrders, () => {});
+    api<OrderSummary[]>('/api/orders').then(setOrders, () => {});
     return () => cancelAnimationFrame(frame);
     // setMessages is stable per chat; the restore runs once per conversation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -276,17 +281,100 @@ export function useLiveSession({
     });
   };
 
-  const approve = async (confirmedUnknownLineIds: string[]): Promise<ApproveResult> => {
-    const result = await api<ApproveResult>('/api/order/approve', { method: 'POST', body: { conversationId, confirmedUnknownLineIds } });
-    if (result.receipt) {
-      const sent = result.receipt;
-      setReceipt(sent);
-      if (draftRef.current) commitDraft({ ...draftRef.current, status: 'submitted' });
-      say('notice.sent', { id: sent.orderId });
-      void refreshOrders();
-    }
-    return result;
+  // ───── Checkout: Review = a gateway offer, Approve = the gateway's placeOrder ─────
+
+  const ordered = (sent: Receipt, approvedBy?: string) => {
+    setReceipt(sent);
+    if (draftRef.current) commitDraft({ ...draftRef.current, status: 'submitted' });
+    setCheckout({ kind: 'idle' });
+    // The chat's words after checkout come from the gateway's answer, never from the model.
+    if (approvedBy) say('notice.approved', { name: approvedBy, id: sent.orderId });
+    else say('notice.sent', { id: sent.orderId });
+    void refreshOrders();
   };
+
+  const skewOf = (now: string) => Date.parse(now) - Date.now();
+
+  const requestOffer = () => {
+    const forConversation = conversationId;
+    if (checkout.kind !== 'pending') setCheckout({ kind: 'quoting' });
+    api<WidgetOffer>('/api/order/offer', { method: 'POST', body: { conversationId } }).then(
+      (r) => {
+        if (conversationRef.current !== forConversation) return;
+        if (r.status === 'offer') {
+          if (r.changes.length) commitDraft(r.draft);
+          setCheckout({ kind: 'offer', offer: r.offer, changes: r.changes, limitEur: r.limitEur, skewMs: skewOf(r.now) });
+        } else if (r.status === 'pending_approval') {
+          setCheckout({ kind: 'pending', offerId: r.offerId, approvalId: r.approvalId, approver: r.approver, reasons: r.reasons, total: r.total, limitEur: r.limitEur });
+        } else {
+          setReceipt(r.receipt);
+          if (draftRef.current) commitDraft({ ...draftRef.current, status: 'submitted' });
+          setCheckout({ kind: 'idle' });
+        }
+      },
+      () => conversationRef.current === forConversation && setCheckout({ kind: 'error' }),
+    );
+  };
+
+  const placeOrder = (allergenLineIds: string[]) => {
+    if (checkout.kind !== 'offer' || checkout.placing) return;
+    const current = checkout;
+    setCheckout({ ...current, placing: true });
+    api<WidgetPlaceResult>('/api/order/place', { method: 'POST', body: { conversationId, offerId: current.offer.offerId, allergenLineIds } }).then(
+      (r) => {
+        if (r.status === 'ordered') return ordered(r.receipt);
+        if (r.status === 'pending_approval') {
+          setCheckout({ kind: 'pending', offerId: r.offerId, approvalId: r.approvalId, approver: r.approver, reasons: r.reasons, total: r.total, limitEur: r.limitEur });
+          say('notice.pending', { name: r.approver.name });
+        } else if (r.status === 'requote') {
+          setCheckout({ kind: 'offer', offer: r.newOffer, changes: r.changes, limitEur: r.limitEur, skewMs: skewOf(r.now), requoted: true });
+        } else if (r.status === 'not_orderable') {
+          setCheckout({ kind: 'not_orderable', reasons: r.reasons });
+        } else {
+          setCheckout({ kind: 'rejected', message: r.message });
+        }
+      },
+      () => setCheckout({ ...current, placing: false }),
+    );
+  };
+
+  // A pending approval is polled until it settles; the approver decides on /approvals.
+  const pendingId = checkout.kind === 'pending' ? checkout.approvalId : null;
+  const approverName = checkout.kind === 'pending' ? checkout.approver.name : '';
+  const settleRef = useRef<(s: WidgetStatus) => void>(() => {});
+  useEffect(() => {
+    settleRef.current = (s: WidgetStatus) => {
+      if (s.status === 'ordered') ordered(s.receipt, approverName);
+      else if (s.status === 'rejected') {
+        setCheckout({ kind: 'rejected', decidedBy: s.decidedBy ?? approverName, note: s.note });
+        say('notice.rejected', { name: s.decidedBy ?? approverName });
+      } else if (s.status === 'requote') {
+        // Approved, but Valio's prices or stock moved meanwhile: the gateway re-quoted; show the new offer.
+        requestOffer();
+      }
+    };
+  });
+  useEffect(() => {
+    if (!pendingId) return;
+    let stopped = false;
+    const tick = () => api<WidgetStatus>(`/api/order/status?id=${encodeURIComponent(pendingId)}`).then(
+      (s) => { if (!stopped && s.status !== 'pending_approval' && s.status !== 'unknown') { stopped = true; settleRef.current(s); } },
+      () => {},
+    );
+    const id = setInterval(tick, APPROVAL_POLL_MS);
+    return () => { stopped = true; clearInterval(id); };
+  }, [pendingId]);
+
+  const clearCheckout = () => setCheckout({ kind: 'idle' });
+
+  const getDelivery = (orderId: string) =>
+    api<DeliveryStatus>(`/api/orders/${encodeURIComponent(orderId)}/delivery`).catch(() => null);
+
+  const nextDeliveryStep = () =>
+    api<{ orderId: string; delivery: DeliveryStatus }>('/api/demo', { method: 'POST', body: { action: 'nextDeliveryStep', conversationId } }).then(
+      (r) => { void refreshOrders(); return r; },
+      (e: { status?: number }) => { if (e.status === 404) say('notice.noOrder'); else fail('chat.error'); return null; },
+    );
 
   const fastForward = () => {
     api<CheckInEvent>('/api/demo', { method: 'POST', body: { action: 'fastForward', conversationId } }).then(
@@ -306,6 +394,7 @@ export function useLiveSession({
         commitDraft(null);
         setDiff(null);
         setReceipt(null);
+        setCheckout({ kind: 'idle' });
         setProgress({});
         setLocal([]);
         setAnswers({});
@@ -350,7 +439,8 @@ export function useLiveSession({
     ).catch(() => []);
 
   return {
-    items, typing, busy, planning, editing, lang, intake, missing, draft, diff, receipt, orders,
-    send, choose, change, approve, fastForward, reset, retry, submitCheckIn, confirmCheckIn, openOrder, getAudit,
+    items, typing, busy, planning, editing, lang, intake, missing, draft, diff, receipt, orders, refreshOrders,
+    send, choose, change, fastForward, reset, retry, submitCheckIn, confirmCheckIn, openOrder, getAudit,
+    checkout, requestOffer, placeOrder, clearCheckout, getDelivery, nextDeliveryStep,
   };
 }

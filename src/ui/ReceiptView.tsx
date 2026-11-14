@@ -2,10 +2,13 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import type { LeftoverRecord, Receipt, UiLang } from '@/contracts';
+import type { DeliveryStatus } from '@/gateway/delivery';
+import { DeliveryTimeline } from './DeliveryTimeline';
 import { formatDay, formatMoney, formatNumber, formatQty } from './format';
 import { t } from './i18n';
-import { ClockIcon, HistoryIcon, LeafIcon, PrintIcon } from './icons';
+import { ClockIcon, DownloadIcon, HistoryIcon, LeafIcon } from './icons';
 import { shortName } from './productName';
+import { downloadReceipt } from './receiptDocument';
 import { SECONDARY_BUTTON } from './styles';
 
 /** Order confirmation. The order number is "stamped" in; the decision log unfolds underneath. */
@@ -15,9 +18,12 @@ export function ReceiptView({
   audit,
   leftovers,
   onReorder,
+  delivery,
   lang,
 }: {
   receipt: Receipt;
+  /** Simulated delivery from the gateway; null while loading (the timeline keeps its size). */
+  delivery?: DeliveryStatus | null;
   onOpenAudit: () => void;
   /** The rendered decision log, shown when present. */
   audit?: React.ReactNode;
@@ -28,6 +34,7 @@ export function ReceiptView({
 }) {
   const money = (n: number) => formatMoney(n, lang, 2);
   const leftoverOf = (lineId: string) => leftovers?.find((r) => r.lineId === lineId);
+  const deliveryOf = (lineId: string) => delivery?.lines.find((l) => l.lineId === lineId && l.short);
   const leftoverText = (r: LeftoverRecord) =>
     r.leftoverQty === 0
       ? t('receipt.usedUp', lang)
@@ -52,8 +59,8 @@ export function ReceiptView({
               <h2 className="text-[16px] font-semibold tracking-[-0.01em] text-navy">{t('receipt.sent', lang)}</h2>
             </div>
             <p className="mt-1 text-[12px] text-muted">
-              {receipt.eventName} · {t('receipt.delivery', lang, { d: formatDay(receipt.deliveryDate, lang) })} ·{' '}
-              {t('sheet.guests', lang, { n: receipt.guests })}
+              {receipt.eventName} · {t('receipt.delivery', lang, { d: formatDay(receipt.deliveryDate, lang) })}
+              {receipt.guests > 0 && <> · {t('sheet.guests', lang, { n: receipt.guests })}</>}
             </p>
           </div>
           <motion.div
@@ -77,6 +84,8 @@ export function ReceiptView({
           {t('receipt.saved', lang, { n: receipt.minutesSaved })}
         </motion.div>
 
+        <DeliveryTimeline delivery={delivery} lang={lang} />
+
         <ul className="mx-5 mt-3 divide-y divide-line text-[12.5px]">
           {receipt.lines.map((l) => (
             <li key={l.lineId} className="py-1.5">
@@ -87,6 +96,14 @@ export function ReceiptView({
                   <span className="w-20 text-right font-medium text-navy">{money(l.lineTotal)}</span>
                 </span>
               </div>
+              {deliveryOf(l.lineId) && (
+                <div className="text-[11px] font-medium text-warn tabular-nums">
+                  {t('delivery.short', lang, {
+                    d: formatQty(deliveryOf(l.lineId)!.deliveredQty ?? 0, l.unit, lang),
+                    o: formatQty(l.quantity, l.unit, lang),
+                  })}
+                </div>
+              )}
               {leftoverOf(l.lineId) && (
                 <div className="flex items-center gap-1 text-[11px] text-warm-ink tabular-nums">
                   <HistoryIcon size={11} className="text-warm-icon" />
@@ -132,9 +149,9 @@ export function ReceiptView({
               {t('receipt.reorder', lang)}
             </button>
           )}
-          <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-blue hover:underline">
-            <PrintIcon size={14} />
-            {t('receipt.print', lang)}
+          <button type="button" onClick={() => downloadReceipt(receipt, lang)} className="inline-flex items-center gap-1.5 text-blue hover:underline">
+            <DownloadIcon size={14} />
+            {t('receipt.download', lang)}
           </button>
           <button type="button" onClick={onOpenAudit} className="text-blue hover:underline">
             {audit ? t('receipt.hideLog', lang) : t('receipt.log', lang)}

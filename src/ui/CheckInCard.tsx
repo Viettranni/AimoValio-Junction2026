@@ -129,6 +129,11 @@ function LeftoverTable({
           return (
             <li key={l.lineId} className="border-t border-warm-border/60 py-1.5 first:border-t-0">
               <div className="truncate text-navy" title={l.productName}>{shortName(l.productName)}</div>
+              {l.deliveredShort && (
+                <div className="text-[10.5px] font-medium text-warn">
+                  {t('delivery.short', lang, { d: formatQty(l.quantity - l.deliveredShort.qty, l.unit, lang), o: formatQty(l.quantity, l.unit, lang) })}
+                </div>
+              )}
               <div className="mt-0.5 flex items-center justify-between gap-2">
                 <span className="tabular-nums">
                   {t('checkin.ordered', lang)} {formatQty(l.quantity, l.unit, lang)}

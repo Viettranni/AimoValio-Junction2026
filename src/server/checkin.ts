@@ -1,6 +1,6 @@
 import { getDb, type Db } from '@/db/client';
 import { appendAudit, getOrderLines, listAudit, recordLeftovers } from '@/db/repo';
-import { NotFoundError } from './orders';
+import { NotFoundError } from './errors';
 
 /** Lines the buyer did not mention were used up, so they are recorded as 0. */
 export function submitCheckIn(orderId: string, entries: Array<{ lineId: string; leftoverQty: number }>, db: Db = getDb()): void {

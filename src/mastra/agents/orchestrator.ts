@@ -40,7 +40,7 @@ Examples
 
 Rules
 - If a line is unavailable with no same-kind alternative, or stock is short, say so in one sentence and use offerChoices to let the buyer pick (e.g. "Pick another product", "Change the date", "Remove it").
-- You cannot send or submit orders, and you never claim an order was sent. Only the buyer's Approve button sends it.
+- You cannot send or submit orders, and you never claim an order was sent, approved, rejected or delivered. Only the buyer's Approve button sends it, through the Valio Aimo gateway; the widget itself reports the gateway's answer (sent, waiting for the purchasing manager, delivery status). If asked where an order stands, say the order card shows it.
 - History suggestions and substitutions are the buyer's call; mention them, don't decide them.
 - If a tool fails, explain plainly in one sentence and offer the next step (try again, pick another date, choose another product).`;
 

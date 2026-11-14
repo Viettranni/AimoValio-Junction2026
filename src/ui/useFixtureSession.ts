@@ -37,7 +37,9 @@ import {
   planningScript,
 } from './fixtures';
 import { formatMoney, formatNumber, formatQtyDelta } from './format';
-import type { WidgetSession } from './session';
+import { deliveryStatus, nextStepAt, type DeliveryOrder } from '@/gateway/delivery';
+import type { Offer, OfferLine } from '@/gateway/types';
+import type { Checkout, WidgetSession } from './session';
 import type { ThreadItem } from './thread';
 
 /** Scales every scripted delay in fast mode. */
@@ -100,6 +102,9 @@ export function useFixtureSession({ conversationId, customerId }: { conversation
   const [orders, setOrders] = useState<OrderRecord[]>(() => fixturePastOrders(customerId));
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [fast, setFastState] = useState(false);
+  const [checkout, setCheckout] = useState<Checkout>({ kind: 'idle' });
+  /** The scripted demo's own clock offset for the delivery timeline (ms). */
+  const clockRef = useRef(0);
 
   const itemsRef = useRef(items);
   const draftRef = useRef(draft);
@@ -495,6 +500,8 @@ export function useFixtureSession({ conversationId, customerId }: { conversation
     commitDraft(null);
     setDiff(null);
     setReceipt(null);
+    setCheckout({ kind: 'idle' });
+    clockRef.current = 0;
     ordersRef.current = fixturePastOrders(customerId);
     setOrders(ordersRef.current);
     setAudit([]);
@@ -505,14 +512,61 @@ export function useFixtureSession({ conversationId, customerId }: { conversation
     setFastState(on);
   };
 
+  // Scripted checkout: a local stand-in for the gateway's offer (prices as on the draft, 15 min hold).
+  const requestOffer = () => {
+    const current = draftRef.current;
+    if (!current) return;
+    const nowMs = Date.now();
+    const lines: OfferLine[] = current.lines.filter((l) => l.packs > 0).map((l) => ({
+      lineId: l.id, productId: l.productId, productName: l.productName, packDescription: l.packDescription,
+      requested: { quantity: l.packs, unit: 'packs' }, packs: l.packs, quantity: l.quantity, unit: l.unit,
+      unitPrice: l.unitPrice, unitPriceWithTax: l.unitPriceWithTax, priceBasis: 'per_pack', valioPrice: l.unitPrice,
+      lineTotal: Math.round(l.packs * (l.unitPrice ?? 0) * 100) / 100, lineTotalWithTax: Math.round(l.packs * (l.unitPriceWithTax ?? 0) * 100) / 100,
+      status: l.unitPrice === null ? 'unavailable' : 'available', available: l.unitPrice !== null,
+      availablePacks: null, availableDate: null, cutoff: current.cutoff, allergen: l.allergen,
+    }));
+    const orderable = lines.filter((l) => l.available);
+    const total = Math.round(orderable.reduce((sum, l) => sum + l.lineTotal, 0) * 100) / 100;
+    const totalWithTax = Math.round(orderable.reduce((sum, l) => sum + l.lineTotalWithTax, 0) * 100) / 100;
+    const offer: Offer = {
+      offerId: 'OF-DEMO0001', customerId, agentId: 'aimo-widget', deliveryDate: current.intake.deliveryDate ?? '', lines,
+      totals: { currency: 'EUR', total, totalWithTax, vat: Math.round((totalWithTax - total) * 100) / 100, orderableLines: orderable.length, excludedLines: lines.length - orderable.length },
+      cutoff: current.cutoff, createdAt: new Date(nowMs).toISOString(), validUntil: new Date(nowMs + 15 * 60_000).toISOString(),
+      status: 'open', pricing: 'Scripted demo', request: { deliveryDate: current.intake.deliveryDate ?? '', lines: [] },
+    };
+    setCheckout({ kind: 'offer', offer, changes: [], limitEur: 1000, skewMs: 0 });
+  };
+
+  const placeOrder = () => {
+    if (checkout.kind !== 'offer' || checkout.placing) return;
+    setCheckout({ ...checkout, placing: true });
+    void approve().then((sent) => setCheckout(sent ? { kind: 'idle' } : { ...checkout, placing: false }));
+  };
+
+  const deliveryOrderOf = (r: Receipt): DeliveryOrder => ({
+    orderId: r.orderId, submittedAt: r.submittedAt, deliveryDate: r.deliveryDate, cutoff: r.cutoff ?? null,
+    lines: r.lines.map((l) => ({ ...l, logisticModel: 'Stock', reliability: null })),
+  });
+
+  const getDelivery = async (orderId: string) => {
+    const order = ordersRef.current.find((o) => o.summary.orderId === orderId);
+    return order ? deliveryStatus(deliveryOrderOf(order.receipt), new Date(Date.now() + clockRef.current)) : null;
+  };
+
+  const nextDeliveryStep = async () => {
+    const latest = [...ordersRef.current].sort((a, b) => b.receipt.submittedAt.localeCompare(a.receipt.submittedAt))[0];
+    if (!latest) return null;
+    const order = deliveryOrderOf(latest.receipt);
+    const next = nextStepAt(order, new Date(Date.now() + clockRef.current));
+    if (next) clockRef.current = Math.max(clockRef.current, Date.parse(next) + 1000 - Date.now());
+    return { orderId: latest.receipt.orderId, delivery: deliveryStatus(order, new Date(Date.now() + clockRef.current)) };
+  };
+
   return {
     items, typing, busy, planning: busy && !draft, editing, lang, intake, missing, draft, diff, receipt, fast, setFast,
     orders: orders.map((o) => o.summary),
     send, choose, change, fastForward, submitCheckIn, reset,
-    approve: async () => {
-      const sent = await approve();
-      return sent ? { receipt: sent } : {};
-    },
+    checkout, requestOffer, placeOrder, clearCheckout: () => setCheckout({ kind: 'idle' }), getDelivery, nextDeliveryStep,
     retry: () => {},
     // The scripted check-in saves straight from the free-text reply, so there is no table to confirm.
     confirmCheckIn: async () => {},

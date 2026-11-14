@@ -35,7 +35,7 @@ const drafts = () => import('@/gateway/drafts');
 
 export const listOrdersTool = createTool({
   id: 'listOrders',
-  description: "Your customer's orders (newest event first, with leftover ratio once reported) and the approvals still pending.",
+  description: "Your customer's orders (newest event first, with leftover ratio once reported and the current simulated delivery state) and the approvals still pending.",
   inputSchema: z.object({ limit: z.number().int().min(1).max(100).optional().describe('Default 20') }),
   mcp: { annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false } },
   execute: async ({ limit }, context) => (await drafts()).listAgentOrders({ agent: agentFor(context) }, limit),
@@ -43,10 +43,21 @@ export const listOrdersTool = createTool({
 
 export const getOrderTool = createTool({
   id: 'getOrder',
-  description: 'One order: the receipt (lines, totals, delivery date; simulated order) and the leftovers recorded for it.',
+  description: 'One order: the receipt (lines, totals, delivery date; simulated order), the leftovers recorded for it and its simulated delivery status (same as getDeliveryStatus).',
   inputSchema: z.object({ orderId: z.string() }),
   mcp: { annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false } },
   execute: async ({ orderId }, context) => (await drafts()).getOrder(orderId, { agent: agentFor(context) }),
+});
+
+export const getDeliveryStatusTool = createTool({
+  id: 'getDeliveryStatus',
+  description:
+    'Simulated, deterministic delivery of one of your orders on the Aimo demo clock: state (received → confirmed → picking → out_for_delivery → delivered) with the time of each step, ' +
+    'the ETA window on the delivery day, the supplier sub-track for Terminal lines (ordered from supplier → arrived at the Valio Aimo terminal), a late-risk flag ' +
+    '(ordered within 2 h of the cut-off) and, once delivered, per-line delivered quantities with the reason for any short line. Use it before reportLeftovers.',
+  inputSchema: z.object({ orderId: z.string() }),
+  mcp: { annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false } },
+  execute: async ({ orderId }, context) => (await import('@/gateway/deliveries')).getDeliveryStatus(orderId, { agent: agentFor(context) }),
 });
 
 export const reportLeftoversTool = createTool({
@@ -63,4 +74,4 @@ export const reportLeftoversTool = createTool({
   execute: async (input, context) => (await drafts()).reportLeftovers(input, { agent: agentFor(context) }),
 });
 
-export const orderTools = [placeOrderTool, getOrderStatusTool, listOrdersTool, getOrderTool, reportLeftoversTool];
+export const orderTools = [placeOrderTool, getOrderStatusTool, listOrdersTool, getOrderTool, getDeliveryStatusTool, reportLeftoversTool];

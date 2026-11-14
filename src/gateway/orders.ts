@@ -3,14 +3,16 @@ import type { CatalogProduct, Draft, PortionCategory, Receipt } from '@/contract
 import { getProduct } from '@/catalog';
 import { getDb, type Db } from '@/db/client';
 import { appendAudit, getDraftById, getReceipt, listAudit, nextOrderId, now as clockNow, saveDraft, storeOrder } from '@/db/repo';
-import { minutesSaved } from '@/server/orders';
 import { actorFor, getOwnOffer, GatewayError, quote } from './offers';
 import { policyFor } from './policies';
 import { evaluatePolicy } from './policy';
 import { getApproval, getOffer, listOffers, newId, saveApproval, saveOffer } from './store';
-import type { Approval, Change, GatewayContext, Offer, OrderPreferences, PlaceOrderResult } from './types';
+import type { Approval, Change, GatewayContext, HumanConfirmations, Offer, OrderPreferences, PlaceOrderResult } from './types';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/** Rough buyer time saved against ordering by hand, shown on the receipt. */
+export const minutesSaved = (lineCount: number) => Math.min(60, 5 + 3 * lineCount);
 
 /** Why a fresh quote differs from the offer: expiry, any price change, any availability change. */
 export function diffOffers(old: Offer, fresh: Offer, now: Date, opts: { ignoreExpiry?: boolean } = {}): Change[] {
@@ -48,6 +50,7 @@ function buildReceipt(offer: Offer, orderId: string, submittedAt: string, draft:
   const lines = offer.lines.filter((l) => l.available).map((l) => ({
     lineId: l.lineId, productId: l.productId, productName: l.productName, packs: l.packs, quantity: l.quantity, unit: l.unit,
     unitPrice: l.unitPrice as number, unitPriceWithTax: l.unitPriceWithTax as number, lineTotal: l.lineTotal, lineTotalWithTax: l.lineTotalWithTax,
+    ...(l.logisticModel !== undefined ? { logisticModel: l.logisticModel } : {}),
   }));
   const total = round2(lines.reduce((s, l) => s + l.lineTotal, 0));
   const totalWithTax = round2(lines.reduce((s, l) => s + l.lineTotalWithTax, 0));
@@ -58,9 +61,10 @@ function buildReceipt(offer: Offer, orderId: string, submittedAt: string, draft:
   }
   return {
     orderId, simulated: true, customerId: offer.customerId,
-    eventName: draft?.intake.eventName ? `${draft.intake.eventName} (${offer.offerId})` : `Agent order ${offer.offerId}`,
+    eventName: draft?.intake.eventName ?? 'Agent order',
     eventType: draft?.intake.eventType ?? 'other', deliveryDate: offer.deliveryDate, guests: draft?.intake.guests ?? 0, lines, total, totalWithTax, vat: round2(totalWithTax - total),
     co2Kg: co2 === null ? null : round2(co2), minutesSaved: minutesSaved(lines.length), submittedAt,
+    cutoff: offer.cutoff,
   };
 }
 
@@ -164,8 +168,12 @@ export function committedToday(offer: Offer, now: Date, db?: Db): number {
 /**
  * placeOrder: re-checks fresh prices and availability, then applies the customer's authority policy.
  * Changed or expired → requote (new offer, list of changes). Within authority → ordered. Otherwise → pending_approval.
+ * The one rule set for every client: external agents over MCP and the Aimo widget alike. humanConfirmations count
+ * only for an agent with humanInTheLoop (the widget's server-side identity); from anyone else they are ignored.
  */
-export async function placeOrder(input: { offerId: string; preferences?: OrderPreferences }, ctx: GatewayContext): Promise<PlaceOrderResult> {
+export async function placeOrder(
+  input: { offerId: string; preferences?: OrderPreferences; humanConfirmations?: HumanConfirmations }, ctx: GatewayContext,
+): Promise<PlaceOrderResult> {
   const db = ctx.db ?? getDb();
   const offer = getOwnOffer(input.offerId, ctx);
   if (offer.status !== 'open') return settled(offer, db);
@@ -193,7 +201,17 @@ export async function placeOrder(input: { offerId: string; preferences?: OrderPr
       return { status: 'not_orderable', offerId: latest.offerId, reasons, message: 'No line of this offer can be delivered in full on the date; nothing was ordered and no approval was requested. Use the alternatives or another date.' };
     }
 
-    const decision = evaluatePolicy(latest, { preferences: input.preferences, now: nowDate, committedEur: committedToday(latest, nowDate, t) });
+    const confirmed = confirmedAllergenLines(latest, input.humanConfirmations, ctx);
+    if (confirmed.size) {
+      appendAudit({
+        conversationId: latest.offerId, actor: 'buyer', action: 'confirmAllergens',
+        summary: `The buyer checked and confirmed the allergens of ${confirmed.size} line(s) with no allergen data on the review screen (${ctx.agent.displayName})`,
+        data: { lineIds: [...confirmed] },
+      }, t);
+    }
+    const decision = evaluatePolicy(latest, {
+      preferences: input.preferences, now: nowDate, committedEur: committedToday(latest, nowDate, t), confirmedAllergenLineIds: confirmed,
+    });
     appendAudit({
       conversationId: latest.offerId, actor: 'gateway', action: 'evaluatePolicy',
       summary: decision.decision === 'auto'
@@ -224,6 +242,13 @@ export async function placeOrder(input: { offerId: string; preferences?: OrderPr
   });
 }
 
+/** The allergen sign-offs that count: a human in the loop, lines of this offer whose allergens are unknown (never failed). */
+function confirmedAllergenLines(offer: Offer, confirmations: HumanConfirmations | undefined, ctx: GatewayContext): Set<string> {
+  if (!ctx.agent.humanInTheLoop || !confirmations?.allergenLineIds?.length) return new Set();
+  const wanted = new Set(confirmations.allergenLineIds);
+  return new Set(offer.lines.filter((l) => l.available && l.allergen?.verdict === 'unknown' && wanted.has(l.lineId)).map((l) => l.lineId));
+}
+
 /** getOrderStatus: an order id (VA-…), approval id (AP-…) or offer id (OF-…) of the caller's own customer. */
 export function getOrderStatus(id: string, ctx: GatewayContext) {
   const db = ctx.db ?? getDb();
@@ -242,8 +267,7 @@ export function getOrderStatus(id: string, ctx: GatewayContext) {
   } else {
     receipt = getReceipt(id, db);
     if (!receipt || receipt.customerId !== ctx.agent.customerId) throw notFound();
-    const offerId = /\b(OF-[0-9A-F]+)\b/.exec(receipt.eventName)?.[1];
-    offer = offerId ? getOffer(offerId, db) : null;
+    offer = listOffers(receipt.customerId, db).find((o) => o.status === 'ordered' && o.orderId === receipt!.orderId) ?? null;
     approval = offer?.approvalId ? getApproval(offer.approvalId, db) : null;
   }
   const orderId = receipt?.orderId ?? approval?.orderId ?? offer?.orderId;

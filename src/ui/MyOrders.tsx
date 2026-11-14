@@ -5,6 +5,25 @@ import type { OrderSummary, UiLang } from '@/contracts';
 import { formatDay, formatMoney } from './format';
 import { t } from './i18n';
 import { ArrowLeftIcon } from './icons';
+import { deliveryStateLabel } from './offerCard';
+
+const CHIP: Record<NonNullable<OrderSummary['delivery']>['state'], string> = {
+  received: 'bg-sky text-blue',
+  confirmed: 'bg-sky text-blue',
+  picking: 'bg-sky text-blue',
+  out_for_delivery: 'bg-lime text-lime-ink',
+  delivered: 'bg-ok/10 text-ok',
+};
+
+function DeliveryChip({ o, lang }: { o: OrderSummary; lang: UiLang }) {
+  if (!o.delivery) return null;
+  return (
+    <span className={`ml-1.5 inline-flex items-center rounded-full px-1.5 py-px align-[1px] text-[10px] font-semibold transition-colors ${CHIP[o.delivery.state]}`}>
+      {deliveryStateLabel(o.delivery.state, lang)}
+      {o.delivery.shortLines > 0 && <span className="ml-1 text-warn">· {t('delivery.shortCount', lang, { n: o.delivery.shortLines })}</span>}
+    </span>
+  );
+}
 
 function leftoverText(o: OrderSummary, lang: UiLang): { text: string; tone: string } {
   if (!o.checkInDone || o.leftoverRatio === null) return { text: t('orders.pending', lang), tone: 'text-muted' };
@@ -56,9 +75,12 @@ export function MyOrders({
                 className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-ice"
               >
                 <span className="min-w-0">
-                  <span className="block text-[13px] font-medium text-navy">{o.eventName}</span>
+                  <span className="block text-[13px] font-medium text-navy">
+                    {o.eventName}
+                    <DeliveryChip o={o} lang={lang} />
+                  </span>
                   <span className="block text-[11.5px] text-muted tabular-nums">
-                    {formatDay(o.eventDate, lang)} · {t('sheet.guests', lang, { n: o.guests })} · {o.orderId}
+                    {formatDay(o.eventDate, lang)}{o.guests > 0 && <> · {t('sheet.guests', lang, { n: o.guests })}</>} · {o.orderId}
                   </span>
                 </span>
                 <span className="flex-none text-right tabular-nums">

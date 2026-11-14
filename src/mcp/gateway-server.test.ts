@@ -44,7 +44,7 @@ describe('tool registry', () => {
     expect(Object.keys(registryTools())).toEqual([
       'searchProducts', 'getProduct', 'getAlternatives', 'getIngredients', 'checkAllergens',
       'getPriceAndAvailability', 'requestOffer', 'planEvent', 'getDraft', 'updateDraft', 'checkoutDraft',
-      'placeOrder', 'getOrderStatus', 'listOrders', 'getOrder', 'reportLeftovers', 'getAuthorityPolicy', 'chatWithAimo',
+      'placeOrder', 'getOrderStatus', 'listOrders', 'getOrder', 'getDeliveryStatus', 'reportLeftovers', 'getAuthorityPolicy', 'chatWithAimo',
     ]);
     expect(TOOL_GROUPS.map((g) => g.group)).toEqual(['catalog', 'pricing', 'offers', 'drafts', 'orders', 'policy', 'assistant']);
   });
@@ -55,6 +55,8 @@ describe('tool registry', () => {
     const json = JSON.stringify(tools.map(([, t]) => z.toJSONSchema(t.inputSchema as z.ZodType)));
     expect(json).toContain('"deliveryDate"');
     expect(json).not.toMatch(/"(unitPrice|price|discount)"/);
+    // Only the widget's server-side identity is a human in the loop: no tool takes human confirmations.
+    expect(json).not.toMatch(/humanConfirmations|allergenLineIds|humanInTheLoop/);
   });
 });
 

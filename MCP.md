@@ -33,10 +33,10 @@ flowchart TB
   P -->|prices + stock| V[(Valio Aimo API)]
   P -->|drafts, history, audit| DB[(SQLite)]
 
-  UI{{Approve button}} -->|the only submit path| API["/api/order/approve"]
+  UI{{Review → Approve}} -->|widget identity aimo-widget| GW["gateway: quoteDraft → placeOrder<br/>(the only submit path for everyone)"]
 ```
 
-**The rule:** agents reason, code computes. The orchestrator can only call the five delegate tools. Specialists use the model only where judgment is needed. Every price, stock figure, quantity, allergen verdict and history number comes from code over real data. In the widget, no agent can submit an order; only the buyer's **Approve** button can. External purchasing agents order through the gateway (section 5), where code applies the customer's authority policy and a human signs off the rest.
+**The rule:** agents reason, code computes. The orchestrator can only call the five delegate tools. Specialists use the model only where judgment is needed. Every price, stock figure, quantity, allergen verdict and history number comes from code over real data. In the widget, no agent can submit an order; only the buyer's **Approve** button can, and that button is just another gateway client: Review requests a fixed-price offer (`quoteDraft`), Approve calls `placeOrder` under the same authority policy as every external agent (section 5), and orders outside it wait for a human sign-off.
 
 ## 2. Orchestrator tools
 
@@ -50,7 +50,7 @@ These are the only tools the orchestrator sees (`src/mastra/tools/*`). Each one 
 | `editDraft` | Order (calls Product, Allergen and Pricing as needed) | Turns typed changes into draft edits: set packs, remove, scale guests, history choice, swap, add, top-up for the remainder. Re-prices and reports problems. | `data-draft` with a diff (changed rows flash) |
 | `checkIn` | History | Parses "about 5 kg chicken left, rice ran out" into a left / short amount per line. Saves nothing until the buyer confirms. | `data-checkin`: the editable table |
 
-Buyer clicks (+/−, Use/Keep, remove, Approve, check-in Confirm) don't go through the model. They call `/api/draft`, `/api/order/approve` and `/api/checkin` directly.
+Buyer clicks (+/−, Use/Keep, remove, Approve, check-in Confirm) don't go through the model. They call `/api/draft`, `/api/order/offer` + `/api/order/place` (the gateway's `quoteDraft` and `placeOrder` under the server-side widget identity `aimo-widget`; `/api/order/status` polls a pending approval) and `/api/checkin` directly.
 
 ## 3. Specialist agents
 
@@ -205,8 +205,9 @@ What is exposed over MCP: catalogue, live price and availability, offers, orders
 | drafts | `checkoutDraft` | `draftId`, optional `requirements`, `preferences` | Like `placeOrder` (`ordered` / `pending_approval` / `requote` / `not_orderable`) plus `draftId` |
 | orders | `placeOrder` | `offerId`, optional `preferences` (`allowSubstitutes`, `latestDeliveryDate`) | `ordered` + receipt, `pending_approval` + approver + reasons, `requote` + new offer + changes, `not_orderable`, or `rejected` |
 | orders | `getOrderStatus` | an order (`VA-…`), approval (`AP-…`) or offer (`OF-…`) id | Status, offer, approval, receipt, audit trail |
-| orders | `listOrders` | optional `limit` | Orders (with leftover ratio once reported) and pending approvals |
-| orders | `getOrder` | `orderId` | Receipt and recorded leftovers |
+| orders | `listOrders` | optional `limit` | Orders (with delivery state and leftover ratio once reported) and pending approvals |
+| orders | `getOrder` | `orderId` | Receipt, recorded leftovers and the delivery status |
+| orders | `getDeliveryStatus` | `orderId` | Simulated delivery: state (`received` → `confirmed` → `picking` → `out_for_delivery` → `delivered`) with times, ETA window, cut-off, late risk, supplier/terminal track, per-line delivered quantity and short-delivery reasons |
 | orders | `reportLeftovers` | `orderId`, `entries[]` (`lineId`, `leftoverQty` + left / − short), optional `note` | The widget's check-in: unmentioned lines count as used up; only after the delivery date; feeds future history notes |
 | policy | `getAuthorityPolicy` | none | The caller's customer policy as JSON |
 | assistant | `chatWithAimo` | `message`, optional `conversationId` | The orchestrator's reply (narration before work tools removed; questions asked with offerChoices kept), `draftId` and a compact draft summary; check it out with `checkoutDraft` |
@@ -232,6 +233,7 @@ sequenceDiagram
   participant T as Delegate tool
   participant S as Specialist (model)
   participant M as MCP aimo-gateway
+  participant G as Gateway (widget identity)
   participant V as Valio API
   participant D as SQLite
 
@@ -251,8 +253,10 @@ sequenceDiagram
   T->>D: history, save draft, audit
   T-->>W: data-progress ×7, data-draft
   O-->>W: "Your draft is ready: about €837–939 …"
+  B->>W: Review (button)
+  W->>G: /api/order/offer → quoteDraft → fixed-price offer + countdown
   B->>W: Approve (button)
-  W->>D: /api/order/approve → re-check → order + receipt
+  W->>G: /api/order/place → placeOrder (same policy) → ordered / pending_approval / requote
 ```
 
 ## 7. Where to look in the code
@@ -264,6 +268,7 @@ sequenceDiagram
 | Delegate tools | `src/mastra/tools/*.ts` |
 | Pipeline | `src/mastra/pipeline/build-draft.ts`, `reprice.ts`, `same-kind.ts`, `reasons.ts` |
 | Agent gateway (lookup, offers, orders, drafts/event flow, policy, approvals, identity) | `src/gateway/*` |
+| Widget as a gateway client; simulated delivery | `src/gateway/widget.ts`, `src/app/api/order/*`; `src/gateway/delivery.ts` (pure timeline), `deliveries.ts` (persisted + `getDeliveryStatus`) |
 | MCP server, tool registry, tools, HTTP adapter, stdio entry, client | `src/mcp/server.ts`, `registry.ts`, `tools/*`, `http.ts`, `stdio.ts`, `client.ts` |
 | Remote MCP endpoint, approval page | `src/app/api/mcp/route.ts`, `src/app/approvals/`, `src/app/api/approvals/*` |
 | Headless external-agent demo | `npx tsx --env-file-if-exists=.env.local scripts/gateway-demo.ts` (`--event`, `--small`, `--over`, `--http`, `--llm`) |

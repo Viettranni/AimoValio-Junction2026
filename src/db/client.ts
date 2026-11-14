@@ -32,7 +32,7 @@ CREATE INDEX IF NOT EXISTS audit_conversation ON audit_log (conversation_id);
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 `;
 
-/** Agent gateway tables (offers, approvals, MCP chat transcripts). Also re-run lazily by src/gateway/store.ts. */
+/** Agent gateway tables (offers, approvals, MCP chat transcripts, simulated deliveries). Also re-run lazily by src/gateway/store.ts. */
 export const GATEWAY_DDL = `
 CREATE TABLE IF NOT EXISTS gateway_offers (
   id TEXT PRIMARY KEY, customer_id TEXT NOT NULL, agent_id TEXT NOT NULL, status TEXT NOT NULL,
@@ -45,6 +45,9 @@ CREATE INDEX IF NOT EXISTS gateway_approvals_status ON gateway_approvals (status
 CREATE TABLE IF NOT EXISTS gateway_chats (
   conversation_id TEXT PRIMARY KEY, customer_id TEXT NOT NULL, agent_id TEXT NOT NULL,
   messages_json TEXT NOT NULL, updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS deliveries (
+  order_id TEXT NOT NULL, line_id TEXT NOT NULL, ordered_qty REAL NOT NULL, delivered_qty REAL NOT NULL,
+  unit TEXT NOT NULL, reason TEXT, delivered_at TEXT NOT NULL, PRIMARY KEY (order_id, line_id));
 `;
 
 export function createDb(path: string): Db {

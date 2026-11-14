@@ -21,24 +21,29 @@ import { sameKind } from '@/mastra/pipeline/same-kind';
 import { defaultSpecialists, type Specialists } from '@/mastra/specialists';
 import { coverage, nextLineId } from '@/mastra/tools/edit-draft';
 import { validateIntake } from '@/mastra/tools/understand-request';
-import { NotFoundError } from '@/server/orders';
+import { NotFoundError } from '@/server/errors';
 import { submitCheckIn } from '@/server/checkin';
+import { deliverySummaryFor, syncDelivery } from './deliveries';
 import { fetchValio, STALE_PRICE_MS } from './lookup';
 import { actorFor, GatewayError, quote } from './offers';
 import { placeOrder } from './orders';
 import { listApprovalRows, listOffers, saveOffer } from './store';
-import type { Change, GatewayContext, OrderPreferences, PlaceOrderResult, Requirements } from './types';
+import type { Change, GatewayContext, Offer, OrderPreferences, PlaceOrderResult, Requirements } from './types';
 
 const MAX_GUESTS = 5000;
 const catalog = { getProduct };
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/** Agent drafts live under conversation ids `mcp:<customerId>:…` (planEvent and chatWithAimo). */
-const ownsConversation = (customerId: string, conversationId: string) => conversationId.startsWith(`mcp:${customerId}:`);
+/**
+ * Agent drafts live under conversation ids `mcp:<customerId>:…` (planEvent and chatWithAimo). The widget
+ * (humanInTheLoop) owns its customer's chat-widget conversations, which never carry the `mcp:` prefix.
+ */
+const ownsConversation = (agent: GatewayContext['agent'], conversationId: string) =>
+  agent.humanInTheLoop ? !conversationId.startsWith('mcp:') : conversationId.startsWith(`mcp:${agent.customerId}:`);
 
 export function getOwnDraft(draftId: string, ctx: GatewayContext): Draft {
   const draft = getDraftById(draftId);
-  if (!draft || draft.customerId !== ctx.agent.customerId || !ownsConversation(ctx.agent.customerId, draft.conversationId)) {
+  if (!draft || draft.customerId !== ctx.agent.customerId || !ownsConversation(ctx.agent, draft.conversationId)) {
     throw new GatewayError(`No draft ${draftId}`, 'not_found');
   }
   return draft;
@@ -231,10 +236,6 @@ async function planAdd(c: Extract<AgentDraftChange, { kind: 'addProduct' }>, dra
   return { change: { kind: 'addLine', line }, draft: { ...draft, components } };
 }
 
-function pendingOfferFor(draft: Draft) {
-  return listOffers(draft.customerId).find((o) => o.draftId === draft.id && o.status === 'pending_approval');
-}
-
 /** updateDraft: deterministic edits, all or nothing. Swaps and adds are validated (same kind, diets, fresh price and stock). */
 export async function updateDraft(draftId: string, changes: AgentDraftChange[], ctx: GatewayContext) {
   const start = getOwnDraft(draftId, ctx);
@@ -309,26 +310,31 @@ export async function updateDraft(draftId: string, changes: AgentDraftChange[], 
   return { ...draftView(draft), diff, problems };
 }
 
+export function pendingOfferFor(draft: Draft) {
+  return listOffers(draft.customerId).find((o) => o.draftId === draft.id && o.status === 'pending_approval');
+}
+
+export interface DraftQuote {
+  draftId: string;
+  /** The saved, open offer at fresh Valio prices. Nothing is placed. */
+  offer: Offer;
+  /** Prices that differ from the draft. When non-empty the draft has been re-priced to match the offer. */
+  changes: Change[];
+  /** The draft after the quote (re-priced when there were changes). */
+  draft: Draft;
+}
+
 /**
- * checkoutDraft: the draft's lines become a fixed-price offer (fresh Valio prices), then placeOrder applies the policy.
- * A price that differs from the draft is never taken silently: the draft is re-priced and `requote` returned.
- * Unknown-allergen lines always go to a human (the policy's allergen rule); pending history notes keep the draft's packs.
+ * quoteDraft: the draft's lines become a fixed-price offer from fresh Valio prices, saved but not placed.
+ * A price that differs from the draft is never taken silently: it is listed in `changes` and the draft is re-priced.
+ * Shared by checkoutDraft (external agents) and the widget's Review screen.
  */
-export async function checkoutDraft(
-  input: { draftId: string; requirements?: Requirements; preferences?: OrderPreferences }, ctx: GatewayContext,
-): Promise<PlaceOrderResult & { draftId: string }> {
+export async function quoteDraft(input: { draftId: string; requirements?: Requirements }, ctx: GatewayContext): Promise<DraftQuote> {
   const draft = getOwnDraft(input.draftId, ctx);
   if (draft.status === 'submitted') throw new GatewayError('This draft was already ordered', 'conflict');
   if (draft.status !== 'ready' || !draft.intake.deliveryDate) throw new GatewayError('The draft is not planned yet', 'conflict');
   const pending = pendingOfferFor(draft);
-  if (pending) {
-    const same = pending.lines.length === draft.lines.filter((l) => l.packs > 0).length
-      && pending.lines.every((ol) => draft.lines.some((l) => l.id === ol.lineId && l.productId === ol.productId && l.packs === ol.packs));
-    if (!same) {
-      throw new GatewayError(`The draft changed since approval ${pending.approvalId} was requested; ask the approver to reject it, then check out again`, 'conflict');
-    }
-    return { ...(await placeOrder({ offerId: pending.offerId }, ctx)), draftId: draft.id };
-  }
+  if (pending) throw new GatewayError(`The draft is waiting for approval ${pending.approvalId}`, 'conflict');
   const lines = draft.lines.filter((l) => l.packs > 0);
   if (!lines.length) throw new GatewayError('The draft has no lines to order');
 
@@ -353,23 +359,48 @@ export async function checkoutDraft(
   saveOffer(offer);
   appendAudit({
     conversationId: draft.conversationId, actor: actorFor(ctx), action: 'checkoutDraft',
-    summary: `${ctx.agent.displayName} checked out the draft as offer ${offer.offerId}: €${offer.totals.total.toFixed(2)} excl. VAT`,
+    summary: `${ctx.agent.displayName} quoted the draft as offer ${offer.offerId}: €${offer.totals.total.toFixed(2)} excl. VAT`,
     data: { offerId: offer.offerId, changes },
   });
   appendAudit({
     conversationId: offer.offerId, actor: actorFor(ctx), action: 'requestOffer',
     summary: `Offer from draft ${draft.id}: ${offer.lines.length} line(s) for ${offer.deliveryDate}, €${offer.totals.total.toFixed(2)} excl. VAT`,
   });
+  if (!changes.length) return { draftId: draft.id, offer, changes, draft };
 
+  // Re-price the draft so it matches the offer; the agent or buyer decides whether to go ahead.
+  const { prices, avail } = await fetchValio(lines.map((l) => l.productId), draft.intake.deliveryDate);
+  const date = draft.intake.deliveryDate;
+  const repriced = draft.lines.map((l) => {
+    const p = getProduct(l.productId);
+    return p ? repriceLine(l, p, prices.get(l.productId), avail.get(l.productId), date) : l;
+  });
+  const next: Draft = { ...draft, lines: repriced, totals: computeTotals(repriced, draft.intake.budget), updatedAt: clockNow().toISOString() };
+  saveDraft(next);
+  return { draftId: draft.id, offer, changes, draft: next };
+}
+
+/**
+ * checkoutDraft: quoteDraft, then placeOrder applies the policy.
+ * A price that differs from the draft is never taken silently: the draft is re-priced and `requote` returned.
+ * Unknown-allergen lines always go to a human (the policy's allergen rule); pending history notes keep the draft's packs.
+ */
+export async function checkoutDraft(
+  input: { draftId: string; requirements?: Requirements; preferences?: OrderPreferences }, ctx: GatewayContext,
+): Promise<PlaceOrderResult & { draftId: string }> {
+  const draft = getOwnDraft(input.draftId, ctx);
+  if (draft.status === 'submitted') throw new GatewayError('This draft was already ordered', 'conflict');
+  const pending = pendingOfferFor(draft);
+  if (pending) {
+    const same = pending.lines.length === draft.lines.filter((l) => l.packs > 0).length
+      && pending.lines.every((ol) => draft.lines.some((l) => l.id === ol.lineId && l.productId === ol.productId && l.packs === ol.packs));
+    if (!same) {
+      throw new GatewayError(`The draft changed since approval ${pending.approvalId} was requested; ask the approver to reject it, then check out again`, 'conflict');
+    }
+    return { ...(await placeOrder({ offerId: pending.offerId }, ctx)), draftId: draft.id };
+  }
+  const { offer, changes } = await quoteDraft(input, ctx);
   if (changes.length) {
-    // Re-price the draft so the next checkout matches; the agent decides whether to go ahead.
-    const { prices, avail } = await fetchValio(lines.map((l) => l.productId), draft.intake.deliveryDate);
-    const date = draft.intake.deliveryDate;
-    const repriced = draft.lines.map((l) => {
-      const p = getProduct(l.productId);
-      return p ? repriceLine(l, p, prices.get(l.productId), avail.get(l.productId), date) : l;
-    });
-    saveDraft({ ...draft, lines: repriced, totals: computeTotals(repriced, draft.intake.budget), updatedAt: clockNow().toISOString() });
     return {
       status: 'requote', offerId: offer.offerId, newOffer: offer, changes, draftId: draft.id,
       message: 'Valio prices changed since the draft was planned. The draft now has the new prices; nothing was ordered. Review and call checkoutDraft again.',
@@ -381,7 +412,11 @@ export async function checkoutDraft(
 // ── Orders and leftovers ──
 
 export function listAgentOrders(ctx: GatewayContext, limit = 20) {
-  const orders = listOrderSummaries(ctx.agent.customerId).slice(0, limit);
+  const db = ctx.db ?? getDb();
+  const orders = listOrderSummaries(ctx.agent.customerId, db).slice(0, limit).map((o) => {
+    const receipt = getReceipt(o.orderId, db);
+    return receipt ? { ...o, delivery: deliverySummaryFor(receipt, db) } : o;
+  });
   const pending = listApprovalRows({ customerId: ctx.agent.customerId, status: 'pending' }).slice(0, limit).map((a) => ({
     approvalId: a.approvalId, offerId: a.offerId, status: 'pending_approval' as const, approver: a.approver, reasons: a.reasons.map((r) => r.message), requestedAt: a.createdAt,
   }));
@@ -398,7 +433,7 @@ export function getOrder(orderId: string, ctx: GatewayContext) {
   const receipt = ownReceipt(orderId, ctx);
   const leftovers = listLeftoverRecords(ctx.agent.customerId).filter((r) => r.orderId === orderId)
     .map((r) => ({ lineId: r.lineId, productId: r.productId, orderedQty: r.orderedQty, leftoverQty: r.leftoverQty, unit: r.unit }));
-  return { receipt, leftovers, checkInDone: leftovers.length > 0 };
+  return { receipt, leftovers, checkInDone: leftovers.length > 0, delivery: syncDelivery(receipt) };
 }
 
 /**

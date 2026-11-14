@@ -12,6 +12,11 @@ export interface PolicyContext {
   now: Date;
   /** Agent orders of this customer placed or pending today for the same delivery date (excl. VAT), excluding this offer. */
   committedEur?: number;
+  /**
+   * Unknown-allergen lines a human in the loop checked and ticked (only passed for agents with humanInTheLoop).
+   * They count as the allergen sign-off; a failed check never does.
+   */
+  confirmedAllergenLineIds?: ReadonlySet<string>;
 }
 
 /** Requirements merged as a union (customer defaults + what the agent states). */
@@ -38,7 +43,9 @@ export function evaluatePolicy(offer: Offer, ctx: PolicyContext): PolicyDecision
     });
   }
 
-  const unverified = orderable.filter((l) => l.allergen && l.allergen.verdict !== 'pass');
+  const confirmed = ctx.confirmedAllergenLineIds;
+  const unverified = orderable.filter((l) => l.allergen && l.allergen.verdict !== 'pass'
+    && !(l.allergen.verdict === 'unknown' && confirmed?.has(l.lineId)));
   if (unverified.length) {
     reasons.push({
       rule: 'allergen_unverified',

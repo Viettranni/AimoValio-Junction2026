@@ -257,8 +257,14 @@ export interface Receipt {
   eventType: EventType;
   deliveryDate: ISODate;
   guests: number;
-  lines: Array<{ lineId: string; productId: string; productName: string; packs: number; quantity: number; unit: MeasureUnit; unitPrice: number; unitPriceWithTax: number; lineTotal: number; lineTotalWithTax: number }>;
+  lines: Array<{
+    lineId: string; productId: string; productName: string; packs: number; quantity: number; unit: MeasureUnit; unitPrice: number; unitPriceWithTax: number; lineTotal: number; lineTotalWithTax: number;
+    /** From the offer: Stock (Valio warehouse) or Terminal (ordered from the supplier). Absent on older orders. */
+    logisticModel?: 'Stock' | 'Terminal' | null;
+  }>;
   total: number; totalWithTax: number; vat: number;
+  /** Effective order cut-off of the order (earliest among its lines), when known. */
+  cutoff?: string | null;
   co2Kg: number | null;
   minutesSaved: number;
   submittedAt: string;
@@ -270,11 +276,26 @@ export interface OrderSummary {
   /** Weighted average leftover ratio across lines, null until check-in recorded. */
   leftoverRatio: number | null;
   checkInDone: boolean;
+  /** Simulated delivery progress (src/gateway/delivery.ts), when the gateway served the list. */
+  delivery?: DeliverySummary;
+}
+
+export type DeliveryState = 'received' | 'confirmed' | 'picking' | 'out_for_delivery' | 'delivered';
+
+export interface DeliverySummary {
+  state: DeliveryState;
+  /** ETA window on the delivery day (ISO). */
+  eta: { from: string; to: string };
+  /** Lines delivered short (known once delivered). */
+  shortLines: number;
+  lateRisk: boolean;
 }
 
 export type Actor = 'buyer' | 'orchestrator' | 'intake' | 'menu' | 'product' | 'allergen' | 'pricing' | 'history' | 'order' | 'system'
   // Agent gateway (src/gateway): an external purchasing agent, the gateway's own policy engine, a human approver.
-  | `agent:${string}` | 'gateway' | `approver:${string}`;
+  | `agent:${string}` | 'gateway' | `approver:${string}`
+  // Simulated delivery (src/gateway/delivery.ts).
+  | 'carrier';
 
 export interface AuditEntry {
   id: string;
@@ -297,7 +318,7 @@ export interface ChoicesEvent { id: string; question: string; options: Array<{ i
 export interface SlotsEvent { intake: Intake; missing: IntakeSlot[] }
 export interface DraftEvent { draft: Draft; diff?: DraftDiff }
 export interface ReceiptEvent { receipt: Receipt }
-export interface CheckInEvent { orderId: string; eventName: string; lines: Array<{ lineId: string; productName: string; quantity: number; unit: MeasureUnit; leftoverQty?: number }> } // quantity = ordered; leftoverQty = parsed (+ left, − short) when known
+export interface CheckInEvent { orderId: string; eventName: string; lines: Array<{ lineId: string; productName: string; quantity: number; unit: MeasureUnit; leftoverQty?: number; deliveredShort?: { qty: number; reason: string } }> } // quantity = ordered; leftoverQty = parsed (+ left, − short) when known; deliveredShort = Valio delivered this much less (prefilled as a shortfall)
 
 export type AimoDataPart =
   | { type: 'data-progress'; data: ProgressEvent }

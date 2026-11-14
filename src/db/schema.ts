@@ -99,3 +99,14 @@ export const gatewayChats = sqliteTable('gateway_chats', {
   messagesJson: text('messages_json').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
+
+/** Per-line delivered quantities, written once when the simulated delivery reaches "delivered". */
+export const deliveries = sqliteTable('deliveries', {
+  orderId: text('order_id').notNull(),
+  lineId: text('line_id').notNull(),
+  orderedQty: real('ordered_qty').notNull(),
+  deliveredQty: real('delivered_qty').notNull(),
+  unit: text('unit').notNull(),
+  reason: text('reason'),
+  deliveredAt: text('delivered_at').notNull(),
+}, (t) => [primaryKey({ columns: [t.orderId, t.lineId] })]);

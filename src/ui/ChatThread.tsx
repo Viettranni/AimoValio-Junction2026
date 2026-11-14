@@ -44,7 +44,11 @@ export function ChatThread({
   }, [items, typing]);
 
   return (
-    <div ref={scroller} className="aimo-scroll flex-1 overflow-y-auto px-3.5 pb-3 pt-4" aria-live="polite">
+    // `relative` makes the thread the containing block of its absolutely positioned descendants (the loaders'
+    // sr-only live regions). Without it they resolve against the iframe's viewport at their in-thread offset,
+    // so the embedded document grows and the thread "scrolls on" into blank space below the last message.
+    // `overscroll-contain` keeps a scroll that reaches the end from chaining into the host page.
+    <div ref={scroller} className="aimo-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-3 pt-4" aria-live="polite">
       <div className="flex flex-col gap-2.5">
         {items.map((item) => {
           switch (item.kind) {

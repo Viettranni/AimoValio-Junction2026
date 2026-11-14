@@ -42,8 +42,9 @@ flowchart LR
 |---|---|---|
 | Embed | `public/widget.js` | One `<script>` tag. It injects a launcher and an iframe to `/embed`, resizes on `postMessage` (origin-pinned both ways), and exposes `window.AimoWidget.open()`. |
 | Widget UI | `src/ui/*`, `src/app/embed` | Chat, slot chips, choice buttons, planning checklist, the order-draft working sheet, review, receipt, My orders and check-in. `useLiveSession` talks to the backend; `useFixtureSession` (`?fixture=1`) is a scripted, no-key fallback. |
-| API | `src/app/api/*` | `chat` (agent stream), `draft` (buyer edits), `order/approve` (the only submit path), `orders`, `audit`, `checkin`, `demo`. All inputs are validated with zod. |
-| Server services | `src/server/*` | `approveAndSubmit` re-checks availability, cut-off, prices and allergens with fresh Valio data inside a race-safe transaction. It also handles check-in saving and the demo clock and reset. |
+| API | `src/app/api/*` | `chat` (agent stream), `draft` (buyer edits), `order/offer`, `order/place`, `order/status` (the widget as a gateway client: quoteDraft → placeOrder, the only submit path), `orders/[id]/delivery`, `orders`, `audit`, `checkin`, `demo`. All inputs are validated with zod. |
+| Server services | `src/server/*` | Check-in saving (prefilled with short deliveries), the demo clock (fast-forward, next delivery step) and reset. Ordering lives in the gateway only: `placeOrder` re-checks availability, cut-off, prices and allergens with fresh Valio data inside a race-safe transaction, for the widget and external agents alike. |
+| Delivery (simulated) | `src/gateway/delivery.ts`, `deliveries.ts` | Deterministic timeline per order from the demo clock: received → confirmed → picking → out for delivery (ETA window) → delivered, a supplier track for terminal lines, late risk near the cut-off, and short deliveries for low-reliability lines (seeded by order id). Delivered quantities are persisted once and audited. |
 | Agents | `src/mastra/agents/*` | The orchestrator plus intake, menu, product, allergen, pricing, history and order specialists, all on `claude-opus-5-5` with per-agent effort. |
 | Delegate tools | `src/mastra/tools/*` | `understandRequest`, `offerChoices`, `planOrder`, `editDraft` and `checkIn`. These are the only things the orchestrator can call; each is owned by one specialist. |
 | Pipeline | `src/mastra/pipeline/*` | `buildDraft`: menu → quantities → search → product pick → allergen screen (via MCP) → price and stock → same-kind substitution and stock split → history → totals. |
@@ -95,22 +96,24 @@ sequenceDiagram
   T-->>UI: data-draft (sheet expands)
   B->>UI: +/− , Use/Keep, "make it 320 guests"
   UI->>DB: /api/draft or editDraft via chat
-  B->>UI: Review → Approve
-  UI->>V: fresh availability + prices (server)
-  UI->>DB: order + receipt (transaction)
+  B->>UI: Review
+  UI->>V: gateway quoteDraft: fresh prices + availability → fixed-price offer (countdown)
+  B->>UI: Approve
+  UI->>DB: gateway placeOrder (same policy as external agents): order + receipt, or pending_approval → Anna on /approvals
+  UI->>DB: delivery timeline (getDeliveryStatus) on the receipt
   Note over UI,DB: Fast-forward → check-in → leftovers saved → next plan uses them
 ```
 
 ## Safety and control
 
-- **In the widget, only a buyer click submits.** No widget agent tool can submit. External agents order through the gateway: code checks the authority policy, and orders outside it wait for a human on `/approvals` (no MCP tool can approve). `/api/order/approve` re-checks everything and returns per-line problems instead of dropping lines silently. A double click is race-safe.
+- **One set of rules for every agent.** In the widget, only a buyer click submits (no widget agent tool can), and that click is the gateway's `placeOrder` under the server-side identity `aimo-widget`, so the chef's widget and external MCP agents get the same offers, authority policy and human sign-off. Orders outside the authority wait for a human on `/approvals` (no MCP tool can approve). The only difference: the widget has a human in the loop, so the buyer's per-line tick counts as the sign-off for an unverifiable allergen line; external agents can't do that. `placeOrder` re-checks everything and returns a requote instead of changing anything silently. A double click is idempotent.
 - **Allergens.**
   - Products with no real ingredient data are "unknown" and never pass a constraint.
   - Shared items must satisfy every diet group.
   - Diet coverage only counts one way: lactose-free never covers a milk allergy.
   - Unknown lines need a per-line tick in Review, which is recorded in the audit log.
 - **No silent changes.** Substitutions are tagged with a reason in the buyer's language. Stock shortfalls are split or offered as choices. History notes need Use or Keep. Budget overruns are flagged.
-- **Valio failure.** The client retries, then serves stale cache. Approve refuses stale prices or availability with a plain message, and the route returns 503 when nothing is cached.
+- **Valio failure.** The client retries, then serves stale cache. Review re-quotes and Approve refuses stale prices or availability with a plain message, and the route returns 503 when nothing is cached.
 
 ## Key data interpretations
 

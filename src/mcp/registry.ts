@@ -13,7 +13,7 @@ export const TOOL_GROUPS = [
   { group: 'pricing', label: 'Live price and availability for a delivery date', tools: pricingTools },
   { group: 'offers', label: 'Inquiry → binding offer at fixed catalogue prices', tools: offerTools },
   { group: 'drafts', label: 'Event planning like the widget: plan, edit, check out', tools: draftTools },
-  { group: 'orders', label: 'Place within authority or route to a human; status, orders, leftovers', tools: orderTools },
+  { group: 'orders', label: 'Place within authority or route to a human; status, orders, delivery, leftovers', tools: orderTools },
   { group: 'policy', label: "The customer's authority policy", tools: policyTools },
   { group: 'assistant', label: 'Chat with the Aimo planning assistant', tools: chatTools },
 ] as const;

@@ -1,7 +1,7 @@
 import type { AuditEntry, EventType, MeasureUnit, PortionCategory, Receipt } from '@/contracts';
-import { getDb, type Db } from './client';
+import { GATEWAY_DDL, getDb, type Db } from './client';
 import { appendAudit, nextOrderId, recordLeftovers, storeOrder, upsertCustomer } from './repo';
-import { auditLog, customers, drafts, gatewayApprovals, gatewayChats, gatewayOffers, leftovers, orderLines, orders, settings } from './schema';
+import { auditLog, customers, deliveries, drafts, gatewayApprovals, gatewayChats, gatewayOffers, leftovers, orderLines, orders, settings } from './schema';
 
 export const DEMO_CUSTOMER = { id: 'helsinki-juhlapalvelu', name: 'Helsinki Juhlapalvelu Oy' };
 
@@ -101,7 +101,9 @@ function seedAudit(db: Db, receipt: Receipt, e: SeedEvent, submittedAt: string, 
 }
 
 export function resetAndSeed(db: Db = getDb()): { customers: number; orders: number; lines: number; leftovers: number; audit: number } {
-  for (const table of [leftovers, orderLines, orders, drafts, auditLog, settings, customers, gatewayOffers, gatewayApprovals, gatewayChats]) db.delete(table).run();
+  // A long-running server's connection may predate newer gateway tables.
+  (db as unknown as { $client?: { exec: (sql: string) => void } }).$client?.exec(GATEWAY_DDL);
+  for (const table of [leftovers, orderLines, orders, drafts, auditLog, settings, customers, gatewayOffers, gatewayApprovals, gatewayChats, deliveries]) db.delete(table).run();
   upsertCustomer(DEMO_CUSTOMER, db);
 
   const today = Date.now();

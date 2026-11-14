@@ -115,6 +115,7 @@ export function buildLines(
       availablePacks: a.availablePacks,
       availableDate: a.availableDate,
       cutoff: a.cutoff,
+      logisticModel: a.logisticModel,
       ...(allergen ? { allergen } : {}),
     };
   });

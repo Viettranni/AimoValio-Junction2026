@@ -19,7 +19,7 @@ import { sampleTerms } from './shelf';
 import { SkeletonSheet } from './SkeletonRows';
 import { SlotChips } from './SlotChips';
 import type { ResizeState, WidgetView } from './thread';
-import type { ApproveResult, OrderDetails, WidgetSession } from './session';
+import type { OrderDetails, WidgetSession } from './session';
 import { useFixtureSession } from './useFixtureSession';
 import { useLiveSession } from './useLiveSession';
 import { ShelfContext, usePageVisible, useProductSample, type ShelfState } from './useProductSample';
@@ -108,8 +108,6 @@ function WidgetView({
   const [view, setView] = useState<WidgetView>('chat');
   const [opened, setOpened] = useState<OrderDetails | null>(null);
   const [audit, setAudit] = useState<AuditEntry[] | null>(null);
-  // Problems from the last approval hold only for the draft version they were found on.
-  const [rejected, setRejected] = useState<{ at: string; problems: NonNullable<ApproveResult['problems']> } | null>(null);
   const [text, setText] = useState('');
   const [focusKey, setFocusKey] = useState(0);
 
@@ -122,8 +120,6 @@ function WidgetView({
   if (skeleton && !fromSkeleton) setFromSkeleton(true);
   if (fromSkeleton && view !== 'chat') setFromSkeleton(false);
   const sentHere = receipt !== null && draft?.status === 'submitted';
-  const problems = rejected && draft && rejected.at === draft.updatedAt ? rejected.problems : undefined;
-  const lineProblems = problems && Object.fromEntries(problems.filter((p) => p.lineId).map((p) => [p.lineId, p.reason]));
 
   const postResize = (state: ResizeState) => {
     if (parentOrigin) window.parent.postMessage({ type: 'aimo:resize', state }, parentOrigin);
@@ -155,11 +151,35 @@ function WidgetView({
     if (details) showReceipt(details);
   };
   const backFromOrders = () => (sentHere ? showReceipt({ receipt: receipt!, leftovers: [] }) : go('chat'));
-  const approve = async (confirmedUnknownLineIds: string[]) => {
-    const result = await session.approve(confirmedUnknownLineIds);
-    if (result.receipt) showReceipt({ receipt: result.receipt, leftovers: [] });
-    else if (result.problems?.length && draft) setRejected({ at: draft.updatedAt, problems: result.problems });
-    return result;
+  // An order placed from Review (directly, or after the approver signed off) opens its receipt.
+  const [shownReceiptId, setShownReceiptId] = useState<string | null>(receipt?.orderId ?? null);
+  if (receipt && shownReceiptId !== receipt.orderId) {
+    setShownReceiptId(receipt.orderId);
+    if (view === 'review' || view === 'chat') {
+      setOpened({ receipt, leftovers: [] });
+      setAudit(null);
+      setView('receipt');
+    }
+  }
+
+  // The delivery timeline of the opened order comes from the gateway.
+  const openedId = view === 'receipt' && opened && opened.delivery === undefined ? opened.receipt.orderId : null;
+  useEffect(() => {
+    if (!openedId) return;
+    let live = true;
+    session.getDelivery(openedId).then((delivery) => {
+      if (live) setOpened((o) => (o && o.receipt.orderId === openedId ? { ...o, delivery: delivery ?? undefined } : o));
+    });
+    return () => { live = false; };
+    // session.getDelivery is recreated each render; the fetch is per opened order.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openedId]);
+
+  const nextDeliveryStep = async () => {
+    const r = await session.nextDeliveryStep();
+    if (!r) return;
+    if (view === 'receipt' && opened?.receipt.orderId === r.orderId) setOpened({ ...opened, delivery: r.delivery });
+    else await openOrder(r.orderId);
   };
   const toggleAudit = async (orderId?: string) => {
     if (audit) return setAudit(null);
@@ -188,6 +208,7 @@ function WidgetView({
           leftovers={opened.leftovers}
           lang={lang}
           audit={auditNode}
+          delivery={opened.delivery ?? null}
           onOpenAudit={() => toggleAudit(opened.receipt.orderId)}
           onReorder={
             opened.receipt.orderId === receipt?.orderId
@@ -203,9 +224,14 @@ function WidgetView({
       return (
         <ReviewSheet
           draft={draft}
-          problems={problems}
-          onApprove={approve}
+          checkout={session.checkout}
+          onRequestOffer={session.requestOffer}
+          onPlace={session.placeOrder}
           onBack={() => go('chat')}
+          onBackToDraft={() => {
+            session.clearCheckout();
+            go('chat');
+          }}
           onOpenAudit={() => toggleAudit()}
           audit={auditNode}
           lang={lang}
@@ -217,7 +243,6 @@ function WidgetView({
         <DraftSheet
           draft={draft}
           diff={session.diff}
-          problems={lineProblems}
           editing={session.editing}
           animateIn={fromSkeleton}
           locked={session.busy || (session.editing !== null && (session.editing.length === 0 || session.editing.includes('')))}
@@ -230,7 +255,7 @@ function WidgetView({
   })();
 
   const card = (
-    <div className={`flex h-full w-full flex-col overflow-hidden bg-white md:flex-row ${running ? '' : 'aimo-paused'}`}>
+    <div className={`relative flex h-full w-full flex-col overflow-hidden bg-white md:flex-row ${running ? '' : 'aimo-paused'}`}>
       <section
         className={`flex min-h-0 flex-col ${expanded ? 'h-[46%] flex-none border-b border-line md:h-full md:w-[380px] md:border-b-0 md:border-r' : 'h-full w-full'}`}
       >
@@ -248,6 +273,7 @@ function WidgetView({
               fast={session.fast}
               lang={lang}
               onFastForward={session.fastForward}
+              onNextStep={() => void nextDeliveryStep()}
               onReset={reset}
               onToggleFast={session.setFast && (() => session.setFast!(!session.fast))}
             />
@@ -255,7 +281,11 @@ function WidgetView({
           <HeaderButton
             label={t('header.orders', lang)}
             active={view === 'orders'}
-            onClick={() => (view === 'orders' ? backFromOrders() : go('orders'))}
+            onClick={() => {
+              if (view === 'orders') return backFromOrders();
+              session.refreshOrders?.();
+              go('orders');
+            }}
           >
             <OrdersIcon size={16} />
           </HeaderButton>

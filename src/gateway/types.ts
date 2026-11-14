@@ -7,6 +7,17 @@ export interface AgentIdentity {
   agentId: string;
   customerId: string;
   displayName: string;
+  /**
+   * A human reviews each order in this client before it is placed (the Aimo widget). Only then do
+   * placeOrder's humanConfirmations count. Never set from an API key.
+   */
+  humanInTheLoop?: boolean;
+}
+
+/** What the human in the loop confirmed on screen (honoured only for agents with humanInTheLoop). */
+export interface HumanConfirmations {
+  /** Lines whose unknown allergens the buyer checked and ticked. Never overrides a failed allergen check. */
+  allergenLineIds?: string[];
 }
 
 export interface GatewayContext {
@@ -87,6 +98,8 @@ export interface OfferLine {
   availablePacks: number | null;
   availableDate: ISODate | null;
   cutoff: string | null;
+  /** Stock = from Valio's own warehouse; Terminal = ordered from the supplier, cross-docked at the terminal. */
+  logisticModel?: 'Stock' | 'Terminal' | null;
   substituteFor?: string;
   allergen?: AllergenCheck;
   /** Same-kind suggestions when the line can't be delivered in full. Never swapped in automatically. */

@@ -1,17 +1,30 @@
 import type {
   AuditEntry, Draft, DraftChange, DraftDiff, Intake, IntakeSlot, Lang, LeftoverRecord, OrderSummary, Receipt,
 } from '@/contracts';
+import type { DeliveryStatus } from '@/gateway/delivery';
+import type { Change, Offer, PolicyReason } from '@/gateway/types';
 import type { ThreadItem } from './thread';
-
-export interface ApproveResult {
-  receipt?: Receipt;
-  problems?: Array<{ lineId: string; reason: string }>;
-}
 
 export interface OrderDetails {
   receipt: Receipt;
   leftovers: LeftoverRecord[];
+  /** Simulated delivery from the gateway; fetched separately for a fresh receipt. */
+  delivery?: DeliveryStatus;
 }
+
+/**
+ * Where the Review → Approve flow stands. The widget is a gateway client: Review shows a fixed-price offer
+ * (quoteDraft), Approve is the gateway's placeOrder with the same policy as every agent.
+ */
+export type Checkout =
+  | { kind: 'idle' }
+  | { kind: 'quoting' }
+  /** skewMs: demo clock minus the browser clock, so the countdown matches the gateway's validUntil. */
+  | { kind: 'offer'; offer: Offer; changes: Change[]; limitEur: number; skewMs: number; requoted?: boolean; placing?: boolean }
+  | { kind: 'pending'; offerId: string; approvalId: string; approver: { name: string; role: string }; reasons: PolicyReason[]; total: number; limitEur: number }
+  | { kind: 'rejected'; decidedBy?: string; note?: string; message?: string }
+  | { kind: 'not_orderable'; reasons: string[] }
+  | { kind: 'error' };
 
 /** What the widget needs from a conversation, whether scripted (fixture) or backed by the API (live). */
 export interface WidgetSession {
@@ -31,14 +44,24 @@ export interface WidgetSession {
   /** The order submitted in this conversation, if any. */
   receipt: Receipt | null;
   orders: OrderSummary[];
+  /** Re-reads My orders, e.g. on opening it: orders placed elsewhere (an external agent over MCP) show up too. */
+  refreshOrders?: () => void;
   /** Fast mode exists only for the scripted demo; live mode has no such switch. */
   fast?: boolean;
   setFast?: (on: boolean) => void;
   send: (text: string) => void;
   choose: (itemId: string, ids: string[], freeText?: string) => void;
   change: (change: DraftChange) => void;
-  /** Lines with unknown allergens the buyer ticked on the review screen are sent along (the server requires them). */
-  approve: (confirmedUnknownLineIds: string[]) => Promise<ApproveResult>;
+  checkout: Checkout;
+  /** Review opened (or "Refresh offer"): ask the gateway for a fixed-price offer for the draft. */
+  requestOffer: () => void;
+  /** Approve: place the current offer; the buyer's allergen ticks go along as the human-in-the-loop sign-off. */
+  placeOrder: (allergenLineIds: string[]) => void;
+  /** Back to an editable draft after a rejection. */
+  clearCheckout: () => void;
+  getDelivery: (orderId: string) => Promise<DeliveryStatus | null>;
+  /** Demo: advance the clock to the next delivery state of the latest order. */
+  nextDeliveryStep: () => Promise<{ orderId: string; delivery: DeliveryStatus } | null>;
   fastForward: () => void;
   reset: () => void;
   retry: () => void;

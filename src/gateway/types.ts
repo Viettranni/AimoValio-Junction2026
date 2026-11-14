@@ -37,6 +37,8 @@ export interface OfferRequestLine {
   unit?: QuantityUnit;
   /** Set when this line replaces another product the agent first wanted (e.g. a suggested alternative). */
   substituteFor?: string;
+  /** Internal: the line id to use (draft checkout keeps the draft's line ids). Not exposed over MCP. */
+  ref?: string;
 }
 
 export interface OfferRequest {
@@ -98,7 +100,10 @@ export interface Offer {
   customerId: string;
   agentId: string;
   deliveryDate: ISODate;
+  /** Effective requirements: the customer's defaults plus what the agent stated. */
   requirements?: Requirements;
+  /** Set when the offer is the checkout of an event draft (checkoutDraft). */
+  draftId?: string;
   lines: OfferLine[];
   /** Over the lines that can be delivered in full, excl. / incl. VAT. */
   totals: { currency: 'EUR'; total: number; totalWithTax: number; vat: number; orderableLines: number; excludedLines: number };
@@ -160,4 +165,5 @@ export type PlaceOrderResult =
   | { status: 'ordered'; offerId: string; receipt: Receipt; excludedLines: Array<{ lineId: string; productId: string; reason?: string }> }
   | { status: 'pending_approval'; offerId: string; approvalId: string; approver: { name: string; role: string }; reasons: PolicyReason[]; message: string }
   | { status: 'requote'; offerId: string; newOffer: Offer; changes: Change[]; message: string }
-  | { status: 'rejected'; offerId: string; approvalId?: string; message: string };
+  | { status: 'rejected'; offerId: string; approvalId?: string; message: string }
+  | { status: 'not_orderable'; offerId: string; reasons: string[]; message: string };

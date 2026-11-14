@@ -60,6 +60,14 @@ describe('identity', () => {
     expect(resolveAgent('aimo-demo-agent-key', {}).customerId).toBe('helsinki-juhlapalvelu');
   });
 
+  it('fails closed when AIMO_AGENT_KEYS is set but invalid: no key works, not even the demo key', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => resolveAgent('aimo-demo-agent-key', { AIMO_AGENT_KEYS: '{not json' })).toThrow(AuthError);
+    expect(() => resolveAgent('aimo-demo-agent-key', { AIMO_AGENT_KEYS: JSON.stringify({ short: agent }) })).toThrow(AuthError);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+
   it("never shows or places another customer's offer", async () => {
     const offer = await requestOffer({ deliveryDate: DATE, lines: [{ productId: 'bas', quantity: 2 }] }, ctx);
     const other = { agent: otherAgent, db };
@@ -155,7 +163,40 @@ describe('evaluatePolicy', () => {
   });
 });
 
+describe('customer defaults', () => {
+  it("applies the customer's default requirements even when the agent states none", async () => {
+    const offer = await requestOffer({ deliveryDate: DATE, lines: [{ productId: 'bas', quantity: 1 }, { productId: 'gfb1', quantity: 1 }] }, ctx);
+    expect(offer.requirements).toEqual({ excludeAllergens: ['peanut'] });
+    expect(offer.lines.map((l) => l.allergen?.verdict)).toEqual(['pass', 'unknown']);
+    const r = await placeOrder({ offerId: offer.offerId }, ctx);
+    expect(r).toMatchObject({ status: 'pending_approval', reasons: [{ rule: 'allergen_unverified', lineIds: ['L2'] }] });
+  });
+
+  it('only accepts substitutes of the same kind', async () => {
+    const offer = await requestOffer({ deliveryDate: DATE, lines: [{ productId: 'bas', quantity: 1, substituteFor: 'jas' }, { productId: 'pizza', quantity: 1, substituteFor: 'jas' }] }, ctx);
+    expect(offer.lines[0]).toMatchObject({ available: true, substituteFor: 'jas' });
+    expect(offer.lines[1]).toMatchObject({ available: false, reason: expect.stringContaining('same kind') });
+  });
+});
+
 describe('placeOrder', () => {
+  it('returns not_orderable for an offer with nothing deliverable, without asking a human', async () => {
+    const offer = await requestOffer({ deliveryDate: DATE, lines: [{ productId: 'jas', quantity: 2 }] }, ctx);
+    const r = await placeOrder({ offerId: offer.offerId }, ctx);
+    expect(r).toMatchObject({ status: 'not_orderable', reasons: [expect.stringContaining('not deliverable')] });
+    expect(listApprovals({}, db)).toHaveLength(0);
+  });
+
+  it('counts orders already placed or pending today for the same date against the limit (no splitting)', async () => {
+    const first = await requestOffer({ deliveryDate: DATE, lines: [{ productId: 'bas', quantity: 60 }] }, ctx); // €804
+    expect(await placeOrder({ offerId: first.offerId }, ctx)).toMatchObject({ status: 'ordered' });
+    const second = await requestOffer({ deliveryDate: DATE, lines: [{ productId: 'bas', quantity: 20 }] }, ctx); // €268
+    const r = await placeOrder({ offerId: second.offerId }, ctx);
+    expect(r).toMatchObject({ status: 'pending_approval', reasons: [{ rule: 'total_over_limit', message: expect.stringContaining('€804.00 already ordered') }] });
+    const otherDay = await requestOffer({ deliveryDate: '2026-12-07', lines: [{ productId: 'bas', quantity: 20 }] }, ctx);
+    expect(await placeOrder({ offerId: otherDay.offerId }, ctx)).toMatchObject({ status: 'ordered' });
+  });
+
   it('orders within authority with a simulated receipt and is idempotent', async () => {
     const offer = await requestOffer({ deliveryDate: DATE, lines: [{ productId: 'bas', quantity: 3 }] }, ctx);
     const r = await placeOrder({ offerId: offer.offerId }, ctx);

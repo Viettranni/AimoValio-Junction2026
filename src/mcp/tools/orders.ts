@@ -31,4 +31,36 @@ export const getOrderStatusTool = createTool({
   execute: async ({ id }, context) => getOrderStatus(id, { agent: agentFor(context) }),
 });
 
-export const orderTools = [placeOrderTool, getOrderStatusTool];
+const drafts = () => import('@/gateway/drafts');
+
+export const listOrdersTool = createTool({
+  id: 'listOrders',
+  description: "Your customer's orders (newest event first, with leftover ratio once reported) and the approvals still pending.",
+  inputSchema: z.object({ limit: z.number().int().min(1).max(100).optional().describe('Default 20') }),
+  mcp: { annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false } },
+  execute: async ({ limit }, context) => (await drafts()).listAgentOrders({ agent: agentFor(context) }, limit),
+});
+
+export const getOrderTool = createTool({
+  id: 'getOrder',
+  description: 'One order: the receipt (lines, totals, delivery date; simulated order) and the leftovers recorded for it.',
+  inputSchema: z.object({ orderId: z.string() }),
+  mcp: { annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false } },
+  execute: async ({ orderId }, context) => (await drafts()).getOrder(orderId, { agent: agentFor(context) }),
+});
+
+export const reportLeftoversTool = createTool({
+  id: 'reportLeftovers',
+  description:
+    'After the event, report what was left over (+) or ran short (−) per order line, in the line\'s unit; lines you leave out count as used up. ' +
+    'Same as the widget\'s check-in: future planEvent drafts use it for history notes. Only after the delivery date.',
+  inputSchema: z.object({
+    orderId: z.string(),
+    entries: z.array(z.object({ lineId: z.string(), leftoverQty: z.number().describe('+ left over, − short, in the line unit') })).max(200),
+    note: z.string().max(300).optional(),
+  }),
+  mcp: { annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false } },
+  execute: async (input, context) => (await drafts()).reportLeftovers(input, { agent: agentFor(context) }),
+});
+
+export const orderTools = [placeOrderTool, getOrderStatusTool, listOrdersTool, getOrderTool, reportLeftoversTool];

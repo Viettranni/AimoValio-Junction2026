@@ -31,6 +31,12 @@ export function getOffer(offerId: string, db?: Db): Offer | null {
   return row ? (JSON.parse(row.json) as Offer) : null;
 }
 
+/** All offers of a customer (newest first), for the split-order guard and listings. */
+export function listOffers(customerId: string, db?: Db): Offer[] {
+  return gatewayDb(db).select().from(gatewayOffers).where(eq(gatewayOffers.customerId, customerId))
+    .orderBy(desc(gatewayOffers.createdAt)).all().map((r) => JSON.parse(r.json) as Offer);
+}
+
 export function saveApproval(a: Approval, db?: Db): void {
   const row = {
     id: a.approvalId, offerId: a.offerId, customerId: a.customerId, agentId: a.agentId, status: a.status,

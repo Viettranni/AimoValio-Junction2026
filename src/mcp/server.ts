@@ -82,3 +82,15 @@ export const aimoGatewayServer = new MCPServer({
   // 2025-era clients (an initialize request: Claude Desktop, Cursor, curl examples) are served statelessly over HTTP.
   legacy: 'stateless',
 });
+
+// Every request is stateless and the tool, resource and prompt lists never change at runtime, so don't advertise
+// list-changed notifications or resource subscriptions (Mastra's defaults) that no client could ever receive.
+type Caps = { tools?: object; resources?: object; prompts?: object; [k: string]: unknown };
+const server = aimoGatewayServer as unknown as { capabilities?: () => Caps };
+const mastraCapabilities = server.capabilities?.bind(aimoGatewayServer);
+if (mastraCapabilities) {
+  server.capabilities = () => {
+    const c = mastraCapabilities();
+    return { ...c, tools: {}, ...(c.resources ? { resources: {} } : {}), ...(c.prompts ? { prompts: {} } : {}) };
+  };
+}

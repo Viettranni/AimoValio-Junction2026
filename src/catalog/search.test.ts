@@ -70,3 +70,17 @@ describe('checkProduct without an ingredient list', () => {
     expect(checkProduct(p({}), {}).verdict).toBe('pass');
   });
 });
+
+describe('lactose-free dairy', () => {
+  const milk: CatalogProduct = {
+    id: 'lf-milk', nameEn: 'Valio semi skimmed milk 1 l lactose free UHT', nameFi: 'Valio kevytmaito 1 l laktoositon UHT', category: '1',
+    salesUnit: 'ST', salesUnitLabel: { en: 'piece', fi: 'kpl', sv: 'st' }, packSize: 1, packUnit: 'l', packDescription: '1 l piece',
+    allowedLotSize: 1, temperature: 'chilled', vendor: 'Valio', allergens: ['milk'], ingredientData: true,
+    dietFlags: ['gluten_free', 'lactose_free'], reliability: 1, co2PerKg: null,
+  };
+  it('meets a lactose_free requirement but still fails a milk allergy', () => {
+    expect(checkProduct(milk, { requireDiet: ['lactose_free'] }).verdict).toBe('pass');
+    expect(checkProduct(milk, { excludeAllergens: ['milk'] })).toMatchObject({ verdict: 'fail', conflicts: ['milk'] });
+    expect(checkProduct(milk, { requireDiet: ['lactose_free'], excludeAllergens: ['milk'] }).verdict).toBe('fail');
+  });
+});

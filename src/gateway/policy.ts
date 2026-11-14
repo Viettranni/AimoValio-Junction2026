@@ -1,7 +1,7 @@
 // The gateway's authority check. Deterministic: the policy data decides, never a language model.
 import { getProduct } from '@/catalog';
 import { POLICY_RULES, policyFor, type AuthorityPolicy } from './policies';
-import type { Offer, OrderPreferences, PolicyDecision, PolicyReason } from './types';
+import type { Offer, OrderPreferences, PolicyDecision, PolicyReason, Requirements } from './types';
 
 const eur = (n: number) => `€${n.toFixed(2)}`;
 
@@ -10,6 +10,16 @@ export interface PolicyContext {
   preferences?: OrderPreferences;
   /** Current time (demo clock), for the cut-off margin. */
   now: Date;
+  /** Agent orders of this customer placed or pending today for the same delivery date (excl. VAT), excluding this offer. */
+  committedEur?: number;
+}
+
+/** Requirements merged as a union (customer defaults + what the agent states). */
+export function mergeRequirements(...rs: Array<Requirements | undefined>): Requirements | undefined {
+  const excludeAllergens = [...new Set(rs.flatMap((r) => r?.excludeAllergens ?? []))];
+  const requireDiet = [...new Set(rs.flatMap((r) => r?.requireDiet ?? []))];
+  if (!excludeAllergens.length && !requireDiet.length) return undefined;
+  return { ...(excludeAllergens.length ? { excludeAllergens } : {}), ...(requireDiet.length ? { requireDiet } : {}) };
 }
 
 export function evaluatePolicy(offer: Offer, ctx: PolicyContext): PolicyDecision {
@@ -18,10 +28,13 @@ export function evaluatePolicy(offer: Offer, ctx: PolicyContext): PolicyDecision
   const reasons: PolicyReason[] = [];
   const orderable = offer.lines.filter((l) => l.available);
 
-  if (offer.totals.total > policy.autoApproveLimitEur) {
+  const committed = ctx.committedEur ?? 0;
+  if (offer.totals.total + committed > policy.autoApproveLimitEur) {
     reasons.push({
       rule: 'total_over_limit',
-      message: `Total ${eur(offer.totals.total)} excl. VAT is above the agent's limit of ${eur(policy.autoApproveLimitEur)}`,
+      message: committed > 0
+        ? `Total ${eur(offer.totals.total)} excl. VAT plus ${eur(committed)} already ordered or pending today for ${offer.deliveryDate} is above the agent's limit of ${eur(policy.autoApproveLimitEur)}`
+        : `Total ${eur(offer.totals.total)} excl. VAT is above the agent's limit of ${eur(policy.autoApproveLimitEur)}`,
     });
   }
 

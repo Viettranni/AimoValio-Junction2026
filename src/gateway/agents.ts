@@ -26,7 +26,7 @@ function isIdentity(v: unknown): v is AgentIdentity {
     && typeof o.displayName === 'string';
 }
 
-/** Keys from AIMO_AGENT_KEYS, or the demo key when it is unset or invalid. */
+/** Keys from AIMO_AGENT_KEYS; the demo key only when it is unset. Invalid config fails closed (no keys). */
 export function agentKeys(env: Record<string, string | undefined> = process.env): Record<string, AgentIdentity> {
   const raw = env.AIMO_AGENT_KEYS;
   if (!raw) return DEFAULT_KEYS;
@@ -35,8 +35,8 @@ export function agentKeys(env: Record<string, string | undefined> = process.env)
     const entries = Object.entries(parsed).filter((e): e is [string, AgentIdentity] => e[0].length >= 8 && isIdentity(e[1]));
     if (entries.length) return Object.fromEntries(entries);
   } catch { /* fall through */ }
-  console.warn('[gateway] AIMO_AGENT_KEYS is not a valid JSON object of key → {agentId, customerId, displayName}; using the demo key');
-  return DEFAULT_KEYS;
+  console.error('[gateway] AIMO_AGENT_KEYS is set but is not a JSON object of key (≥ 8 chars) → {agentId, customerId, displayName}; no agent key is accepted');
+  return {};
 }
 
 const digest = (s: string) => createHash('sha256').update(s).digest();

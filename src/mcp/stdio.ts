@@ -14,6 +14,9 @@ if (existsSync(envFile)) {
   }
 }
 
+// This process IS the gateway: the planning pipeline uses its catalogue tools in-process (src/mcp/client.ts).
+process.env.AIMO_MCP_SERVER_PROCESS = '1';
+
 type Era = 'modern' | 'legacy';
 type Factory = (era?: Era) => unknown;
 
@@ -28,7 +31,9 @@ async function main() {
   const factory = (aimoGatewayServer as unknown as { createServerInstance?: Factory }).createServerInstance;
   const stdio = await import('@modelcontextprotocol/server/stdio').catch(() => null);
   if (typeof factory !== 'function' || !stdio?.serveStdio) {
-    console.error('[aimo-gateway] serving MCP 2026-07-28 clients only');
+    console.error('[aimo-gateway] serveStdio or Mastra\'s server factory is missing (after a @mastra/mcp upgrade?): ' +
+      'serving MCP 2026-07-28 clients only; 2025-era clients that open with initialize (Claude Desktop, most IDEs) will be rejected. ' +
+      'See MCP.md "Transports and auth" and run src/mcp/stdio.test.ts.');
     return aimoGatewayServer.startStdio();
   }
   stdio.serveStdio(

@@ -45,6 +45,8 @@ async function connect(): Promise<Record<string, AnyTool>> {
  * in-process tool objects if the server can't be reached.
  */
 export function getProductTools(): Promise<Record<string, AnyTool>> {
+  // Inside the gateway's own stdio server (planEvent) the tools are local: don't spawn a second server.
+  if (process.env.AIMO_MCP_SERVER_PROCESS === '1') return Promise.resolve(aimoProductTools as Record<string, AnyTool>);
   toolsPromise ??= connect().catch((err: unknown) => {
     console.warn(`[aimo-products] MCP connection failed (${(err as Error).message}); using in-process tools`);
     return aimoProductTools as Record<string, AnyTool>;

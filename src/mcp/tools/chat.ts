@@ -7,6 +7,7 @@ import type { Draft } from '@/contracts';
 import { getDraftByConversation, now as clockNow } from '@/db/repo';
 import { GatewayError } from '@/gateway/offers';
 import { getChat, saveChat } from '@/gateway/store';
+import { buyerFacingText } from '@/mastra/narration';
 import { agentFor } from '../identity';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -28,17 +29,20 @@ export function draftSummary(d: Draft | null) {
     totals: { low: round2(d.totals.low), high: round2(d.totals.high), lowWithTax: round2(d.totals.lowWithTax), highWithTax: round2(d.totals.highWithTax), currency: 'EUR', note: 'excl. VAT unless "WithTax"' },
     cutoff: d.cutoff,
     openIssues: issues,
-    toOrder: 'Call requestOffer with these productIds and packs (unit "packs") and the delivery date, then placeOrder.',
+    toOrder: 'Call checkoutDraft with the draftId (or edit it first with updateDraft).',
   };
 }
+
+/** Internal conversation ids are namespaced per customer, so an id from one customer never reaches another's chat. */
+export const chatConversationId = (customerId: string, id: string) => `mcp:${customerId}:${id}`;
 
 export const chatWithAimoTool = createTool({
   id: 'chatWithAimo',
   description:
     'Talk to Aimo, Valio Aimo\'s ordering assistant, in any language: describe an event ("wedding 6 Dec, 120 guests, salmon and potatoes, 10 gluten-free") ' +
     'and Aimo plans a priced, stock-checked order draft, asks for anything missing and takes edits ("make it 140 guests"). ' +
-    'Pass the returned conversationId to continue. Returns Aimo\'s reply and a compact draft summary. Chatting never orders anything: ' +
-    'to order, call requestOffer with the draft lines, then placeOrder.',
+    'Pass the returned conversationId to continue. Returns Aimo\'s reply, the draftId and a compact draft summary. Chatting never orders anything: ' +
+    'to order, call checkoutDraft with the draftId (getDraft / updateDraft work on it too).',
   inputSchema: z.object({
     message: z.string().min(1).max(4000),
     conversationId: z.string().max(100).optional().describe('From a previous chatWithAimo result; omit to start a new conversation'),
@@ -46,9 +50,12 @@ export const chatWithAimoTool = createTool({
   mcp: { annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true } },
   execute: async ({ message, conversationId: given }, context) => {
     const agent = agentFor(context);
-    const conversationId = given ?? `mcp-${randomUUID()}`;
-    const chat = getChat(conversationId) ?? { customerId: agent.customerId, agentId: agent.agentId, messages: [] };
-    if (chat.customerId !== agent.customerId) throw new GatewayError(`No conversation ${conversationId}`, 'not_found');
+    const publicId = given ?? randomUUID();
+    const conversationId = chatConversationId(agent.customerId, publicId);
+    const existing = getChat(conversationId);
+    // Only ids this customer started can be continued; anything else is "not found", never a fresh chat under that id.
+    if (given && (!existing || existing.customerId !== agent.customerId)) throw new GatewayError(`No conversation ${given}`, 'not_found');
+    const chat = existing ?? { customerId: agent.customerId, agentId: agent.agentId, messages: [] };
 
     const requestContext = new RequestContext();
     requestContext.set('conversationId', conversationId);
@@ -58,9 +65,10 @@ export const chatWithAimoTool = createTool({
     const messages = [...chat.messages, { role: 'user' as const, content: message }];
     const input = messages.map((m) => (m.role === 'user' ? { role: 'user' as const, content: m.content } : { role: 'assistant' as const, content: m.content }));
     const result = await mastra.getAgent('orchestrator').generate(input, { requestContext });
-    const reply = result.text.trim();
+    const reply = buyerFacingText(result);
     saveChat(conversationId, { ...chat, messages: [...messages, { role: 'assistant', content: reply }] }, clockNow().toISOString());
-    return { conversationId, reply, draft: draftSummary(getDraftByConversation(conversationId)) };
+    const draft = getDraftByConversation(conversationId);
+    return { conversationId: publicId, reply, draftId: draft?.id ?? null, draft: draftSummary(draft) };
   },
 });
 

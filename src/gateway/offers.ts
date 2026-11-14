@@ -7,6 +7,8 @@ import { appendAudit, now as clockNow } from '@/db/repo';
 import { packsFor } from '@/domain/quantities';
 import { availabilityFor, fetchValio, pricingFor } from './lookup';
 import { policyFor } from './policies';
+import { mergeRequirements } from './policy';
+import { sameKind } from '@/mastra/pipeline/same-kind';
 import { getOffer, newId, saveOffer } from './store';
 import type { Alternative, GatewayContext, Offer, OfferLine, OfferRequest, OfferRequestLine } from './types';
 
@@ -47,18 +49,34 @@ function unavailableLine(base: Pick<OfferLine, 'lineId' | 'productId' | 'request
   };
 }
 
+/** A substitute must serve the same function as the product it replaces (same category or same kind of name). */
+export function sameKindAs(original: CatalogProduct, candidate: CatalogProduct): boolean {
+  return sameKind({
+    id: 'x', label: original.nameEn, searchTerms: { fi: original.nameFi, en: original.nameEn }, category: 'dairy', origin: 'requested',
+    guests: 0, requiredAmount: 0, requiredUnit: original.packUnit,
+  }, original, candidate);
+}
+
 /** Prices and checks every requested line against fresh Valio data. Pure apart from the catalogue lookup. */
-export function buildLines(request: OfferRequest, fresh: Fresh, nowMs: number, realNowMs = Date.now()): OfferLine[] {
+export function buildLines(
+  request: OfferRequest, fresh: Fresh, nowMs: number, realNowMs = Date.now(), opts: { substitutesSameKindOnly?: boolean } = {},
+): OfferLine[] {
   const checks = request.requirements
     ? new Map(checkAllergens(request.lines.map((l) => l.productId), request.requirements).map((c) => [c.productId, c]))
     : null;
   return request.lines.map((req, i): OfferLine => {
     const base = {
-      lineId: `L${i + 1}`, productId: req.productId, requested: { quantity: req.quantity, unit: req.unit ?? 'packs' },
+      lineId: req.ref ?? `L${i + 1}`, productId: req.productId, requested: { quantity: req.quantity, unit: req.unit ?? 'packs' },
       ...(req.substituteFor ? { substituteFor: req.substituteFor } : {}),
     } as const;
     const p = getProduct(req.productId);
     if (!p) return unavailableLine(base, 'unknown product id');
+    if (req.substituteFor && opts.substitutesSameKindOnly) {
+      const original = getProduct(req.substituteFor);
+      if (!original || !sameKindAs(original, p)) {
+        return unavailableLine(base, `the customer only accepts substitutes of the same kind as ${original?.nameEn ?? req.substituteFor}`, p);
+      }
+    }
     const sized = packsForRequest(req, p);
     if ('error' in sized) return unavailableLine(base, sized.error, p);
     const { packs } = sized;
@@ -150,20 +168,22 @@ function validate(request: OfferRequest, today: ISODate): void {
 }
 
 /** Builds (and does not save) an offer from fresh Valio data. */
-export async function quote(request: OfferRequest, ctx: GatewayContext): Promise<Offer> {
+export async function quote(request: OfferRequest, ctx: GatewayContext, opts: { draftId?: string } = {}): Promise<Offer> {
   const db = ctx.db ?? getDb();
   const nowDate = clockNow(db);
   validate(request, nowDate.toISOString().slice(0, 10));
+  const policy = policyFor(ctx.agent.customerId);
+  const requirements = mergeRequirements(policy.defaults.requirements, request.requirements);
+  const effective: OfferRequest = { ...request, ...(requirements ? { requirements } : {}) };
   const ids = [...new Set(request.lines.map((l) => l.productId).filter((id) => getProduct(id)))];
   const fresh = ids.length ? await fetchValio(ids, request.deliveryDate) : { prices: new Map(), avail: new Map() };
-  const lines = buildLines(request, fresh, nowDate.getTime());
-  await addAlternatives(lines, request, nowDate.getTime());
+  const lines = buildLines(effective, fresh, nowDate.getTime(), Date.now(), { substitutesSameKindOnly: policy.defaults.substitutesSameKindOnly });
+  await addAlternatives(lines, effective, nowDate.getTime());
   const orderable = lines.filter((l) => l.available);
   const total = round2(orderable.reduce((s, l) => s + l.lineTotal, 0));
   const totalWithTax = round2(orderable.reduce((s, l) => s + l.lineTotalWithTax, 0));
   const cutoffs = orderable.map((l) => l.cutoff).filter((c): c is string => !!c).sort((a, b) => Date.parse(a) - Date.parse(b));
   const cutoff = cutoffs[0] ?? null;
-  const policy = policyFor(ctx.agent.customerId);
   const holdUntil = nowDate.getTime() + policy.offerValidityMinutes * 60_000;
   const validUntil = new Date(cutoff ? Math.min(holdUntil, Date.parse(cutoff)) : holdUntil).toISOString();
   return {
@@ -171,7 +191,8 @@ export async function quote(request: OfferRequest, ctx: GatewayContext): Promise
     customerId: ctx.agent.customerId,
     agentId: ctx.agent.agentId,
     deliveryDate: request.deliveryDate,
-    ...(request.requirements ? { requirements: request.requirements } : {}),
+    ...(requirements ? { requirements } : {}),
+    ...(opts.draftId ? { draftId: opts.draftId } : {}),
     lines,
     totals: { currency: 'EUR', total, totalWithTax, vat: round2(totalWithTax - total), orderableLines: orderable.length, excludedLines: lines.length - orderable.length },
     cutoff,

@@ -3,7 +3,7 @@
 import { getDb } from '@/db/client';
 import { appendAudit, now as clockNow } from '@/db/repo';
 import { GatewayError, quote } from './offers';
-import { diffOffers, submitOffer, supersede } from './orders';
+import { diffOffers, supersede, writeOrder } from './orders';
 import { getApproval, getOffer, listApprovalRows, saveApproval, saveOffer } from './store';
 import type { Approval, ApprovalStatus, Change, GatewayContext, Offer } from './types';
 import type { Receipt } from '@/contracts';
@@ -47,26 +47,33 @@ export async function decideApproval(
   }
 
   const ctx: GatewayContext = { agent: { agentId: approval.agentId, customerId: approval.customerId, displayName: approval.agentName }, db };
-  const fresh = await quote(offer.request, ctx);
+  const fresh = await quote(offer.request, ctx, { draftId: offer.draftId });
   const nowDate = clockNow(db);
   const latest = getApproval(approvalId, db);
   if (!latest || latest.status !== 'pending') throw new GatewayError(`Approval ${approvalId} is already ${latest?.status}`, 'conflict');
 
   const changes = diffOffers(offer, fresh, nowDate, { ignoreExpiry: true });
   if (changes.length) {
-    const newOffer = supersede(offer, fresh, changes, 'gateway', db);
-    const decided: Approval = { ...latest, status: 'requoted', decidedAt: nowDate.toISOString(), decidedBy: approverName, newOfferId: newOffer.offerId, ...(note ? { note } : {}) };
-    saveApproval(decided, db);
-    appendAudit({
-      conversationId: offer.offerId, actor, action: 'approveRequoted',
-      summary: `${approverName} approved, but prices or stock changed since the offer; new offer ${newOffer.offerId} goes back to the agent`,
-    }, db);
-    return { status: 'requote', approval: decided, newOffer, changes };
+    return db.transaction((tx) => {
+      const t = tx as unknown as typeof db;
+      const newOffer = supersede(offer, fresh, changes, 'gateway', t);
+      const decided: Approval = { ...latest, status: 'requoted', decidedAt: nowDate.toISOString(), decidedBy: approverName, newOfferId: newOffer.offerId, ...(note ? { note } : {}) };
+      saveApproval(decided, t);
+      appendAudit({
+        conversationId: offer.offerId, actor, action: 'approveRequoted',
+        summary: `${approverName} approved, but prices or stock changed since the offer; new offer ${newOffer.offerId} goes back to the agent`,
+      }, t);
+      return { status: 'requote' as const, approval: decided, newOffer, changes };
+    });
   }
 
-  appendAudit({ conversationId: offer.offerId, actor, action: 'approve', summary: `${approverName} approved offer ${offer.offerId}${note ? `: ${note}` : ''}` }, db);
-  const receipt = submitOffer(offer, { actor, summary: `Ordered after ${approverName}'s sign-off` }, db);
-  const decided: Approval = { ...latest, status: 'approved', decidedAt: nowDate.toISOString(), decidedBy: approverName, orderId: receipt.orderId, ...(note ? { note } : {}) };
-  saveApproval(decided, db);
-  return { status: 'ordered', approval: decided, receipt };
+  // Approval, order and audit in one transaction: all or nothing.
+  return db.transaction((tx) => {
+    const t = tx as unknown as typeof db;
+    appendAudit({ conversationId: offer.offerId, actor, action: 'approve', summary: `${approverName} approved offer ${offer.offerId}${note ? `: ${note}` : ''}` }, t);
+    const receipt = writeOrder(offer, { actor, summary: `Ordered after ${approverName}'s sign-off` }, t);
+    const decided: Approval = { ...latest, status: 'approved', decidedAt: nowDate.toISOString(), decidedBy: approverName, orderId: receipt.orderId, ...(note ? { note } : {}) };
+    saveApproval(decided, t);
+    return { status: 'ordered' as const, approval: decided, receipt };
+  });
 }

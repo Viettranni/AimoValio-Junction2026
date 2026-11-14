@@ -9,6 +9,7 @@ import { GatewayError } from '@/gateway/offers';
 import { getChat, saveChat } from '@/gateway/store';
 import { agentFor } from '../identity';
 
+const round2 = (n: number) => Math.round(n * 100) / 100;
 const ISSUE_TAGS = new Set(['unavailable', 'allergens_unknown', 'may_deliver_short', 'substitute']);
 
 /** Compact view of the planning draft: enough for the caller to show it, or to requestOffer with the same lines. */
@@ -24,7 +25,7 @@ export function draftSummary(d: Draft | null) {
     deliveryDate: d.intake.deliveryDate ?? null,
     guests: d.intake.guests ?? null,
     lines: d.lines.map((l) => ({ productId: l.productId, productName: l.productName, packs: l.packs, packDescription: l.packDescription, unitPrice: l.unitPrice })),
-    totals: { low: d.totals.low, high: d.totals.high, lowWithTax: d.totals.lowWithTax, highWithTax: d.totals.highWithTax, currency: 'EUR', note: 'excl. VAT unless "WithTax"' },
+    totals: { low: round2(d.totals.low), high: round2(d.totals.high), lowWithTax: round2(d.totals.lowWithTax), highWithTax: round2(d.totals.highWithTax), currency: 'EUR', note: 'excl. VAT unless "WithTax"' },
     cutoff: d.cutoff,
     openIssues: issues,
     toOrder: 'Call requestOffer with these productIds and packs (unit "packs") and the delivery date, then placeOrder.',

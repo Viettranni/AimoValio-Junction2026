@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import type { AimoDataPart, Draft, MenuComponent, Receipt } from '@/contracts';
+import type { AimoDataPart, DietNeed, Draft, MenuComponent, Receipt } from '@/contracts';
 
 vi.hoisted(() => { process.env.AIMO_DB_PATH = ':memory:'; });
 vi.mock('@/catalog/load', async () => {
@@ -26,7 +26,7 @@ import { getAvailability, getPrices } from '@/valio/client';
 import { runEditDraft } from '../tools/edit-draft';
 import { runPlanOrder } from '../tools/plan-order';
 import { runUnderstandRequest } from '../tools/understand-request';
-import { applyDietRules, buildDraft, byGranularity } from './build-draft';
+import { applyDietRules, buildDraft, byGranularity, toComponents } from './build-draft';
 
 const ctx = { conversationId: 'conv-plan', customerId: 'helsinki-juhlapalvelu' };
 
@@ -304,6 +304,41 @@ describe('applyDietRules', () => {
     expect(out[2]).toMatchObject({ requiredDiet: ['gluten_free'], excludeAllergens: ['nuts'] });
   });
 
+  // One base plus one variant; true when the variant covers the need (base left unconstrained).
+  const covers = (variant: Partial<MenuComponent>, need: DietNeed['diet']) => {
+    const base = comp({ id: 'c-base' });
+    return applyDietRules([base, comp({ id: 'c-var', dietVariantOf: 'c-base', ...variant })], [{ diet: need, guests: 3 }])[0] === base;
+  };
+
+  it('excluding gluten covers gluten-free; excluding milk covers lactose-free', () => {
+    expect(covers({ excludeAllergens: ['gluten'] }, 'gluten_free')).toBe(true);
+    expect(covers({ excludeAllergens: ['milk'] }, 'lactose_free')).toBe(true);
+  });
+
+  it('excluded allergens never cover vegetarian or vegan', () => {
+    expect(covers({ excludeAllergens: ['fish', 'crustaceans', 'molluscs'] }, 'vegetarian')).toBe(false);
+    expect(covers({ excludeAllergens: ['milk', 'egg', 'fish', 'crustaceans', 'molluscs'] }, 'vegan')).toBe(false);
+  });
+
+  it('lactose-free does not cover a milk allergy; vegan covers milk, lactose-free and vegetarian', () => {
+    expect(covers({ requiredDiet: ['lactose_free'] }, 'milk')).toBe(false);
+    expect(covers({ requiredDiet: ['vegan'] }, 'milk')).toBe(true);
+    expect(covers({ requiredDiet: ['vegan'] }, 'lactose_free')).toBe(true);
+    expect(covers({ requiredDiet: ['vegan'] }, 'vegetarian')).toBe(true);
+  });
+
+  it('gluten-free covers a gluten allergy and vegetarian covers fish; not the other way round', () => {
+    expect(covers({ requiredDiet: ['gluten_free'] }, 'gluten')).toBe(true);
+    expect(covers({ requiredDiet: ['vegetarian'] }, 'fish')).toBe(true);
+    expect(covers({ requiredDiet: ['vegetarian'] }, 'vegan')).toBe(false);
+    expect(covers({ requiredDiet: ['lactose_free'] }, 'vegan')).toBe(false);
+  });
+
+  it('an uncovered need constrains the base', () => {
+    const out = applyDietRules([comp({ id: 'c-a' }), comp({ id: 'c-a-v', dietVariantOf: 'c-a', excludeAllergens: ['milk', 'egg'] })], [{ diet: 'vegan', guests: 3 }]);
+    expect(out[0].requiredDiet).toEqual(['vegan']);
+  });
+
   it('leaves components alone without diets', () => {
     const cs = [comp({ id: 'c-a' })];
     expect(applyDietRules(cs, 'none')).toBe(cs);
@@ -316,5 +351,29 @@ describe('byGranularity', () => {
     const sized = (id: string, packSize: number) => ({ ...products[0], id, packSize });
     const order = byGranularity([sized('huge', 15), sized('tiny', 0.5), sized('good', 4), sized('good2', 10)], 60).map((p) => p.id);
     expect(order).toEqual(['good', 'good2', 'huge', 'tiny']);
+  });
+});
+
+describe('toComponents', () => {
+  it('drops a diet variant whose base component does not exist', () => {
+    const { components, dropped } = toComponents([
+      component({ id: 'c-chicken', category: 'poultry_main' }),
+      component({ id: 'c-rice-gf', category: 'grain_side', guests: 12, dietVariantOf: 'c-rice', requiredDiet: ['gluten_free'] }),
+    ], 'wedding');
+    expect(components.map((c) => c.id)).toEqual(['c-chicken']);
+    expect(dropped.map((p) => p.id)).toEqual(['c-rice-gf']);
+  });
+
+  it('buildDraft audits the dropped variant', async () => {
+    const c3 = { conversationId: 'conv-orphan', customerId: ctx.customerId };
+    vi.mocked(specialists.planMenu).mockResolvedValueOnce([
+      component({ id: 'c-chicken', label: 'Kana', category: 'poultry_main', searchTerms: { fi: 'broileri', en: 'chicken' } }),
+      component({ id: 'c-x-gf', label: 'Orpo', category: 'bread', guests: 10, dietVariantOf: 'c-missing', requiredDiet: ['gluten_free'] }),
+    ]);
+    const d = { ...startDraft, id: 'draft-3', conversationId: c3.conversationId };
+    saveDraft(d);
+    const { draft } = await buildDraft({ draft: d, addons: [], ctx: c3 }, { specialists, emit: async () => {} });
+    expect(draft.components.map((c) => c.id)).toEqual(['c-chicken']);
+    expect(listAudit({ conversationId: c3.conversationId }).find((a) => a.action === 'dropOrphanVariants')?.summary).toMatch(/Orpo \(variant of c-missing\)/);
   });
 });

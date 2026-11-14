@@ -44,8 +44,13 @@ export function toComponent(plan: MenuComponentPlan, id: string, eventType: Even
   };
 }
 
-/** Menu agent output → components with unique ids and portion amounts from the rules. */
-export function toComponents(plans: MenuComponentPlan[], eventType: EventType): MenuComponent[] {
+/**
+ * Menu agent output → components with unique ids and portion amounts from the rules.
+ * A diet variant of a component that doesn't exist is dropped: on its own it would be served to nobody.
+ */
+export function toComponents(
+  plans: MenuComponentPlan[], eventType: EventType,
+): { components: MenuComponent[]; dropped: MenuComponentPlan[] } {
   const ids = new Set<string>();
   const withIds = plans.filter((p) => p.guests > 0).map((p) => {
     const base = p.id || 'c-item';
@@ -54,7 +59,11 @@ export function toComponents(plans: MenuComponentPlan[], eventType: EventType): 
     ids.add(id);
     return { p, id };
   });
-  return withIds.map(({ p, id }) => toComponent(p, id, eventType, p.dietVariantOf && ids.has(p.dietVariantOf) ? p.dietVariantOf : undefined));
+  const orphan = ({ p }: { p: MenuComponentPlan }) => !!p.dietVariantOf && !ids.has(p.dietVariantOf);
+  return {
+    components: withIds.filter((x) => !orphan(x)).map(({ p, id }) => toComponent(p, id, eventType, p.dietVariantOf ?? undefined)),
+    dropped: withIds.filter(orphan).map(({ p }) => p),
+  };
 }
 
 const constraintsOf = (c: MenuComponent) => ({ excludeAllergens: c.excludeAllergens, requireDiet: c.requiredDiet });
@@ -91,6 +100,36 @@ export function byGranularity(products: CatalogProduct[], required: number): Cat
 
 const DIET_FLAGS: ReadonlySet<string> = new Set<DietFlag>(['lactose_free', 'gluten_free', 'vegan', 'vegetarian']);
 
+/** Flags whose own ingredient rules guarantee another diet flag (one-way). */
+const FLAG_COVERED_BY: Record<DietFlag, DietFlag[]> = {
+  gluten_free: ['gluten_free'],
+  lactose_free: ['lactose_free', 'vegan'],
+  vegetarian: ['vegetarian', 'vegan'],
+  vegan: ['vegan'],
+};
+/** An excluded allergen that is enough for a diet flag. Never for vegan/vegetarian (other animal ingredients). */
+const FLAG_COVERED_BY_EXCLUSION: Partial<Record<DietFlag, Allergen>> = { gluten_free: 'gluten', lactose_free: 'milk' };
+/** Allergens a diet flag guarantees absent. Lactose-free dairy still contains milk protein, so lactose_free covers none. */
+const FLAG_EXCLUDES: Record<DietFlag, Allergen[]> = {
+  gluten_free: ['gluten'],
+  lactose_free: [],
+  vegan: ['milk', 'egg', 'fish', 'crustaceans', 'molluscs'],
+  vegetarian: ['fish', 'crustaceans', 'molluscs'],
+};
+
+/** Whether a diet variant safely serves guests with this need (coverage is one-way, never inferred backwards). */
+function variantCovers(v: MenuComponent, need: DietFlag | Allergen): boolean {
+  const flags = v.requiredDiet ?? [];
+  const excluded = v.excludeAllergens ?? [];
+  if (DIET_FLAGS.has(need)) {
+    const diet = need as DietFlag;
+    const byExclusion = FLAG_COVERED_BY_EXCLUSION[diet];
+    return FLAG_COVERED_BY[diet].some((f) => flags.includes(f)) || (!!byExclusion && excluded.includes(byExclusion));
+  }
+  const allergen = need as Allergen;
+  return excluded.includes(allergen) || flags.some((f) => FLAG_EXCLUDES[f].includes(allergen));
+}
+
 /**
  * Every guest eats the shared components, so each one must meet every diet need that no
  * diet variant of it covers (cooking items, sauces, and dishes the menu agent made no variant for).
@@ -100,9 +139,7 @@ export function applyDietRules(components: MenuComponent[], diets: Intake['diets
   return components.map((c) => {
     if (c.dietVariantOf) return c;
     const variants = components.filter((v) => v.dietVariantOf === c.id);
-    const covered = (need: DietFlag | Allergen) =>
-      variants.some((v) => v.requiredDiet?.includes(need as DietFlag) || v.excludeAllergens?.includes(need as Allergen));
-    const open = unique(diets.map((d) => d.diet)).filter((d) => !covered(d));
+    const open = unique(diets.map((d) => d.diet)).filter((need) => !variants.some((v) => variantCovers(v, need)));
     if (!open.length) return c;
     const requiredDiet = unique([...(c.requiredDiet ?? []), ...open.filter((d): d is DietFlag => DIET_FLAGS.has(d))]);
     const excludeAllergens = unique([...(c.excludeAllergens ?? []), ...open.filter((d): d is Allergen => !DIET_FLAGS.has(d))]);
@@ -351,9 +388,13 @@ export async function buildDraft(
   const stage: Stage = (step, status, extra) => progress(emit, lang, step, status, extra);
 
   await stage('understand', 'start');
-  const planned = toComponents(await specialists.planMenu({ intake, addons }), eventType);
+  const { components: planned, dropped } = toComponents(await specialists.planMenu({ intake, addons }), eventType);
   const components = applyDietRules(planned, intake.diets);
   audit(ctx.conversationId, 'menu', 'planMenu', `Planned ${components.length} components: ${components.map((c) => c.label).join(', ')}`, components);
+  if (dropped.length) {
+    audit(ctx.conversationId, 'menu', 'dropOrphanVariants',
+      `Dropped diet variants of unknown components: ${dropped.map((p) => `${p.label} (variant of ${p.dietVariantOf})`).join(', ')}`, dropped);
+  }
   const tightened = components.filter((c, i) => c !== planned[i]);
   if (tightened.length) {
     audit(ctx.conversationId, 'menu', 'applyDietRules',

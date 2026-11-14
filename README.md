@@ -37,7 +37,9 @@ Start everything with `npm run dev` (port 3100, see Run it). Everything below us
 
 6. **Food waste (hävikki):** tell Claude "we threw out 3 kg of basmati rice yesterday, we cooked too much, and 2 l of cream expired" and it calls `logWaste`; "how much food do we waste?" calls `getWasteReport` (€ value, CO₂, the product thrown away most often, leftovers after events). The chat widget understands the same sentences. The seed adds two months of kitchen waste for the report.
 
-7. **Delivery you can follow:** the receipt shows a simulated delivery timeline (Received → Confirmed → Picking → Out for delivery with an ETA window → Delivered, plus the supplier track for terminal lines). **Next delivery step** in the demo controls walks it forward; lines from less reliable products may arrive short, with the reason, and the leftover check-in is prefilled with them. External agents see the same thing through `getDeliveryStatus`.
+7. **Plan from the calendar:** in claude.ai, connect both Google Calendar and Aimo (the copy-paste link), then pick the `plan-my-calendar` prompt or ask "plan catering orders for my next 4 weeks". Claude reads the calendar with its own connector and calls `planFromCalendar`: food events come back with guests, menu and diets, what is missing, orders already placed (so nothing is ordered twice) and urgent ones within 3 days; a dentist visit is skipped. Then `planEvent` per event, in one conversation. An iCal feed (`icsUrl`) works without a calendar connector.
+
+8. **Delivery you can follow:** the receipt shows a simulated delivery timeline (Received → Confirmed → Picking → Out for delivery with an ETA window → Delivered, plus the supplier track for terminal lines). **Next delivery step** in the demo controls walks it forward; lines from less reliable products may arrive short, with the reason, and the leftover check-in is prefilled with them. External agents see the same thing through `getDeliveryStatus`.
 
 ## Run it
 

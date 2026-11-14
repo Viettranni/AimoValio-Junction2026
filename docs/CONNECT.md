@@ -27,6 +27,10 @@ Claude's custom connectors call from Anthropic's cloud and take only a URL, so `
 
 Copy it from the `npm run dev` banner, the **Aimo Claudessa** section on `/demo-host`, or the chat ("How do I connect Claude?"). In Claude: Settings → Connectors → Add custom connector → paste the URL. The tunnel URL changes on every `npm run dev`, so update the connector after a restart. A key in a URL ends up in proxy logs; this is for the demo key only.
 
+## Plan from your calendar (Claude)
+
+Aimo never reads a calendar itself; Claude does, with its own calendar connector. In claude.ai: Settings → Connectors → connect **Google Calendar** and add the Aimo link (above). Then use the `plan-my-calendar` prompt (the "+" menu → Aimo) or say "Plan my catering orders for the next 4 weeks from my calendar". Claude lists the events, calls `planFromCalendar`, asks every open question at once, and plans each event with `planEvent`. Other calendars: pass an iCal feed as `icsUrl` (a public https `.ics` address; recurring events are not expanded).
+
 ## Claude Code
 
 Without touching your Claude Code settings, pass a config file per run:

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Allergen } from '@/contracts';
 import { deriveAllergens, deriveDietFlags, parseAllergens } from './allergens';
 
 describe('parseAllergens', () => {
@@ -54,6 +55,11 @@ describe('deriveDietFlags', () => {
       expect.arrayContaining(['vegan', 'vegetarian']),
     );
     expect(deriveDietFlags({ nameEn: 'Vegan burger', nameFi: '', allergens: ['egg'] })).not.toContain('vegan');
+  });
+  it('flags lactose-free dairy as lactose free although it contains milk (milk allergy still fails)', () => {
+    const milk = { nameEn: 'Valio semi skimmed milk 1 l lactose free UHT', nameFi: 'Valio kevytmaito 1 l laktoositon UHT', allergens: ['milk'] as Allergen[], ingredientData: true };
+    expect(deriveDietFlags(milk)).toContain('lactose_free');
+    expect(deriveDietFlags({ ...milk, nameEn: 'Valio semi skimmed milk 1 l', nameFi: 'Valio kevytmaito 1 l' })).not.toContain('lactose_free');
   });
 });
 

@@ -81,7 +81,8 @@ export function deriveDietFlags(p: {
   const has = (a: Allergen) => known?.includes(a) ?? false;
   const flags: DietFlag[] = [];
 
-  if (!has('milk') && (CLAIMS.lactose_free.test(names) || proven)) flags.push('lactose_free');
+  // Lactose-free dairy still contains milk protein: the claim stands (a milk allergy is checked separately).
+  if (CLAIMS.lactose_free.test(names) || (proven && !has('milk'))) flags.push('lactose_free');
   if (!has('gluten') && (CLAIMS.gluten_free.test(names) || proven)) flags.push('gluten_free');
 
   const animal = ANIMAL_ALLERGENS.some(has);

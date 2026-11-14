@@ -5,17 +5,18 @@ import { checkAllergens, getProduct } from '@/catalog';
 import { getDraftByConversation, now, saveDraft } from '@/db/repo';
 import { deliverableOn } from '@/domain/cutoff';
 import { applyDraftChange } from '@/domain/draft';
+import { pendingOfferFor } from '@/gateway/store';
 import { packsFor } from '@/domain/quantities';
 import { computeTotals } from '@/domain/totals';
 import type { EditIntent } from '../agents/order';
 import { getAimoContext, type AimoContext } from '../context';
 import { audit, emitterFor, type Emit } from '../events';
 import {
-  attachHistory, earliestCutoff, neededAmount, productName, sourceComponents, toComponent, toLine,
+  attachHistory, earliestCutoff, findCandidates, neededAmount, productName, sourceComponents, toComponent, toLine,
 } from '../pipeline/build-draft';
 import { reasonText } from '../pipeline/reasons';
 import { availablePacks, repriceLine } from '../pipeline/reprice';
-import { sameKind } from '../pipeline/same-kind';
+import { sameKind, swapFits } from '../pipeline/same-kind';
 import { defaultSpecialists, type Specialists } from '../specialists';
 
 const MAX_GUESTS = 5000;
@@ -161,11 +162,18 @@ async function plan(
       const component = line && draft.components.find((c) => c.id === line.componentId);
       const searchTerms = queryOf(intent);
       if (!line || !component || !searchTerms.en) return { note: 'Could not tell which line to swap or what to' };
-      const sourced = await sourceComponents([{ ...component, searchTerms }], draft.intake, {
-        specialists, ctx, request: instruction, priceCandidates: true,
+      // Only candidates that can really stand in for the line's product reach the product agent.
+      const current = getProduct(line.productId);
+      const target = { ...component, searchTerms };
+      const unfit = new Set(current ? findCandidates(target).filter((p) => !swapFits(current, p, searchTerms)).map((p) => p.id) : []);
+      const sourced = await sourceComponents([target], draft.intake, {
+        specialists, ctx, request: instruction, priceCandidates: true, excludeProductIds: unfit,
       });
       const sel = sourced.selections[0];
-      if (!sel) return { note: `No product found for "${searchTerms.en}"` };
+      if (!sel) {
+        const msg = `No "${searchTerms.en}" in the catalogue can replace ${line.productName}; nothing changed. Tell the buyer and offer other options`;
+        return { note: msg, problems: [msg] };
+      }
       if (sel.product.id === line.productId) return { note: `${line.productName} is already the best match` };
       // If the requested product itself had to be substituted, that reason is what the buyer must see.
       const substituteFor = sel.substituteFor;
@@ -253,6 +261,9 @@ function describe(before: Draft, after: Draft, diff: DraftDiff): string[] {
 export async function runEditDraft({ ctx, instruction }: { ctx: AimoContext; instruction: string }, { specialists, emit }: Deps) {
   const start = getDraftByConversation(ctx.conversationId);
   if (!start || start.status !== 'ready') throw new Error('There is no order draft to edit yet.');
+  if (pendingOfferFor(start)) {
+    throw new Error('This order is waiting for the purchasing manager\'s approval, so the draft can\'t change until they decide.');
+  }
   const intents = await specialists.interpretEdit({ instruction, draft: start });
 
   let draft = start;

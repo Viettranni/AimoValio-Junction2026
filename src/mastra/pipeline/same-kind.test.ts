@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CatalogProduct, MenuComponent } from '@/contracts';
 import { products } from '../fixtures.test-util';
-import { sameKind } from './same-kind';
+import { sameKind, swapFits } from './same-kind';
 
 const product = (o: Partial<CatalogProduct>): CatalogProduct => ({ ...products[0], ...o });
 const component = (fi: string, en: string, o: Partial<MenuComponent> = {}): MenuComponent => ({
@@ -42,5 +42,23 @@ describe('sameKind', () => {
     expect(sameKind(c, jasmine, product({ nameEn: 'Basmati 5kg', nameFi: 'Basmatiriisi 5kg', category: '41' }))).toBe(true);
     expect(sameKind(c, jasmine, product({ nameEn: 'Bulgur 5kg', nameFi: 'Bulgur 5kg', category: '40' }))).toBe(true);
     expect(sameKind(c, jasmine, product({ nameEn: 'Couscous 5kg', nameFi: 'Kuskus 5kg', category: '42' }))).toBe(false);
+  });
+});
+
+describe('swapFits', () => {
+  const knorr = product({ nameEn: 'Knorr Cream sauce 1kg/9L', nameFi: 'Knorr Kermakastike 1kg/9L', category: '21905' });
+  const ask = { fi: 'laktoositon kermakastike', en: 'lactose-free cream sauce' };
+  it('rejects ice cream and soy sauce for a cream sauce (seen live)', () => {
+    const iceCream = product({ nameEn: 'Cornetto Classico Gluten & Lactose Free Ice cream 125 ml/75 g', nameFi: 'Cornetto Gluteeniton ja laktoositon Jäätelötuutti', category: '41800' });
+    const soy = product({ nameEn: 'Kikkoman 1l Gluten free soy sauce', nameFi: 'Kikkoman 1l Gluteeniton soijakastike', category: '21921' });
+    expect(swapFits(knorr, iceCream, ask)).toBe(false);
+    expect(swapFits(knorr, soy, { fi: 'gluteeniton kermakastike', en: 'gluten-free cream sauce' })).toBe(false);
+  });
+  it('accepts the same category group or a name with every asked word', () => {
+    const valio = product({ nameEn: 'Valio Keittiön creamy brown sauce 3 dl lactose free', nameFi: 'Valio Keittiön kermainen ruskea kastike 3 dl laktoositon', category: '21904' });
+    expect(swapFits(knorr, valio, ask)).toBe(true);
+    const jasmine = product({ nameEn: 'Jasmin rice 5kg', nameFi: 'Jasmiiniriisi 5kg', category: '21340' });
+    const basmati = product({ nameEn: 'Basmati rice 5kg', nameFi: 'Basmatiriisi 5kg', category: '17300' });
+    expect(swapFits(jasmine, basmati, { fi: 'basmatiriisi', en: 'basmati rice' })).toBe(true);
   });
 });

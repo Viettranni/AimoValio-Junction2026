@@ -1,12 +1,14 @@
 // The orchestrator sometimes "thinks aloud" before a work tool call ("Buyer already said no add-ons, so plan directly.").
 // That text must never reach the buyer. Enforced in code: text written in a step that goes on to call a WORK tool
-// (understandRequest, planOrder, editDraft, checkIn) is dropped. offerChoices is different: its question text
+// (understandRequest, planOrder, editDraft, checkIn, and the lookups) is dropped. offerChoices is different: its question text
 // ("What's your budget?") IS the reply and is kept, as is text in steps without tool calls.
 
 type Chunk = { type: string; toolName?: string };
 
 /** Tools that do work after which the orchestrator writes its real reply; text before them is narration. */
-export const WORK_TOOLS: ReadonlySet<string> = new Set(['understandRequest', 'planOrder', 'editDraft', 'checkIn']);
+export const WORK_TOOLS: ReadonlySet<string> = new Set([
+  'understandRequest', 'planOrder', 'editDraft', 'checkIn', 'readDraft', 'lookupProducts', 'draftDirectOrder', 'refreshPrices',
+]);
 
 const TEXT = new Set(['text-start', 'text-delta', 'text-end']);
 const TOOL_START = new Set(['tool-input-start', 'tool-input-available']);

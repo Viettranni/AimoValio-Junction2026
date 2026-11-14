@@ -1,12 +1,16 @@
 import { Agent } from '@mastra/core/agent';
+import type { SystemMessage } from '@mastra/core/llm';
 import { defaultSpecialists, type Specialists } from '../specialists';
 import { askDietsTool } from '../tools/ask-diets';
 import { createCheckInTool } from '../tools/check-in';
+import { createDirectOrderTool } from '../tools/direct-order';
+import { createLookupProductsTool, createReadDraftTool, createRefreshPricesTool } from '../tools/lookup';
 import { createEditDraftTool } from '../tools/edit-draft';
 import { offerChoicesTool } from '../tools/offer-choices';
 import { createPlanOrderTool } from '../tools/plan-order';
 import { createUnderstandRequestTool } from '../tools/understand-request';
 import { MODEL, cachedSystem, effort } from './model';
+import { answerSystem, todayMessage } from './orchestrator-answers';
 
 export const ORCHESTRATOR_INSTRUCTIONS = `You are Aimo, the ordering assistant of Valio Aimo, a Finnish food-service wholesaler, inside a chat widget for B2B buyers (caterers, hotels, school kitchens).
 You talk to the buyer and delegate all work to specialists through your tools. You never compute or look up data yourself.
@@ -50,7 +54,8 @@ export function createOrchestrator(specialists: Specialists = defaultSpecialists
     id: 'orchestrator',
     name: 'Aimo',
     description: 'Talks to the buyer and delegates to the intake, menu, product, allergen, pricing, history and order specialists.',
-    instructions: cachedSystem(ORCHESTRATOR_INSTRUCTIONS),
+    // Today's date changes per request (and with the demo clock), so it comes last, after the cached blocks.
+    instructions: () => [cachedSystem(ORCHESTRATOR_INSTRUCTIONS), answerSystem(), todayMessage()].flat() as unknown as SystemMessage,
     model: MODEL,
     tools: {
       understandRequest: createUnderstandRequestTool(specialists),
@@ -59,6 +64,10 @@ export function createOrchestrator(specialists: Specialists = defaultSpecialists
       planOrder: createPlanOrderTool(specialists),
       editDraft: createEditDraftTool(specialists),
       checkIn: createCheckInTool(specialists),
+      readDraft: createReadDraftTool(),
+      lookupProducts: createLookupProductsTool(),
+      draftDirectOrder: createDirectOrderTool(),
+      refreshPrices: createRefreshPricesTool(),
     },
     defaultOptions: { ...effort('low'), maxSteps: 8 },
   });

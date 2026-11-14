@@ -56,14 +56,18 @@ async function attempt(url: string, init: RequestInit): Promise<unknown> {
   return res.json();
 }
 
+/** The challenge API sometimes stalls a request for 20–100 s while the next one answers in 0.3 s: retry twice. */
+const ATTEMPTS = 3;
+
 async function request(url: string, init: RequestInit): Promise<unknown> {
-  try {
-    return await attempt(url, init);
-  } catch (err) {
-    // Network errors/timeouts have no `retryable` flag and are retried; 4xx are not.
-    if ((err as { retryable?: boolean }).retryable === false) throw err;
-    await sleep(RETRY_DELAY_MS);
-    return attempt(url, init);
+  for (let n = 1; ; n++) {
+    try {
+      return await attempt(url, init);
+    } catch (err) {
+      // Network errors/timeouts have no `retryable` flag and are retried; 4xx are not.
+      if ((err as { retryable?: boolean }).retryable === false || n >= ATTEMPTS) throw err;
+      await sleep(RETRY_DELAY_MS);
+    }
   }
 }
 

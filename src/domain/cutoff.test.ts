@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AvailabilityInfo } from '@/contracts';
-import { deliverableOn, effectiveCutoff } from './cutoff';
+import { deliverableOn, effectiveCutoff, nextOrderableDate } from './cutoff';
 
 const avail = (o: Partial<AvailabilityInfo>): AvailabilityInfo => ({
   productId: '467238', deliverable: true, salesBlock: false, logisticModel: 'Stock', availableAmount: 100,
@@ -27,5 +27,22 @@ describe('effectiveCutoff', () => {
   it('handles month boundaries', () => {
     expect(effectiveCutoff(avail({ availableDate: '2026-11-16', closingTime: '2026-11-14T09:00:00Z' }), '2026-12-01'))
       .toBe('2026-11-29T09:00:00Z');
+  });
+});
+
+describe('nextOrderableDate', () => {
+  // Valio: earliest delivery Mon 16 Nov, ordered by Thu 12 Nov 14:00 (a four-day lead time).
+  const a = avail({ availableDate: '2026-11-16', closingTime: '2026-11-12T14:00:00+0200' });
+  it('moves to the first date every product can be delivered and still ordered for', () => {
+    // Sat 14 Nov 14:22Z: the 18th's cut-off (Sat 14 Nov 12:00Z) has passed, the 19th's (Sun 12:00Z) has not.
+    expect(nextOrderableDate([a], '2026-11-15', new Date('2026-11-14T14:22:00Z'))).toBe('2026-11-19');
+    expect(nextOrderableDate([a], '2026-11-15', new Date('2026-11-12T10:00:00Z'))).toBe('2026-11-16');
+  });
+  it('skips Sundays', () => {
+    const b = avail({ availableDate: '2026-11-21', closingTime: '2026-11-20T14:00:00+0200' });
+    expect(nextOrderableDate([b], '2026-11-21', new Date('2026-11-20T08:00:00Z'))).toBe('2026-11-23');
+  });
+  it('is null without usable availability', () => {
+    expect(nextOrderableDate([], '2026-11-20', new Date())).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import type { AimoDataPart, DietNeed, Draft, MenuComponent, Receipt } from '@/contracts';
+import type { AimoDataPart, AvailabilityInfo, DietNeed, Draft, MenuComponent, Receipt } from '@/contracts';
 
 vi.hoisted(() => { process.env.AIMO_DB_PATH = ':memory:'; });
 vi.mock('@/catalog/load', async () => {
@@ -375,5 +375,113 @@ describe('toComponents', () => {
     const { draft } = await buildDraft({ draft: d, addons: [], ctx: c3 }, { specialists, emit: async () => {} });
     expect(draft.components.map((c) => c.id)).toEqual(['c-chicken']);
     expect(listAudit({ conversationId: c3.conversationId }).find((a) => a.action === 'dropOrphanVariants')?.summary).toMatch(/Orpo \(variant of c-missing\)/);
+  });
+});
+
+describe('substitution and stock', () => {
+  const plan = async (conversationId: string, menu: MenuComponentPlan[], customerId = ctx.customerId) => {
+    vi.mocked(specialists.planMenu).mockResolvedValueOnce(menu);
+    const d = { ...startDraft, id: `draft-${conversationId}`, conversationId, customerId };
+    saveDraft(d);
+    return buildDraft({ draft: d, addons: [], ctx: { conversationId, customerId } }, { specialists, emit: async () => {} });
+  };
+  const chickenOnly = [component({ id: 'c-chicken', label: 'Kana', category: 'poultry_main', searchTerms: { fi: 'broileri', en: 'chicken' } })];
+  const withStock = (overrides: Record<string, Partial<AvailabilityInfo>>) => async (ids: string[]) => {
+    const f = await import('../fixtures.test-util');
+    return new Map([...f.fakeAvailability(ids)].map(([id, a]) => [id, { ...a, ...overrides[id] }]));
+  };
+
+  it('does not substitute with a product of another kind; the line stays unavailable', async () => {
+    const { draft, summary } = await plan('conv-kind', [
+      component({ id: 'c-crumbs', label: 'Korppujauho', category: 'seasoning', origin: 'needed_for_cooking', searchTerms: { fi: 'gluteeniton', en: 'gluten free' } }),
+    ]);
+    const crumbs = draft.lines[0];
+    expect(crumbs.productId).toBe('crumbs');
+    expect(crumbs.alternatives).not.toContain('pizza');
+    expect(crumbs.tags).toContain('unavailable');
+    expect(crumbs.tags).not.toContain('substitute');
+    expect(summary.exceptions.join(' ')).toMatch(/no product of the same kind/);
+  });
+
+  it('tops up from a same-kind alternative when stock is short', async () => {
+    vi.mocked(getAvailability).mockImplementationOnce(withStock({ chk: { availableAmount: 10 } })); // 10 kg = 2 pieces of 4.4 kg
+    const { draft, summary } = await plan('conv-stock', chickenOnly);
+    const [main, topUp] = draft.lines;
+    expect(main).toMatchObject({ productId: 'chk', packs: 2, quantity: 8.8 });
+    expect(main.quantity).toBeLessThanOrEqual(10); // passes the approve-time stock check
+    expect(topUp).toMatchObject({ productId: 'chk2', packs: 6 }); // 56 guests × 0.2 kg = 11.2 kg → 6 × 2 kg
+    expect(topUp.tags).toContain('substitute');
+    expect(topUp.substituteFor?.reason).toBe('only 2 packs of Broileri rintafilee n4,4kg in stock');
+    expect(draft.components.map((c) => [c.id, c.guests])).toEqual([['c-chicken', 44], ['c-chicken-more', 56]]);
+    expect(summary.exceptions.join(' ')).toMatch(/only 2 packs/);
+  });
+
+  it('caps the line and reports it when no alternative has stock', async () => {
+    vi.mocked(getAvailability).mockImplementationOnce(withStock({ chk: { availableAmount: 10 }, chk2: { deliverable: false, availableAmount: 0 } }));
+    const { draft, summary } = await plan('conv-cap', chickenOnly);
+    expect(draft.lines).toHaveLength(1);
+    expect(draft.lines[0]).toMatchObject({ productId: 'chk', packs: 2, quantity: 8.8 });
+    expect(draft.lines[0].tags).not.toContain('may_deliver_short');
+    expect(summary.exceptions.join(' ')).toMatch(/line is capped/);
+  });
+
+  describe('with history that ran short last time (+30 % needed)', () => {
+    const SHORT = 'cust-short';
+    beforeAll(() => {
+      storeOrder({
+        orderId: 'VA-2026-00002', simulated: true, customerId: SHORT, eventName: 'Häät', eventType: 'wedding',
+        deliveryDate: '2026-06-01', guests: 100,
+        lines: [{ lineId: 'l-1', productId: 'chk', productName: 'Chicken', packs: 5, quantity: 22, unit: 'kg', unitPrice: 37.4, unitPriceWithTax: 42.46, lineTotal: 187, lineTotalWithTax: 212.3 }],
+        total: 187, totalWithTax: 212.3, vat: 25.3, co2Kg: null, minutesSaved: 20, submittedAt: '2026-05-20T09:00:00Z',
+      }, new Map([['l-1', 'poultry_main']]));
+      recordLeftovers('VA-2026-00002', [{ lineId: 'l-1', leftoverQty: -6.6 }]);
+    });
+    const chickenLine = (d: Draft) => d.lines.find((l) => l.productId === 'chk');
+
+    it('history clamp: a note never goes above Stock, and is dropped when the clamp leaves nothing to change', async () => {
+      // 20 kg → 5 pieces; history 26 kg → 6 pieces.
+      vi.mocked(getAvailability).mockImplementationOnce(withStock({ chk: { availableAmount: 50 } }));
+      const roomy = await plan('conv-hist-room', chickenOnly, SHORT);
+      expect(chickenLine(roomy.draft)!.history).toMatchObject({ historyPacks: 6, suggestedPacks: 5 });
+
+      vi.mocked(getAvailability).mockImplementationOnce(withStock({ chk: { availableAmount: 22 } })); // exactly 5 pieces
+      const tight = await plan('conv-hist-tight', chickenOnly, SHORT);
+      expect(chickenLine(tight.draft)).toMatchObject({ packs: 5 });
+      expect(chickenLine(tight.draft)!.history).toBeUndefined();
+    });
+
+    it('history + split: the served line keeps within its stock', async () => {
+      vi.mocked(getAvailability).mockImplementationOnce(withStock({ chk: { availableAmount: 10 } }));
+      const { draft } = await plan('conv-hist-split', chickenOnly, SHORT);
+      expect(chickenLine(draft)).toMatchObject({ packs: 2 });
+      expect(chickenLine(draft)!.history).toBeUndefined();
+      expect(draft.lines.find((l) => l.productId === 'chk2')!.tags).toContain('substitute');
+    });
+
+    it('no history note on a line that cannot be delivered', async () => {
+      vi.mocked(getAvailability).mockImplementationOnce(withStock({
+        chk: { deliverable: false, availableAmount: 0 }, chk2: { deliverable: false, availableAmount: 0 },
+      }));
+      const { draft } = await plan('conv-hist-undeliverable', chickenOnly, SHORT);
+      const chicken = chickenLine(draft)!;
+      expect(chicken.tags).toContain('unavailable');
+      expect(chicken.history).toBeUndefined();
+    });
+
+    it('history + cap: the capped component asks for the capped amount and no note exceeds stock', async () => {
+      vi.mocked(getAvailability).mockImplementationOnce(withStock({ chk: { availableAmount: 10 }, chk2: { deliverable: false, availableAmount: 0 } }));
+      const { draft } = await plan('conv-hist-cap', chickenOnly, SHORT);
+      expect(draft.components[0].requiredAmount).toBe(8.8);
+      expect(chickenLine(draft)).toMatchObject({ packs: 2 });
+      expect(chickenLine(draft)!.history).toBeUndefined();
+    });
+  });
+
+  it('drops a line whose stock covers no pack at all and keeps the exception', async () => {
+    vi.mocked(getAvailability).mockImplementationOnce(withStock({ chk: { availableAmount: 2 }, chk2: { deliverable: false, availableAmount: 0 } }));
+    const { draft, summary } = await plan('conv-zero', chickenOnly);
+    expect(draft.lines).toEqual([]);
+    expect(draft.components).toEqual([]);
+    expect(summary.exceptions.join(' ')).toMatch(/line is left out/);
   });
 });

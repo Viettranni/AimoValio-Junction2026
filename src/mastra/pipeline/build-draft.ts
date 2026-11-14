@@ -14,7 +14,8 @@ import type { MenuComponentPlan } from '../agents/menu';
 import type { AimoContext } from '../context';
 import { audit, progress, type Emit } from '../events';
 import type { Specialists } from '../specialists';
-import { repriceLine } from './reprice';
+import { availablePacks, repriceLine } from './reprice';
+import { sameKind } from './same-kind';
 
 const CANDIDATES = 8;
 const ALTERNATIVES = 2;
@@ -203,10 +204,13 @@ async function screenAllergens({ component, ranked, reason }: Ranked, specialist
       if (picked) chosen = { ...picked, evidence: [picked.evidence, choice.note].filter(Boolean).join('. ') };
     }
   }
+  const product = getProduct(chosen.productId)!;
+  // Only same-kind products may stand in for the pick (substitution, stock top-up).
   const alternatives = checks
     .filter((c) => c.productId !== chosen.productId && c.verdict !== 'fail')
+    .filter((c) => { const p = getProduct(c.productId); return !!p && sameKind(component, product, p); })
     .slice(0, ALTERNATIVES).map((c) => c.productId);
-  return { component, product: getProduct(chosen.productId)!, alternatives, reason, allergen: chosen };
+  return { component, product, alternatives, reason, allergen: chosen };
 }
 
 /** Swaps an undeliverable / blocked product for the first deliverable alternative that is no less safe. */
@@ -231,7 +235,10 @@ function substitute(
     };
   }
   const earliest = !late && a.availableDate && a.availableDate > date ? `; earliest ${a.availableDate}` : '';
-  return { selection: sel, problem: `${sel.component.label}: ${sel.product.nameEn} ${reason.toLowerCase()}${earliest}, and no alternative deliverable by ${date}` };
+  return {
+    selection: sel,
+    problem: `${sel.component.label}: ${sel.product.nameEn} ${reason.toLowerCase()}${earliest}, and no product of the same kind is deliverable by ${date}; ask the buyer what to use instead`,
+  };
 }
 
 export async function sourceComponents(
@@ -338,22 +345,101 @@ export function toLine(
   return repriceLine(line, p, sourced.prices.get(p.id), sourced.availability.get(p.id), requestedDate);
 }
 
+// ── Stock ──
+
+interface Fitted { componentId: string; components: MenuComponent[]; lines: DraftLine[]; problem?: string }
+
+/**
+ * Keeps a Stock line within the stock Valio reports for it. The guests the stock can't cover move to the
+ * first same-kind alternative with enough stock (a separate component and line tagged substitute);
+ * without one, the line is capped and the shortfall reported.
+ */
+export function fitToStock(
+  sel: Selection, line: DraftLine, sourced: Pick<Sourced, 'prices' | 'availability'>,
+  opts: { date: string; lang: Lang; eventType: EventType },
+): Fitted {
+  const { component: c, product: p } = sel;
+  const keep: Fitted = { componentId: c.id, components: [c], lines: [line] };
+  const a = sourced.availability.get(p.id);
+  // Undeliverable products are the substitution path's business (they stay tagged unavailable).
+  const inStock = a?.logisticModel === 'Stock' && deliverableOn(a, opts.date) ? availablePacks(p, a) : null;
+  if (inStock === null || inStock >= line.packs) return keep;
+
+  const lot = Math.max(1, p.allowedLotSize);
+  const stockPacks = Math.floor(inStock / lot) * lot;
+  const name = productName(p, opts.lang);
+  const reason = `only ${stockPacks} packs of ${name} in stock`;
+  const portion = c.requiredAmount / Math.max(1, c.guests);
+  const servedGuests = Math.min(c.guests, Math.floor((stockPacks * p.packSize) / portion));
+  const resize = (comp: MenuComponent, id: string, guests: number): MenuComponent => ({
+    ...comp, id, guests, requiredAmount: requiredAmount(comp.category, opts.eventType, guests).amount,
+  });
+
+  const rest = resize(c, `${c.id}-more`, c.guests - servedGuests);
+  for (const altId of sel.alternatives) {
+    const alt = getProduct(altId);
+    const altAvail = sourced.availability.get(altId);
+    if (!alt || !altAvail || !deliverableOn(altAvail, opts.date)) continue;
+    const check = checkAllergens([altId], constraintsOf(c))[0];
+    if (check.verdict === 'fail' || (sel.allergen.verdict === 'pass' && check.verdict !== 'pass')) continue;
+    const altStock = altAvail.logisticModel === 'Stock' ? availablePacks(alt, altAvail) : null;
+    if (altStock !== null && altStock < packsFor(rest.requiredAmount, alt).packs) continue;
+
+    const topUp: Selection = {
+      component: rest, product: alt, allergen: check, reason: sel.reason,
+      alternatives: sel.alternatives.filter((id) => id !== altId),
+      substituteFor: { productId: p.id, productName: name, reason },
+    };
+    const topUpLine = toLine(topUp, 'l-0', opts.lang, sourced, opts.date);
+    const problem = `${c.label}: ${reason}; the rest (${rest.requiredAmount} ${rest.requiredUnit}) comes from ${alt.nameEn}`;
+    if (servedGuests === 0) return { componentId: c.id, components: [rest], lines: [topUpLine], problem };
+    const served = resize(c, c.id, servedGuests);
+    return {
+      componentId: c.id,
+      components: [served, rest],
+      lines: [toLine({ ...sel, component: served }, 'l-0', opts.lang, sourced, opts.date), topUpLine],
+      problem,
+    };
+  }
+
+  const problem = `${c.label}: ${reason} (needed ${line.packs}) and no same-kind product has enough; ` +
+    (stockPacks > 0 ? 'the line is capped, ask the buyer how to cover the rest' : 'the line is left out, ask the buyer what to use instead');
+  if (stockPacks === 0) return { componentId: c.id, components: [], lines: [], problem };
+  const quantity = Math.round(stockPacks * p.packSize * 1e6) / 1e6;
+  // The component now asks for what is ordered, so history notes are based on the capped amount.
+  return {
+    componentId: c.id,
+    components: [{ ...c, requiredAmount: quantity }],
+    lines: [repriceLine({ ...line, packs: stockPacks, quantity }, p, line.price, line.availability, opts.date)],
+    problem,
+  };
+}
+
 // ── History ──
 
-export function attachHistory(lines: DraftLine[], components: MenuComponent[], eventType: EventType, customerId: string): DraftLine[] {
+export function attachHistory(
+  lines: DraftLine[], components: MenuComponent[], eventType: EventType, customerId: string, requestedDate: string,
+): DraftLine[] {
   const records = listLeftoverRecords(customerId);
   const today = now();
   return lines.map((line) => {
     const c = components.find((x) => x.id === line.componentId);
     const product = getProduct(line.productId);
-    if (!c || !product) return line;
+    // No note on a line that can't be delivered: there is nothing to adjust.
+    if (!c || !product || (line.availability && !deliverableOn(line.availability, requestedDate))) return line;
     const adjustment = computeHistoryAdjustment({
       productId: line.productId, category: line.group, eventType, suggestedQty: c.requiredAmount, unit: c.requiredUnit, records, now: today,
     });
     if (!adjustment) return line;
-    const historyPacks = packsFor(adjustment.adjustedQty, product).packs;
-    // A note that would not change the order is noise.
-    if (historyPacks === line.packs) return line;
+    let historyPacks = packsFor(adjustment.adjustedQty, product).packs;
+    // History never suggests more than a Stock product has.
+    const inStock = line.availability?.logisticModel === 'Stock' ? availablePacks(product, line.availability) : null;
+    if (inStock !== null) {
+      const lot = Math.max(1, product.allowedLotSize);
+      historyPacks = Math.min(historyPacks, Math.floor(inStock / lot) * lot);
+    }
+    // A note that would not change the order, or would order nothing, is noise.
+    if (historyPacks === line.packs || historyPacks === 0) return line;
     return { ...line, history: { adjustment, historyPacks, suggestedPacks: line.packs, choice: 'pending' as const } };
   });
 }
@@ -389,7 +475,7 @@ export async function buildDraft(
 
   await stage('understand', 'start');
   const { components: planned, dropped } = toComponents(await specialists.planMenu({ intake, addons }), eventType);
-  const components = applyDietRules(planned, intake.diets);
+  let components = applyDietRules(planned, intake.diets);
   audit(ctx.conversationId, 'menu', 'planMenu', `Planned ${components.length} components: ${components.map((c) => c.label).join(', ')}`, components);
   if (dropped.length) {
     audit(ctx.conversationId, 'menu', 'dropOrphanVariants',
@@ -406,10 +492,14 @@ export async function buildDraft(
   await stage('ingredients', 'done', { count: components.length, ticker: components.map((c) => c.label) });
 
   const sourced = await sourceComponents(components, intake, { specialists, ctx, stage });
-  let lines = sourced.selections.map((s, i) => toLine(s, `l-${i + 1}`, lang, sourced, intake.deliveryDate ?? ''));
+  const date = intake.deliveryDate ?? '';
+  const fitted = sourced.selections.map((s) => fitToStock(s, toLine(s, 'l-0', lang, sourced, date), sourced, { date, lang, eventType }));
+  const stockProblems = fitted.flatMap((f) => (f.problem ? [f.problem] : []));
+  components = components.flatMap((c) => fitted.find((f) => f.componentId === c.id)?.components ?? [c]);
+  let lines = fitted.flatMap((f) => f.lines).map((l, i) => ({ ...l, id: `l-${i + 1}` }));
 
   await stage('history', 'start');
-  lines = attachHistory(lines, components, eventType, ctx.customerId);
+  lines = attachHistory(lines, components, eventType, ctx.customerId, date);
   const historyNotes = lines.filter((l) => l.history).length;
   audit(ctx.conversationId, 'history', 'getHistoryAdjustment', `History notes on ${historyNotes} of ${lines.length} lines`,
     lines.filter((l) => l.history).map((l) => ({ lineId: l.id, ...l.history })));
@@ -419,7 +509,7 @@ export async function buildDraft(
   const totals = computeTotals(lines, intake.budget);
   const today = now();
   const cutoff = earliestCutoff(lines, intake.deliveryDate ?? '');
-  const exceptions = [...sourced.exceptions];
+  const exceptions = [...sourced.exceptions, ...stockProblems];
   if (cutoff && Date.parse(cutoff) < today.getTime()) {
     const passed = `The order cut-off has passed for ${intake.deliveryDate} (${cutoff}); offer the next possible date`;
     exceptions.push(passed);

@@ -1,12 +1,13 @@
 // Live smoke test of the orchestrator: npx tsx --env-file=.env.local scripts/agent-smoke.ts
 // Plays a short wedding conversation, prints every tool call and data part, then the draft totals.
+// An optional argument replaces the first message, e.g. a fully specified request.
 // Writes a draft and audit rows for a fresh "smoke-…" conversation into the local database.
 import { RequestContext } from '@mastra/core/request-context';
 import { getDraftByConversation } from '@/db/repo';
 import { mastra } from '@/mastra';
 
 const CUSTOMER = 'helsinki-juhlapalvelu';
-const TURNS = [
+const DEFAULT_TURNS = [
   'We have a wedding on 6 December, 300 guests, chicken and rice. Budget about 4000 euros. 12 guests are gluten-free.',
   'No add-ons, thanks. Please plan it.',
   'Yes, go ahead and build the draft.',
@@ -17,6 +18,7 @@ async function main() {
     console.error('ANTHROPIC_API_KEY is not set. Add it to .env.local and run: npx tsx --env-file=.env.local scripts/agent-smoke.ts');
     process.exit(1);
   }
+  const turns = process.argv[2] ? [process.argv[2], ...DEFAULT_TURNS.slice(1)] : DEFAULT_TURNS;
   const conversationId = `smoke-${Date.now()}`;
   const requestContext = new RequestContext();
   requestContext.set('conversationId', conversationId);
@@ -25,16 +27,19 @@ async function main() {
   const messages: Array<{ role: 'user'; content: string } | { role: 'assistant'; content: string }> = [];
   const toolSequence: string[] = [];
 
-  for (const turn of TURNS) {
+  for (const turn of turns) {
     if (getDraftByConversation(conversationId)?.status === 'ready') break;
     console.log(`\n> ${turn}`);
     messages.push({ role: 'user', content: turn });
     const started = Date.now();
     const stream = await agent.stream(messages, { requestContext });
-    let text = '';
+    // Text segments split at tool calls, so text written before a tool call (narration) is visible.
+    const segments: string[] = [''];
     for await (const chunk of stream.fullStream) {
       const c = chunk as { type: string; payload?: { toolName?: string; args?: unknown; textDelta?: string; text?: string }; data?: unknown };
       if (c.type === 'tool-call') {
+        if (segments.at(-1)!.trim()) console.log(`  [text before ${c.payload?.toolName}] ${segments.at(-1)!.trim()}`);
+        segments.push('');
         toolSequence.push(c.payload?.toolName ?? '?');
         console.log(`  [tool] ${c.payload?.toolName} ${JSON.stringify(c.payload?.args)}`);
       } else if (c.type === 'tool-result') {
@@ -45,10 +50,11 @@ async function main() {
         const d = c.data as { step?: string; status?: string; count?: number };
         console.log(`  [${c.type}] ${c.type === 'data-progress' ? `${d.step} ${d.status}${d.count !== undefined ? ` (${d.count})` : ''}` : ''}`);
       } else if (c.type === 'text-delta') {
-        text += c.payload?.text ?? c.payload?.textDelta ?? '';
+        segments[segments.length - 1] += c.payload?.text ?? c.payload?.textDelta ?? '';
       }
     }
-    console.log(`< ${text.trim()}  (${((Date.now() - started) / 1000).toFixed(1)} s)`);
+    const text = segments.join(' ').replace(/\s+/g, ' ').trim();
+    console.log(`< ${segments.at(-1)!.trim()}  (${((Date.now() - started) / 1000).toFixed(1)} s)`);
     messages.push({ role: 'assistant', content: text });
   }
 

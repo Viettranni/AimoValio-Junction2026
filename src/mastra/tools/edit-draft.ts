@@ -11,7 +11,7 @@ import { audit, emitterFor, type Emit } from '../events';
 import {
   attachHistory, earliestCutoff, productName, sourceComponents, toComponent, toLine,
 } from '../pipeline/build-draft';
-import { repriceLine } from '../pipeline/reprice';
+import { availablePacks, repriceLine } from '../pipeline/reprice';
 import { defaultSpecialists, type Specialists } from '../specialists';
 
 const MAX_GUESTS = 5000;
@@ -90,7 +90,7 @@ async function plan(
       const sourced = await sourceComponents([component], draft.intake, { specialists, ctx, request: instruction, priceCandidates: true });
       const sel = sourced.selections[0];
       if (!sel) return { note: `No product found for "${searchTerms.en}"` };
-      const [newLine] = attachHistory([toLine(sel, nextLineId(draft), lang, sourced, date)], [component], eventType, ctx.customerId);
+      const [newLine] = attachHistory([toLine(sel, nextLineId(draft), lang, sourced, date)], [component], eventType, ctx.customerId, date);
       return {
         change: { kind: 'addLine', line: newLine },
         draft: { ...draft, components: [...draft.components, component] },
@@ -152,6 +152,11 @@ export async function runEditDraft({ ctx, instruction }: { ctx: AimoContext; ins
     const repriced = product ? repriceLine(l, product, l.price, l.availability, date) : l;
     return { ...repriced, tags: [...repriced.tags.filter((t) => t !== 'updated'), 'updated'] };
   });
+  for (const l of lines) {
+    const product = touched.has(l.id) ? getProduct(l.productId) : undefined;
+    const inStock = product && l.availability?.logisticModel === 'Stock' ? availablePacks(product, l.availability) : null;
+    if (inStock !== null && inStock < l.packs) problems.push(`${l.productName}: only ${inStock} packs in stock (needs ${l.packs}); offer to lower it or add a similar product`);
+  }
   draft = {
     ...draft, lines, totals: computeTotals(lines, draft.intake.budget), cutoff: earliestCutoff(lines, date), updatedAt: now().toISOString(),
   };

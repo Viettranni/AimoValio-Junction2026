@@ -93,6 +93,8 @@
     launcher.setAttribute('aria-expanded', String(open));
     launcher.setAttribute('aria-label', open ? 'Minimise the Aimo ordering assistant' : 'Open the Aimo ordering assistant');
     launcher.firstChild.innerHTML = open ? ICON_CLOSE : ICON_CHAT;
+    // Lets the widget pause its loader animations while minimised.
+    if (frame.contentWindow) frame.contentWindow.postMessage({ type: 'aimo:open', open: open }, origin);
   }
 
   launcher.addEventListener('click', function () {

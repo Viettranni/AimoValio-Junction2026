@@ -131,11 +131,31 @@
   animation: aimo-shimmer 1.3s linear infinite;
 }
 
+/* Thin lime indeterminate bar: loaders and edits in progress. */
+@keyframes aimo-indeterminate {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(310%); }
+}
+.aimo-indeterminate > span {
+  animation: aimo-indeterminate 1.4s cubic-bezier(0.45, 0, 0.35, 1) infinite;
+}
+
+/* Minimised widget or background tab: every loader animation holds still. */
+.aimo-paused,
+.aimo-paused * {
+  animation-play-state: paused !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .aimo-pulse,
   .aimo-typing span,
-  .aimo-shimmer {
+  .aimo-shimmer,
+  .aimo-indeterminate > span {
     animation: none;
+  }
+  /* A still bar still says "working"; centre it so it does not read as a progress amount. */
+  .aimo-indeterminate > span {
+    margin-left: 33%;
   }
 }
 

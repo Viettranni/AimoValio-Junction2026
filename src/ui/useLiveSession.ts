@@ -8,6 +8,7 @@ import type {
   OrderSummary, ProgressEvent, Receipt, ReceiptEvent, SlotsEvent,
 } from '@/contracts';
 import { describeEdit } from './editNote';
+import { showShelfCard, toolRunning } from './shelf';
 import { t, uiLangFor, type UiKey } from './i18n';
 import type { ApproveResult, OrderDetails, WidgetSession } from './session';
 import { answerText, deriveThread, messageText, type ChoiceAnswer, type LocalItem, type ProgressRuns, type ThreadItem } from './thread';
@@ -119,7 +120,8 @@ export function useLiveSession({
   const [local, setLocal] = useState<LocalItem[]>([]);
   const [answers, setAnswers] = useState<Record<string, ChoiceAnswer>>({});
   const [checkins, setCheckins] = useState<Record<string, { answer?: string; confirmed?: boolean }>>({});
-  const [slowTurn, setSlowTurn] = useState('');
+  const [quietKey, setQuietKey] = useState('');
+  const [pendingEdits, setPendingEdits] = useState<string[]>([]);
   const [attempt, setAttempt] = useState(0);
   const localId = useRef(0);
   // Draft edits run one at a time, each against the draft the previous one returned.
@@ -197,11 +199,13 @@ export function useLiveSession({
     if (status === 'ready' && messages.length) saveChat(conversationId, { messages, answers });
   }, [status, messages, answers, conversationId]);
 
-  // The typing dots wait 600 ms on every attempt, including a retry of the same turn.
-  const turnKey = `${userCount}:${attempt}`;
+  // The shelf card waits until the turn has been quiet for 600 ms: every attempt (a retry of the same turn
+  // too) and every new progress event restarts the wait.
+  const run = progress[userCount] ?? [];
+  const turnKey = `${userCount}:${attempt}:${run.length}`;
   useEffect(() => {
     if (!busy) return;
-    const id = setTimeout(() => setSlowTurn(turnKey), TYPING_DELAY_MS);
+    const id = setTimeout(() => setQuietKey(turnKey), TYPING_DELAY_MS);
     return () => clearTimeout(id);
   }, [busy, turnKey]);
 
@@ -221,8 +225,11 @@ export function useLiveSession({
   });
 
   const last = messages.at(-1);
-  const typing =
-    busy && slowTurn === turnKey && !progress[userCount]?.length && (last?.role !== 'assistant' || !messageText(last));
+  const replyText = last?.role === 'assistant' ? messageText(last) : '';
+  const typing = busy && quietKey === turnKey && showShelfCard({ events: run, replyText });
+  const planning = busy && run.length > 0 && !draft;
+  const chatEditing = busy && last?.role === 'assistant' && toolRunning(last.parts, 'editDraft');
+  const editing = chatEditing ? [] : pendingEdits.length ? pendingEdits : null;
 
   // ───── Actions ─────
 
@@ -245,6 +252,8 @@ export function useLiveSession({
   const change = (c: DraftChange) => {
     if (!draft || draft.status === 'submitted' || busy) return;
     const forConversation = conversationId;
+    const touched = 'lineId' in c ? c.lineId : '';
+    setPendingEdits((list) => [...list, touched]);
     editQueue.current = editQueue.current.then(async () => {
       try {
         const res = await api<{ draft: Draft; diff: DraftDiff }>('/api/draft', { method: 'POST', body: { conversationId: forConversation, change: c } });
@@ -258,6 +267,11 @@ export function useLiveSession({
         if (note) notify((id) => ({ id, kind: 'assistant', text: note }));
       } catch {
         if (conversationRef.current === forConversation) fail('chat.editFailed');
+      } finally {
+        setPendingEdits((list) => {
+          const i = list.indexOf(touched);
+          return i < 0 ? list : [...list.slice(0, i), ...list.slice(i + 1)];
+        });
       }
     });
   };
@@ -336,7 +350,7 @@ export function useLiveSession({
     ).catch(() => []);
 
   return {
-    items, typing, busy, lang, intake, missing, draft, diff, receipt, orders,
+    items, typing, busy, planning, editing, lang, intake, missing, draft, diff, receipt, orders,
     send, choose, change, approve, fastForward, reset, retry, submitCheckIn, confirmCheckIn, openOrder, getAudit,
   };
 }

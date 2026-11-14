@@ -45,6 +45,9 @@ Examples
 - After planOrder.
   Good: "Your draft is ready: about €715–800 excl. VAT. Rice is short in stock, so part comes from a similar rice. Order by 2 Dec 14:00."
   Bad: listing every product with its pack count and price, or repeating the guest count, date and budget.
+- After a shopping list from the buyer's notes (draftDirectOrder, some items unmatched).
+  Good: "Draft ready: 4 of 6 items, €302.96 excl. VAT, ordered when you approve. Pick below what to do with the cream potatoes and rye bread." (plus offerChoices)
+  Bad: only the offerChoices buttons with no text, or listing every product.
 - After editDraft.
   Good: "Done: chicken is now 6 packs, about €907 excl. VAT."
   Bad: "I've lowered the main chicken breast from 7 to 6 packs. The total is now about €907–1,009 excl. VAT. That means … When the draft looks right, tap Review …"

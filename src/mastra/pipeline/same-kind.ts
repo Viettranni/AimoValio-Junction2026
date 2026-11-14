@@ -12,6 +12,9 @@ function keyTokens(c: MenuComponent): string[] {
     .split(/[^a-zåäö]+/).filter((t) => t.length >= 4 && !NOISE.has(t));
 }
 
+/** Snacks and ready meals are their own kind: never a stand-in for an ingredient (and vice versa). */
+const SNACK = /snack|välipala|mellanmål|ready[ -]?meal|valmisruoka|färdigmat|pizza|pizzapohja/i;
+
 /**
  * A product serves the same function as the component (a fair substitute): its name contains one of the
  * component's search words (substring, so Finnish compounds like "jasmiiniriisi" match "riisi"), or it is in
@@ -20,7 +23,14 @@ function keyTokens(c: MenuComponent): string[] {
  */
 export function sameKind(c: MenuComponent, original: CatalogProduct, candidate: CatalogProduct): boolean {
   if (original.packUnit === c.requiredUnit && candidate.packUnit !== c.requiredUnit) return false;
-  if (candidate.category === original.category) return true;
+  const terms = `${c.searchTerms.fi} ${c.searchTerms.en} ${c.label}`;
+  const originalName = `${original.nameFi} ${original.nameEn}`.toLowerCase();
   const name = `${candidate.nameFi} ${candidate.nameEn}`.toLowerCase();
-  return keyTokens(c).some((t) => name.includes(t));
+  if (SNACK.test(name) && !SNACK.test(terms) && !SNACK.test(originalName)) return false;
+  if (candidate.category === original.category) return true;
+  // The words that name what the original pick IS ("korppujauho" in "gluten-free breadcrumbs for chicken"),
+  // not what it is for or which diet it suits; all search words only when none of them is in the original's name.
+  const tokens = keyTokens(c);
+  const anchored = tokens.filter((t) => originalName.includes(t));
+  return (anchored.length ? anchored : tokens).some((t) => name.includes(t));
 }

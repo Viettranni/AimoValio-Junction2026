@@ -23,3 +23,18 @@ export function effectiveCutoff(a: AvailabilityInfo, requestedDate: ISODate): st
   const leadDays = dayNumber(availableDate) - dayNumber(closingTime.slice(0, 10));
   return `${fromDayNumber(dayNumber(requestedDate) - leadDays)}${closingTime.slice(10)}`;
 }
+
+/**
+ * The first delivery date after `requestedDate` whose cut-off (the same lead time as `cutoff`, which has passed)
+ * is still ahead of `now`. Sundays are skipped. Null without a cut-off.
+ */
+export function nextOrderableDate(requestedDate: ISODate, cutoff: string | null, now: Date): ISODate | null {
+  if (!cutoff) return null;
+  const leadMs = Date.parse(`${requestedDate}T00:00:00Z`) - Date.parse(cutoff);
+  for (let day = dayNumber(requestedDate) + 1; day < dayNumber(requestedDate) + 60; day++) {
+    const date = fromDayNumber(day);
+    if (new Date(day * DAY_MS).getUTCDay() === 0) continue;
+    if (Date.parse(`${date}T00:00:00Z`) - leadMs > now.getTime()) return date;
+  }
+  return null;
+}

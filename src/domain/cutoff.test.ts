@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AvailabilityInfo } from '@/contracts';
-import { deliverableOn, effectiveCutoff } from './cutoff';
+import { deliverableOn, effectiveCutoff, nextOrderableDate } from './cutoff';
 
 const avail = (o: Partial<AvailabilityInfo>): AvailabilityInfo => ({
   productId: '467238', deliverable: true, salesBlock: false, logisticModel: 'Stock', availableAmount: 100,
@@ -27,5 +27,19 @@ describe('effectiveCutoff', () => {
   it('handles month boundaries', () => {
     expect(effectiveCutoff(avail({ availableDate: '2026-11-16', closingTime: '2026-11-14T09:00:00Z' }), '2026-12-01'))
       .toBe('2026-11-29T09:00:00Z');
+  });
+});
+
+describe('nextOrderableDate', () => {
+  const cutoff = '2026-11-19T14:00:00+0200'; // for delivery on Friday 20 Nov
+  it('moves to the first date whose cut-off is still ahead', () => {
+    expect(nextOrderableDate('2026-11-20', cutoff, new Date('2026-11-20T07:00:00Z'))).toBe('2026-11-21');
+  });
+  it('skips Sundays and dates whose shifted cut-off has passed too', () => {
+    // Saturday 21 Nov 10:00Z: Saturday's cut-off (Fri 12:00Z) has passed; Sunday's would not have, but Sunday is skipped.
+    expect(nextOrderableDate('2026-11-20', cutoff, new Date('2026-11-21T10:00:00Z'))).toBe('2026-11-23');
+  });
+  it('is null without a cut-off', () => {
+    expect(nextOrderableDate('2026-11-20', null, new Date())).toBeNull();
   });
 });

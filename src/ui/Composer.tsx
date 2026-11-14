@@ -2,8 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 import type { UiLang } from '@/contracts';
-import { t } from './i18n';
-import { PaperclipIcon, SendIcon } from './icons';
+import { localeFor, t } from './i18n';
+import { MicIcon, PaperclipIcon, SendIcon } from './icons';
+import { useSpeechInput } from './useSpeechInput';
 
 export function Composer({
   value,
@@ -31,11 +32,13 @@ export function Composer({
 }) {
   const input = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const speech = useSpeechInput({ locale: localeFor(lang), value, onChange });
   useEffect(() => {
     if (focusKey) input.current?.focus();
   }, [focusKey]);
 
   const submit = () => {
+    if (speech.listening) speech.stop();
     if (disabled || !value.trim()) return;
     onSubmit(value.trim());
     onChange('');
@@ -74,11 +77,27 @@ export function Composer({
           </button>
         </>
       )}
+      {speech.supported && (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => { speech.toggle(); input.current?.focus(); }}
+          aria-pressed={speech.listening}
+          aria-label={t(speech.listening ? 'composer.micStop' : 'composer.mic', lang)}
+          title={t(speech.listening ? 'composer.micStop' : 'composer.mic', lang)}
+          className={`flex h-8 w-8 flex-none items-center justify-center rounded-full transition-colors disabled:opacity-30 ${
+            speech.listening ? 'bg-red-500 text-white motion-safe:animate-pulse' : 'text-muted hover:bg-ice hover:text-blue'
+          } ${onAttach ? '' : '-ml-1.5'}`}
+        >
+          <MicIcon size={16} />
+        </button>
+      )}
       <input
         ref={input}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={reading ? t('document.reading', lang) : placeholder}
+        placeholder={reading ? t('document.reading', lang) : speech.listening ? t('composer.listening', lang)
+          : speech.error ? t(`composer.mic.${speech.error}`, lang) : placeholder}
         aria-label={placeholder}
         className="min-w-0 flex-1 bg-transparent py-1.5 focus-visible:outline-none text-[13px] text-navy outline-none placeholder:text-muted"
       />

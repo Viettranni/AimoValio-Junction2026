@@ -8,6 +8,7 @@ import { t } from './i18n';
 import { CloseIcon, MinusIcon, PlusIcon } from './icons';
 import { HistoryNote } from './HistoryNote';
 import { shortName } from './productName';
+import { LimeBar } from './ShelfShuffle';
 
 const TAG_TONE: Partial<Record<LineTag, string>> = {
   may_deliver_short: 'bg-warn/10 text-warn',
@@ -24,6 +25,8 @@ export function DraftRow({
   lang,
   readOnly,
   problem,
+  editing,
+  enterDelay = 0,
 }: {
   line: DraftLine;
   /** A new value replays the soft-blue "changed" flash. */
@@ -33,6 +36,10 @@ export function DraftRow({
   readOnly?: boolean;
   /** Why the last approval rejected this line. */
   problem?: string;
+  /** An edit of this line is in flight: a thin lime bar runs along its foot. */
+  editing?: boolean;
+  /** Seconds to wait before dropping in (rows replacing skeletons arrive one after another). */
+  enterDelay?: number;
 }) {
   const size = line.packs > 0 ? line.quantity / line.packs : 0;
   const lineTotal = line.unitPrice === null ? null : line.unitPrice * line.packs;
@@ -41,7 +48,8 @@ export function DraftRow({
     <motion.div
       layout="position"
       initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
+      // The delay belongs to the drop-in only; layout moves later must not wait for it.
+      animate={{ opacity: 1, y: 0, transition: { type: 'spring', stiffness: 420, damping: 34, delay: enterDelay } }}
       exit={{ opacity: 0, height: 0, transition: { duration: 0.2 } }}
       transition={{ type: 'spring', stiffness: 420, damping: 34 }}
       className="group relative overflow-hidden border-b border-line last:border-b-0"
@@ -78,7 +86,12 @@ export function DraftRow({
         </div>
 
         <div className="flex flex-col items-center gap-0.5">
-          <div className="inline-flex items-center rounded-md border border-line bg-white">
+          <div
+            aria-disabled={readOnly || undefined}
+            className={`inline-flex items-center rounded-md border transition-[opacity,background-color] duration-200 ${
+              readOnly ? 'border-line/70 bg-ice opacity-60' : 'border-line bg-white'
+            }`}
+          >
             <StepButton label={t('row.less', lang)} disabled={readOnly || line.packs <= 1} onClick={() => onChange({ kind: 'setPacks', lineId: line.id, packs: line.packs - 1 })}>
               <MinusIcon size={12} strokeWidth={2.4} />
             </StepButton>
@@ -111,6 +124,7 @@ export function DraftRow({
           </button>
         )}
       </div>
+      {editing && <LimeBar className="absolute inset-x-0 bottom-0" />}
       {line.history && (
         <div className="relative px-4 pb-2.5 -mt-0.5">
           <HistoryNote

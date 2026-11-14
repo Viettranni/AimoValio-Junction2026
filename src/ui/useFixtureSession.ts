@@ -90,6 +90,7 @@ export function useFixtureSession({ conversationId, customerId }: { conversation
   const [items, setItems] = useState<ThreadItem[]>([{ id: 'greet', kind: 'greeting' }]);
   const [typing, setTyping] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState<string[] | null>(null);
   const [lang, setLang] = useState<Lang | undefined>();
   const [intake, setIntake] = useState<Intake | null>(null);
   const [missing, setMissing] = useState<IntakeSlot[]>([]);
@@ -302,7 +303,13 @@ export function useFixtureSession({ conversationId, customerId }: { conversation
   const editFlow = async (text: string) => {
     const current = draftRef.current!;
     const edit = parseFixtureEdit(text, current);
-    await think(650);
+    // The sheet shows the edit is under way while the "assistant" thinks about it.
+    setEditing(edit.kind === 'unknown' ? null : edit.kind === 'remove' ? [edit.lineId] : []);
+    try {
+      await think(650);
+    } finally {
+      setEditing(null);
+    }
     switch (edit.kind) {
       case 'scale': {
         const { before, draft: after, diff: d } = applyChange({ kind: 'scaleGuests', guests: edit.guests });
@@ -499,7 +506,7 @@ export function useFixtureSession({ conversationId, customerId }: { conversation
   };
 
   return {
-    items, typing, busy, lang, intake, missing, draft, diff, receipt, fast, setFast,
+    items, typing, busy, planning: busy && !draft, editing, lang, intake, missing, draft, diff, receipt, fast, setFast,
     orders: orders.map((o) => o.summary),
     send, choose, change, fastForward, submitCheckIn, reset,
     approve: async () => {

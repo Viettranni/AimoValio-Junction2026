@@ -9,17 +9,20 @@ import { ChatThread } from './ChatThread';
 import { Composer } from './Composer';
 import { DemoControls } from './DemoControls';
 import { DraftSheet } from './DraftSheet';
-import { customerDisplayName } from './fixtures';
+import { customerDisplayName, TICKER_NAMES } from './fixtures';
 import { t, uiLangFor, type UiKey } from './i18n';
 import { ChevronDownIcon, OrdersIcon } from './icons';
 import { MyOrders } from './MyOrders';
 import { ReceiptView } from './ReceiptView';
 import { ReviewSheet } from './ReviewSheet';
+import { sampleTerms } from './shelf';
+import { SkeletonSheet } from './SkeletonRows';
 import { SlotChips } from './SlotChips';
 import type { ResizeState, WidgetView } from './thread';
 import type { ApproveResult, OrderDetails, WidgetSession } from './session';
 import { useFixtureSession } from './useFixtureSession';
 import { useLiveSession } from './useLiveSession';
+import { ShelfContext, usePageVisible, useProductSample, type ShelfState } from './useProductSample';
 
 const noSubscribe = () => () => {};
 const useEmbedded = () => useSyncExternalStore(noSubscribe, () => window.self !== window.top, () => false);
@@ -67,7 +70,7 @@ function LiveWidget(props: WidgetProps) {
 
 function FixtureWidget(props: WidgetProps) {
   const session = useFixtureSession({ conversationId: props.conversationId, customerId: props.customerId });
-  return <WidgetView {...props} session={session} examples={FIXTURE_EXAMPLES} />;
+  return <WidgetView {...props} session={session} examples={FIXTURE_EXAMPLES} fixtureNames={TICKER_NAMES} />;
 }
 
 function WidgetView({
@@ -76,10 +79,30 @@ function WidgetView({
   parentOrigin,
   session,
   examples,
-}: WidgetProps & { session: WidgetSession; examples: UiKey[] }) {
+  fixtureNames,
+}: WidgetProps & { session: WidgetSession; examples: UiKey[]; fixtureNames?: string[] }) {
   const embedded = useEmbedded();
   const browserLang = useBrowserLang();
   const lang = uiLangFor(session.lang ?? browserLang);
+
+  // Loaders: products for this conversation's menu, rolling only while the widget is open and visible.
+  const [hostOpen, setHostOpen] = useState(true);
+  const pageVisible = usePageVisible();
+  const terms = sampleTerms(session.draft?.intake ?? session.intake);
+  const products = useProductSample({ terms, lang, enabled: session.busy, fixtureNames });
+  const running = hostOpen && pageVisible;
+  const shelf: ShelfState = { products, working: session.busy, running, lang };
+
+  useEffect(() => {
+    if (!parentOrigin) return;
+    // widget.js says when the buyer minimises or reopens the panel (origin-pinned like the resize messages).
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== parentOrigin || event.source !== window.parent) return;
+      if (event.data?.type === 'aimo:open') setHostOpen(event.data.open !== false);
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [parentOrigin]);
 
   const [view, setView] = useState<WidgetView>('chat');
   const [opened, setOpened] = useState<OrderDetails | null>(null);
@@ -90,7 +113,13 @@ function WidgetView({
   const [focusKey, setFocusKey] = useState(0);
 
   const { draft, receipt } = session;
-  const expanded = draft !== null || view !== 'chat';
+  // Planning opens the sheet straight away, with skeleton rows until the draft arrives.
+  const skeleton = draft === null && session.planning && view === 'chat';
+  const expanded = draft !== null || view !== 'chat' || skeleton;
+  // Rows that replace the skeletons drop in one after another; afterwards (review → back) the sheet just appears.
+  const [fromSkeleton, setFromSkeleton] = useState(false);
+  if (skeleton && !fromSkeleton) setFromSkeleton(true);
+  if (fromSkeleton && view !== 'chat') setFromSkeleton(false);
   const sentHere = receipt !== null && draft?.status === 'submitted';
   const problems = rejected && draft && rejected.at === draft.updatedAt ? rejected.problems : undefined;
   const lineProblems = problems && Object.fromEntries(problems.filter((p) => p.lineId).map((p) => [p.lineId, p.reason]));
@@ -141,6 +170,7 @@ function WidgetView({
   };
   const reset = () => {
     session.reset();
+    setFromSkeleton(false);
     go('chat');
     setOpened(null);
     setText('');
@@ -180,13 +210,16 @@ function WidgetView({
           lang={lang}
         />
       );
+    if (skeleton) return <SkeletonSheet intake={session.intake} lang={lang} />;
     if (draft)
       return (
         <DraftSheet
           draft={draft}
           diff={session.diff}
           problems={lineProblems}
-          locked={session.busy}
+          editing={session.editing}
+          animateIn={fromSkeleton}
+          locked={session.busy || (session.editing !== null && (session.editing.length === 0 || session.editing.includes('')))}
           onChange={session.change}
           onReview={() => go('review')}
           lang={lang}
@@ -196,7 +229,7 @@ function WidgetView({
   })();
 
   const card = (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-white md:flex-row">
+    <div className={`flex h-full w-full flex-col overflow-hidden bg-white md:flex-row ${running ? '' : 'aimo-paused'}`}>
       <section
         className={`flex min-h-0 flex-col ${expanded ? 'h-[46%] flex-none border-b border-line md:h-full md:w-[380px] md:border-b-0 md:border-r' : 'h-full w-full'}`}
       >
@@ -286,6 +319,7 @@ function WidgetView({
   );
 
   return (
+    <ShelfContext.Provider value={shelf}>
     <MotionConfig reducedMotion="user">
       {embedded ? (
         <div className="h-dvh w-full">{card}</div>
@@ -304,6 +338,7 @@ function WidgetView({
         </div>
       )}
     </MotionConfig>
+    </ShelfContext.Provider>
   );
 }
 

@@ -1,9 +1,11 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { ProgressEvent, ProgressStepId, UiLang } from '@/contracts';
 import { t } from './i18n';
+import { shelfModeFor, tickerOf } from './shelf';
+import { StepShuffle } from './ShelfShuffle';
+import { useShelf } from './useProductSample';
 
 interface StepState {
   step: ProgressStepId;
@@ -23,9 +25,12 @@ function reduceSteps(events: ProgressEvent[]): StepState[] {
   return steps;
 }
 
-/** Live narration of the planning pipeline: pulsing dot → check, result fades in, catalogue hits flicker by. */
+/** Live narration of the planning pipeline: pulsing dot → check, result fades in, catalogue products roll by. */
 export function PlanningChecklist({ events, lang }: { events: ProgressEvent[]; lang: UiLang }) {
   const steps = reduceSteps(events);
+  // Prices and allergens look at the same candidates the search reported.
+  const ticker = tickerOf(events);
+  const { working } = useShelf();
   return (
     <div className="rounded-xl border border-line bg-white px-3.5 py-3 shadow-sm">
       <ol className="space-y-2">
@@ -43,7 +48,9 @@ export function PlanningChecklist({ events, lang }: { events: ProgressEvent[]; l
                 <div className={`text-[12.5px] leading-[18px] ${s.done ? 'text-ink-soft' : 'font-medium text-navy'}`}>
                   {t(`step.${s.step}`, lang)}
                 </div>
-                {!s.done && s.ticker && <Ticker names={s.ticker} />}
+                {!s.done && working && shelfModeFor(s.step) && (
+                  <StepShuffle mode={shelfModeFor(s.step)!} names={s.ticker ?? ticker} />
+                )}
                 {s.done && s.result && s.result !== t(`step.${s.step}`, lang) && (
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -88,33 +95,5 @@ function StepDot({ done }: { done: boolean }) {
         </>
       )}
     </span>
-  );
-}
-
-/** Product names flicker past while the catalogue search runs. */
-function Ticker({ names }: { names: string[] }) {
-  const reduce = useReducedMotion();
-  const [index, setIndex] = useState(0);
-  useEffect(() => {
-    if (reduce) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % names.length), 120);
-    return () => clearInterval(id);
-  }, [names.length, reduce]);
-  if (reduce) return <div className="truncate text-[11.5px] leading-4 text-blue">{names[0]}</div>;
-  return (
-    <div className="relative h-4 overflow-hidden text-[11.5px] leading-4 text-blue" aria-hidden="true">
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={index}
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -10, opacity: 0 }}
-          transition={{ duration: 0.1 }}
-          className="absolute inset-x-0 truncate"
-        >
-          {names[index]}
-        </motion.div>
-      </AnimatePresence>
-    </div>
   );
 }

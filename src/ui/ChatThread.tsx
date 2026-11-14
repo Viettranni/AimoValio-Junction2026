@@ -8,6 +8,7 @@ import { ChoiceButtons } from './ChoiceButtons';
 import { t, type UiKey } from './i18n';
 import { SendIcon } from './icons';
 import { PlanningChecklist } from './PlanningChecklist';
+import { ShelfCard } from './ShelfShuffle';
 import type { ThreadItem } from './thread';
 
 const enter = { initial: { opacity: 0, y: 6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const } };
@@ -138,10 +139,8 @@ export function ChatThread({
           }
         })}
         {typing && (
-          <motion.div {...enter} className="aimo-typing flex w-fit gap-1 rounded-[14px_14px_14px_4px] bg-ice px-3 py-3" aria-label="typing">
-            <span className="h-1.5 w-1.5 rounded-full bg-muted" />
-            <span className="h-1.5 w-1.5 rounded-full bg-muted" />
-            <span className="h-1.5 w-1.5 rounded-full bg-muted" />
+          <motion.div key="shelf" {...enter}>
+            <ShelfCard />
           </motion.div>
         )}
       </div>

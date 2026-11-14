@@ -1,10 +1,15 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import type { UiLang } from '@/contracts';
-import { localeFor, t } from './i18n';
+import { t } from './i18n';
 import { MicIcon, PaperclipIcon, SendIcon } from './icons';
+import {
+  SPEECH_LANGUAGES, localeShort, readPickedSpeechLang, resolveSpeechLocale, savePickedSpeechLang, subscribePickedSpeechLang,
+} from './speechLanguages';
 import { useSpeechInput } from './useSpeechInput';
+
+const noSubscribe = () => () => {};
 
 export function Composer({
   value,
@@ -16,6 +21,7 @@ export function Composer({
   lang,
   onAttach,
   reading,
+  speechLang,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -29,10 +35,15 @@ export function Composer({
   onAttach?: (file: File) => void;
   /** An attached document is being read. */
   reading?: boolean;
+  /** The conversation's language as detected from what the buyer wrote (any code, e.g. "et"), for the mic. */
+  speechLang?: string | null;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const speech = useSpeechInput({ locale: localeFor(lang), value, onChange });
+  const picked = useSyncExternalStore(subscribePickedSpeechLang, readPickedSpeechLang, () => null);
+  const browserLang = useSyncExternalStore(noSubscribe, () => navigator.language, () => null);
+  const locale = resolveSpeechLocale(picked, speechLang, browserLang);
+  const speech = useSpeechInput({ locale, value, onChange });
   useEffect(() => {
     if (focusKey) input.current?.focus();
   }, [focusKey]);
@@ -91,6 +102,24 @@ export function Composer({
         >
           <MicIcon size={16} />
         </button>
+      )}
+      {speech.supported && (
+        <label
+          title={t('composer.micLang', lang)}
+          className="relative -ml-1 flex h-6 flex-none items-center rounded-md px-1 text-[10.5px] font-semibold tracking-wide text-muted hover:bg-ice hover:text-blue"
+        >
+          {localeShort(locale)}
+          <select
+            aria-label={t('composer.micLang', lang)}
+            value={picked ?? ''}
+            disabled={speech.listening}
+            onChange={(e) => savePickedSpeechLang(e.target.value || null)}
+            className="absolute inset-0 cursor-pointer opacity-0"
+          >
+            <option value="">{t('composer.micLangAuto', lang, { lang: localeShort(resolveSpeechLocale(null, speechLang, browserLang)) })}</option>
+            {SPEECH_LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+          </select>
+        </label>
       )}
       <input
         ref={input}

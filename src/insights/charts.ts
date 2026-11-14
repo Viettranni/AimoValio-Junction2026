@@ -83,9 +83,15 @@ function enc({ result, name, axisType = null, extra = {} }: {
     else type = 'nominal';
   }
   const e: Enc = { field: name, type, title: c.label + unit };
-  if (type === 'temporal') {
-    e.timeUnit = grain === 'month' ? 'yearmonth' : 'yearmonthdate';
-    e.axis = { format: grain === 'month' ? '%b %y' : '%d %b' };
+  if (c.type === 'time' && (grain === 'month' || grain === 'day')) {
+    const format = grain === 'month' ? '%b %Y' : '%-d.%-m.%Y';
+    if (type === 'temporal') {
+      e.timeUnit = grain === 'month' ? 'yearmonth' : 'yearmonthdate';
+      e.axis = { format, labelAngle: 0 };
+    } else {
+      // Discrete chart axes still hold timestamps, so format their labels as dates too.
+      e.axis = { labelExpr: `timeFormat(datum.value, '${format}')`, labelAngle: 0 };
+    }
   }
   return { ...e, ...extra };
 }
@@ -133,11 +139,14 @@ function layerTimeCalcs({ spec, m, rows }: { spec: ChartSpec; m: string; rows: R
 
 const str = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
 
-/** A temporal axis drawn as discrete bars: drop the time unit and date format. */
+/** A temporal axis drawn as discrete bars: keep ticks discrete, but format their timestamp labels. */
 function asOrdinal(e: Enc): void {
+  const axis = isRecord(e.axis) ? e.axis : null;
+  const format = typeof axis?.format === 'string' ? axis.format : null;
   e.type = 'ordinal';
-  delete e.axis;
   delete e.timeUnit;
+  if (format) e.axis = { labelExpr: `timeFormat(datum.value, '${format}')`, labelAngle: 0 };
+  else delete e.axis;
 }
 
 export function build({ result, intent }: { result: QueryResult; intent: ChartIntent }): ChartSpec {

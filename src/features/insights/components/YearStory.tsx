@@ -30,7 +30,10 @@ export function YearStory({ vm }: { vm: InsightsVM }) {
       </div>
       {!wrapped ? <p className="text-[13.5px] text-muted">Ladataan vuottasi…</p> : !c ? <p className="text-[13.5px] text-muted">Ei näytettävää.</p> : (
         <>
-          <article className="ik-card relative overflow-hidden p-6 md:p-8" aria-roledescription="story" aria-label={`Kortti ${card + 1} / ${cards.length}`}>
+          <article className="ik-card ik-story-card relative overflow-hidden p-6 md:p-8" data-story-theme={card}
+            data-story-kind={c.kind} data-story-tone={c.tone}
+            data-story-last={last ? 'true' : undefined}
+            aria-roledescription="story" aria-label={`Kortti ${card + 1} / ${cards.length}`}>
             <div className="mb-6 flex gap-1" aria-hidden="true">
               {cards.map((_, i) => <i key={i} className={`h-1 flex-1 rounded-full ${i <= card ? 'bg-navy' : 'bg-line'}`} />)}
             </div>

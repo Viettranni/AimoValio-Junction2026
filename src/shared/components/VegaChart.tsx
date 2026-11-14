@@ -17,6 +17,7 @@ function vegaConfig(el: Element) {
     background: null, font, padding: 4, view: { stroke: null },
     axis: { labelColor: css('--muted'), titleColor: css('--muted'), gridColor: css('--line'), domainColor: css('--line'), tickColor: css('--line'),
       labelFontSize: 12, titleFontSize: 12, titleFontWeight: 500, gridOpacity: 0.7 },
+    axisX: { labelAngle: 0 },
     legend: { labelColor: css('--ink'), titleColor: css('--muted'), labelFontSize: 12, titleFontSize: 12, orient: 'bottom', symbolType: 'circle' },
     title: { color: css('--ink'), fontSize: 14, fontWeight: 600, anchor: 'start' },
     range: { category: cat, ordinal: { scheme: 'teals' }, ramp: seq, heatmap: seq },

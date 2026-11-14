@@ -3,6 +3,7 @@ import { RequestContext } from '@mastra/core/request-context';
 import { createUIMessageStreamResponse } from 'ai';
 import { z } from 'zod';
 import { mastra } from '@/mastra';
+import { suppressPreToolText } from '@/mastra/narration';
 import { failure, parseBody } from '../http';
 
 export const maxDuration = 120;
@@ -30,7 +31,8 @@ export async function POST(req: Request) {
         return 'Sorry, something went wrong on my side. Please try again.';
       },
     });
-    return withSseHeartbeat(createUIMessageStreamResponse({ stream }), 15000);
+    // Pre-tool narration never reaches the buyer (see src/mastra/narration.ts).
+    return withSseHeartbeat(createUIMessageStreamResponse({ stream: stream.pipeThrough(suppressPreToolText()) }), 15000);
   } catch (e) {
     return failure(e);
   }

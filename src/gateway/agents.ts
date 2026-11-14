@@ -78,11 +78,21 @@ export function resolveAgent(key: string | null | undefined, env: Record<string,
   throw new AuthError();
 }
 
-/** The caller's key: `Authorization: Bearer <key>`, else the URL's `?key=` (for clients that take only a URL). */
+/**
+ * The caller's key: `Authorization: Bearer <key>`, else the URL path `/api/mcp/<key>`, else `?key=<key>`. Clients that
+ * take only a URL (Claude's custom connectors) use the path form: some clients drop the query string on their checks.
+ */
 export function requestKey(authorization: string | null | undefined, url: string): string | null {
   const bearer = bearerToken(authorization);
   if (bearer) return bearer;
-  try { return new URL(url).searchParams.get('key')?.trim() || null; } catch { return null; }
+  try {
+    const u = new URL(url);
+    const inPath = /^\/api\/mcp\/([^/]+)\/?$/.exec(u.pathname)?.[1];
+    if (inPath) return decodeURIComponent(inPath).trim() || null;
+    return u.searchParams.get('key')?.trim() || null;
+  } catch {
+    return null;
+  }
 }
 
 /** `Authorization: Bearer <key>` → key, or null. */

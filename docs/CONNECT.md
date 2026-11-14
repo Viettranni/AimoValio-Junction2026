@@ -23,7 +23,7 @@ npx tsx src/mcp/stdio.ts        # or: stdio only (an MCP client normally starts 
 
 ## claude.ai and Claude Desktop (copy-paste link)
 
-Claude's custom connectors call from Anthropic's cloud and take only a URL, so `npm run dev` opens a cloudflared quick tunnel (`brew install cloudflared`; `AIMO_TUNNEL=0` turns it off) in front of `scripts/mcp-only-proxy.ts`, which forwards only `/api/mcp`, so `/approvals` and the other routes stay local. The link carries the connect key: `https://<random>.trycloudflare.com/api/mcp?key=sakdnkfbwjklebfkjABF`.
+Claude's custom connectors call from Anthropic's cloud and take only a URL, so `npm run dev` opens a cloudflared quick tunnel (`brew install cloudflared`; `AIMO_TUNNEL=0` turns it off) in front of `scripts/mcp-only-proxy.ts`, which forwards only `/api/mcp`, so `/approvals` and the other routes stay local. The link carries the connect key: `https://<random>.trycloudflare.com/api/mcp/sakdnkfbwjklebfkjABF` (the key is in the path; `?key=` also works).
 
 Copy it from the `npm run dev` banner, the **Aimo Claudessa** section on `/demo-host`, or the chat ("How do I connect Claude?"). In Claude: Settings → Connectors → Add custom connector → paste the URL. The tunnel URL changes on every `npm run dev`, so update the connector after a restart. A key in a URL ends up in proxy logs; this is for the demo key only.
 

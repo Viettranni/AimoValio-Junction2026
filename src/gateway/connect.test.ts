@@ -13,8 +13,8 @@ describe('connect link', () => {
     expect(info).toEqual({
       key: PRESET_CONNECT_KEY,
       isPublic: false,
-      mcpUrl: `http://localhost:3100/api/mcp?key=${PRESET_CONNECT_KEY}`,
-      localMcpUrl: `http://localhost:3100/api/mcp?key=${PRESET_CONNECT_KEY}`,
+      mcpUrl: `http://localhost:3100/api/mcp/${PRESET_CONNECT_KEY}`,
+      localMcpUrl: `http://localhost:3100/api/mcp/${PRESET_CONNECT_KEY}`,
     });
   });
 
@@ -23,15 +23,17 @@ describe('connect link', () => {
     writeFileSync(file, JSON.stringify({ publicBaseUrl: 'https://abc.trycloudflare.com/' }));
     const info = connectInfo('http://localhost:3100', { AIMO_CONNECT_KEY: 'custom-key-123' }, file);
     expect(info.isPublic).toBe(true);
-    expect(info.mcpUrl).toBe('https://abc.trycloudflare.com/api/mcp?key=custom-key-123');
-    expect(info.localMcpUrl).toBe('http://localhost:3100/api/mcp?key=custom-key-123');
+    expect(info.mcpUrl).toBe('https://abc.trycloudflare.com/api/mcp/custom-key-123');
+    expect(info.localMcpUrl).toBe('http://localhost:3100/api/mcp/custom-key-123');
   });
 
   it('the preset key resolves to the demo customer, from the header or ?key=', () => {
     expect(resolveAgent(PRESET_CONNECT_KEY, {}).customerId).toBe('helsinki-juhlapalvelu');
-    expect(requestKey(null, `http://x/api/mcp?key=${PRESET_CONNECT_KEY}`)).toBe(PRESET_CONNECT_KEY);
+    expect(requestKey(null, `http://x/api/mcp/${PRESET_CONNECT_KEY}`)).toBe(PRESET_CONNECT_KEY);
     expect(requestKey('Bearer abc-header', 'http://x/api/mcp?key=other')).toBe('abc-header');
     expect(requestKey(null, 'http://x/api/mcp')).toBeNull();
+    expect(requestKey(null, `http://x/api/mcp/${PRESET_CONNECT_KEY}`)).toBe(PRESET_CONNECT_KEY);
+    expect(requestKey(null, 'http://x/api/mcp/abc/extra')).toBeNull();
   });
 
   it('AIMO_AGENT_KEYS replaces the preset key (fails closed)', () => {

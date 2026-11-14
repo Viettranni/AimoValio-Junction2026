@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const DISCLAIMER = 'Prototyyppi Junction 2026 -hackathoniin — ei Valio Aimon virallinen sivusto.';
 
 const UTILITY_TABS = ['Valioaimo.fi', 'Pikatukku', 'Toimitustukku', 'VALO Tilauspalvelu', 'Minun Aimo'];
-const NAV = ['Asiakkaaksi', 'Inspiroidu', 'Tuotteet', 'Reseptit', 'Ajankohtaista', 'Yritys'];
+const NAV = ['Asiakkaaksi', 'Inspiroidu', 'Tuotteet', 'Reseptit', 'Ajankohtaista', 'Yritys', 'Analytiikka'];
 
 // Mirrors the seeded demo history (src/ui/fixtures.ts); totals are excl. VAT.
 const RECENT_ORDERS = [

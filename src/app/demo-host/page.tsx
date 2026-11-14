@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { ConnectClaude } from './ConnectClaude';
 import { OpenAssistantButton } from './OpenAssistantButton';
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 const DISCLAIMER = 'Prototyyppi Junction 2026 -hackathoniin — ei Valio Aimon virallinen sivusto.';
 
 const UTILITY_TABS = ['Valioaimo.fi', 'Pikatukku', 'Toimitustukku', 'VALO Tilauspalvelu', 'Minun Aimo'];
-const NAV = ['Asiakkaaksi', 'Inspiroidu', 'Tuotteet', 'Reseptit', 'Ajankohtaista', 'Yritys', 'Analytiikka'];
+const NAV = ['Asiakkaaksi', 'Inspiroidu', 'Tuotteet', 'Reseptit', 'Ajankohtaista', 'Yritys'];
 
 // Mirrors the seeded demo history (src/ui/fixtures.ts); totals are excl. VAT.
 const RECENT_ORDERS = [
@@ -81,6 +82,7 @@ export default function DemoHostPage() {
               {NAV.map((item) => (
                 <li key={item}>{item}</li>
               ))}
+              <li><Link href="/analytiikka">Analytiikka</Link></li>
             </ul>
           </nav>
           <div className="flex items-center gap-1 sm:gap-2 md:gap-4">

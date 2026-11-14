@@ -1,0 +1,32 @@
+/* Analytiikka (Oivallukset and Ravintolat): light theme only, built on the app's own tokens (globals.css). */
+.ik-root {
+  --ik-surface: #ffffff;
+  --ik-raised: #f7fafb;
+  --ik-cat-1: #005670; --ik-cat-2: #8db600; --ik-cat-3: #c98a1b; --ik-cat-4: #7a5aa6;
+  --ik-cat-5: #2a9d8f; --ik-cat-6: #d1495b; --ik-cat-7: #4f6d7a; --ik-cat-8: #e9c46a;
+  --ik-seq-1: #e3eef1; --ik-seq-2: #5fa3b7; --ik-seq-3: #003f52;
+  background: var(--ice);
+  color: var(--ink);
+}
+
+.ik-card { background: var(--ik-surface); border: 1px solid var(--line); border-radius: 12px; }
+.ik-story-card { background: linear-gradient(135deg, var(--story-start), var(--story-end)); border-color: var(--story-border); }
+.ik-story-card[data-story-theme="0"] { --story-start: #c7e5ed; --story-end: #d5ecf1; --story-border: #a8d2de; }
+.ik-story-card[data-story-theme="1"] { --story-start: #ddeb9a; --story-end: #e7f0b6; --story-border: #c7d96c; }
+.ik-story-card[data-story-theme="2"] { --story-start: #f8d1a4; --story-end: #fbe0bd; --story-border: #e9b777; }
+.ik-story-card[data-story-theme="3"] { --story-start: #dbc9ed; --story-end: #e6d9f1; --story-border: #c2a8df; }
+.ik-story-card[data-story-theme="4"] { --story-start: #e8a99b; --story-end: #f1c1b5; --story-border: #d88e7d; }
+.ik-story-card[data-story-theme="5"] { --story-start: #efb3bb; --story-end: #f5cbd0; --story-border: #df939e; }
+.ik-story-card[data-story-theme="6"] { --story-start: #efd477; --story-end: #f5e19a; --story-border: #dac055; }
+.ik-story-card[data-story-theme="7"] { --story-start: #a5d9d3; --story-end: #bce5df; --story-border: #83c6be; }
+.ik-story-card[data-story-theme="8"] { --story-start: #c5e3c6; --story-end: #d5ebd5; --story-border: #a4d1a7; }
+.ik-story-card[data-story-kind="waste"][data-story-tone="good"] { --story-start: #b9dfa8; --story-end: #cce8bc; --story-border: #99cc83; }
+.ik-story-card[data-story-kind="waste"][data-story-tone="watch"] { --story-start: #f3d58c; --story-end: #f7e3ad; --story-border: #dfbd61; }
+.ik-story-card[data-story-last="true"] { --story-start: #c5e3c6; --story-end: #d5ebd5; --story-border: #a4d1a7; }
+.ik-raised { background: var(--ik-raised); }
+.ik-root select, .ik-root input {
+  background: var(--ik-surface); color: var(--ink); border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 12px; font-size: 13.5px;
+}
+.ik-chart { width: 100%; min-height: 120px; }
+.ik-chart .vega-embed { width: 100%; }

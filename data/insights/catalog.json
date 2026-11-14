@@ -1,0 +1,4983 @@
+{
+ "allergens": [
+  "cereals_gluten",
+  "crustaceans",
+  "eggs",
+  "fish",
+  "peanuts",
+  "soybeans",
+  "milk",
+  "nuts",
+  "celery",
+  "mustard",
+  "sesame",
+  "sulphites",
+  "lupin",
+  "molluscs"
+ ],
+ "products": [
+  {
+   "key": "milk_lf_semi_kaarna",
+   "gtin": "06439990001072",
+   "aimoSku": "AIMO-400013",
+   "name": "Lactose-free semi-skimmed milk drink 1.5% 1 L",
+   "brand": "Kaarna Meijeri",
+   "category": "dairy",
+   "kind": "milk",
+   "variant": [
+    "lactose_free",
+    "semi_skimmed"
+   ],
+   "keywords": [
+    "milk",
+    "maito",
+    "laktoositon"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 10,
+   "caseQty": 10.0,
+   "unitPrice": 1.29,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "lactose_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-011"
+   },
+   "qualityGrade": 4.7,
+   "carbonClass": "C",
+   "shelfLifeDays": 10,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 1.3,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.97,
+   "stock": 640,
+   "inbound": [
+    {
+     "inDays": 5,
+     "qty": 800
+    }
+   ],
+   "aimoId": "465039"
+  },
+  {
+   "key": "milk_lf_semi_maitokaari",
+   "gtin": "06439990001140",
+   "aimoSku": "AIMO-400026",
+   "name": "Lactose-free semi-skimmed milk 1.5% 1.5 L",
+   "brand": "Maitokaari",
+   "category": "dairy",
+   "kind": "milk",
+   "variant": [
+    "lactose_free",
+    "semi_skimmed"
+   ],
+   "keywords": [
+    "milk",
+    "maito",
+    "laktoositon"
+   ],
+   "unit": "L",
+   "packSize": 1.5,
+   "unitsPerCase": 6,
+   "caseQty": 9.0,
+   "unitPrice": 1.33,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "lactose_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-019"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "C",
+   "shelfLifeDays": 10,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 1.3,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.95,
+   "stock": 800,
+   "inbound": [],
+   "aimoId": "464201"
+  },
+  {
+   "key": "milk_lf_whole_tunturi",
+   "gtin": "06439990001218",
+   "aimoSku": "AIMO-400039",
+   "name": "Lactose-free whole milk 3.5% 1 L",
+   "brand": "Tunturi Dairy",
+   "category": "dairy",
+   "kind": "milk",
+   "variant": [
+    "lactose_free",
+    "whole"
+   ],
+   "keywords": [
+    "milk",
+    "maito",
+    "laktoositon"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 10,
+   "caseQty": 10.0,
+   "unitPrice": 1.41,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "lactose_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-023"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "C",
+   "shelfLifeDays": 10,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 1.3,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 1200,
+   "inbound": [],
+   "aimoId": "464073"
+  },
+  {
+   "key": "milk_semi_laaksola",
+   "gtin": "06439990001287",
+   "aimoSku": "AIMO-400052",
+   "name": "Semi-skimmed milk 1.5% 1 L",
+   "brand": "Laaksola",
+   "category": "dairy",
+   "kind": "milk",
+   "variant": [
+    "semi_skimmed"
+   ],
+   "keywords": [
+    "milk",
+    "maito"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 12,
+   "caseQty": 12.0,
+   "unitPrice": 0.99,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-031"
+   },
+   "qualityGrade": 4.1,
+   "carbonClass": "C",
+   "shelfLifeDays": 10,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 1.3,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.98,
+   "stock": 2000,
+   "inbound": []
+  },
+  {
+   "key": "milk_skim_kaarna",
+   "gtin": "06439990001355",
+   "aimoSku": "AIMO-400065",
+   "name": "Skimmed milk 0% 1 L",
+   "brand": "Kaarna Meijeri",
+   "category": "dairy",
+   "kind": "milk",
+   "variant": [
+    "skimmed"
+   ],
+   "keywords": [
+    "milk",
+    "maito",
+    "rasvaton"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 10,
+   "caseQty": 10.0,
+   "unitPrice": 0.95,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-011"
+   },
+   "qualityGrade": 4.7,
+   "carbonClass": "C",
+   "shelfLifeDays": 10,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 1.3,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.97,
+   "stock": 900,
+   "inbound": []
+  },
+  {
+   "key": "milk_organic_kaarna",
+   "gtin": "06439990001423",
+   "aimoSku": "AIMO-400078",
+   "name": "Organic semi-skimmed milk 1.5% 1 L",
+   "brand": "Kaarna Meijeri",
+   "category": "dairy",
+   "kind": "milk",
+   "variant": [
+    "semi_skimmed",
+    "organic"
+   ],
+   "keywords": [
+    "milk",
+    "luomu"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 10,
+   "caseQty": 10.0,
+   "unitPrice": 1.49,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "EU Organic",
+     "issuer": "Ruokavirasto FI-EKO-201",
+     "validUntil": "2027-06-30"
+    },
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-011"
+   },
+   "qualityGrade": 4.7,
+   "carbonClass": "C",
+   "shelfLifeDays": 10,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 1.3,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.94,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "cream_whip_kaarna",
+   "gtin": "06439990001492",
+   "aimoSku": "AIMO-400091",
+   "name": "Whipping cream 35% 1 L",
+   "brand": "Kaarna Meijeri",
+   "category": "dairy",
+   "kind": "cream",
+   "variant": [
+    "whipping"
+   ],
+   "keywords": [
+    "cream",
+    "kerma",
+    "whipping"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 12,
+   "caseQty": 12.0,
+   "unitPrice": 4.2,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-011"
+   },
+   "qualityGrade": 4.7,
+   "carbonClass": "C",
+   "shelfLifeDays": 14,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 4.5,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.97,
+   "stock": 400,
+   "inbound": []
+  },
+  {
+   "key": "cream_whip_lf_maitokaari",
+   "gtin": "06439990001560",
+   "aimoSku": "AIMO-400104",
+   "name": "Lactose-free whipping cream 35% 1 L",
+   "brand": "Maitokaari",
+   "category": "dairy",
+   "kind": "cream",
+   "variant": [
+    "whipping",
+    "lactose_free"
+   ],
+   "keywords": [
+    "cream",
+    "kerma",
+    "whipping"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 12,
+   "caseQty": 12.0,
+   "unitPrice": 4.55,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "lactose_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-019"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "C",
+   "shelfLifeDays": 14,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 4.5,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.95,
+   "stock": 240,
+   "inbound": []
+  },
+  {
+   "key": "cream_cook_lf_kaarna",
+   "gtin": "06439990001638",
+   "aimoSku": "AIMO-400117",
+   "name": "Lactose-free cooking cream 15% 1 L",
+   "brand": "Kaarna Meijeri",
+   "category": "dairy",
+   "kind": "cream",
+   "variant": [
+    "cooking",
+    "lactose_free"
+   ],
+   "keywords": [
+    "cream",
+    "ruokakerma",
+    "cooking"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 12,
+   "caseQty": 12.0,
+   "unitPrice": 3.1,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "lactose_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-011"
+   },
+   "qualityGrade": 4.7,
+   "carbonClass": "C",
+   "shelfLifeDays": 14,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 4.5,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.97,
+   "stock": 360,
+   "inbound": []
+  },
+  {
+   "key": "butter_kaarna",
+   "gtin": "06439990001706",
+   "aimoSku": "AIMO-400130",
+   "name": "Butter 82% unsalted 500 g",
+   "brand": "Kaarna Meijeri",
+   "category": "dairy",
+   "kind": "butter",
+   "variant": [
+    "unsalted"
+   ],
+   "keywords": [
+    "butter",
+    "voi"
+   ],
+   "unit": "kg",
+   "packSize": 0.5,
+   "unitsPerCase": 20,
+   "caseQty": 10.0,
+   "unitPrice": 9.8,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "lactose_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-011"
+   },
+   "qualityGrade": 4.7,
+   "carbonClass": "D",
+   "shelfLifeDays": 60,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 9.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.97,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "cheese_emmental_tunturi",
+   "gtin": "06439990001775",
+   "aimoSku": "AIMO-400143",
+   "name": "Emmental cheese block approx. 3 kg",
+   "brand": "Tunturi Dairy",
+   "category": "dairy",
+   "kind": "cheese",
+   "variant": [
+    "emmental",
+    "block"
+   ],
+   "keywords": [
+    "cheese",
+    "juusto",
+    "emmental"
+   ],
+   "unit": "kg",
+   "packSize": 3.0,
+   "unitsPerCase": 2,
+   "caseQty": 6.0,
+   "unitPrice": 12.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "lactose_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-023"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "D",
+   "shelfLifeDays": 45,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 9.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 120,
+   "inbound": []
+  },
+  {
+   "key": "cheese_edam_slices_laaksola",
+   "gtin": "06439990001843",
+   "aimoSku": "AIMO-400156",
+   "name": "Edam cheese slices 1 kg",
+   "brand": "Laaksola",
+   "category": "dairy",
+   "kind": "cheese",
+   "variant": [
+    "edam",
+    "sliced"
+   ],
+   "keywords": [
+    "cheese",
+    "juusto",
+    "edam"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 10.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-031"
+   },
+   "qualityGrade": 4.1,
+   "carbonClass": "D",
+   "shelfLifeDays": 45,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 9.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.98,
+   "stock": 180,
+   "inbound": []
+  },
+  {
+   "key": "cheese_feta_style",
+   "gtin": "06439990001911",
+   "aimoSku": "AIMO-400169",
+   "name": "White brine cheese cubes 2 kg",
+   "brand": "Laaksola",
+   "category": "dairy",
+   "kind": "cheese",
+   "variant": [
+    "brine"
+   ],
+   "keywords": [
+    "cheese",
+    "feta"
+   ],
+   "unit": "kg",
+   "packSize": 2.0,
+   "unitsPerCase": 4,
+   "caseQty": 8.0,
+   "unitPrice": 11.5,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "GR",
+    "supplierId": "SUP-044"
+   },
+   "qualityGrade": 4.1,
+   "carbonClass": "D",
+   "shelfLifeDays": 45,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 9.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.92,
+   "stock": 96,
+   "inbound": []
+  },
+  {
+   "key": "yogurt_natural_kaarna",
+   "gtin": "06439990001980",
+   "aimoSku": "AIMO-400182",
+   "name": "Natural yogurt 2.5% 10 kg bucket",
+   "brand": "Kaarna Meijeri",
+   "category": "dairy",
+   "kind": "yogurt",
+   "variant": [
+    "natural"
+   ],
+   "keywords": [
+    "yogurt",
+    "jogurtti"
+   ],
+   "unit": "kg",
+   "packSize": 10.0,
+   "unitsPerCase": 1,
+   "caseQty": 10.0,
+   "unitPrice": 2.35,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-011"
+   },
+   "qualityGrade": 4.7,
+   "carbonClass": "C",
+   "shelfLifeDays": 21,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.6,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.97,
+   "stock": 400,
+   "inbound": []
+  },
+  {
+   "key": "yogurt_lf_greek_maitokaari",
+   "gtin": "06439990002055",
+   "aimoSku": "AIMO-400195",
+   "name": "Lactose-free Greek-style yogurt 10% 5 kg",
+   "brand": "Maitokaari",
+   "category": "dairy",
+   "kind": "yogurt",
+   "variant": [
+    "greek",
+    "lactose_free"
+   ],
+   "keywords": [
+    "yogurt",
+    "jogurtti",
+    "greek"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 1,
+   "caseQty": 5.0,
+   "unitPrice": 4.2,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "lactose_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-019"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "C",
+   "shelfLifeDays": 21,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.6,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.95,
+   "stock": 150,
+   "inbound": []
+  },
+  {
+   "key": "quark_kaarna",
+   "gtin": "06439990002123",
+   "aimoSku": "AIMO-400208",
+   "name": "Plain quark 5 kg",
+   "brand": "Kaarna Meijeri",
+   "category": "dairy",
+   "kind": "quark",
+   "variant": [
+    "plain"
+   ],
+   "keywords": [
+    "quark",
+    "rahka"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 1,
+   "caseQty": 5.0,
+   "unitPrice": 3.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-011"
+   },
+   "qualityGrade": 4.7,
+   "carbonClass": "C",
+   "shelfLifeDays": 21,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 2.5,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.97,
+   "stock": 200,
+   "inbound": []
+  },
+  {
+   "key": "sour_cream_laaksola",
+   "gtin": "06439990002192",
+   "aimoSku": "AIMO-400221",
+   "name": "Smetana sour cream 20% 1 kg",
+   "brand": "Laaksola",
+   "category": "dairy",
+   "kind": "sour_cream",
+   "variant": [
+    "smetana"
+   ],
+   "keywords": [
+    "smetana",
+    "sour cream"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 4.6,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-031"
+   },
+   "qualityGrade": 4.1,
+   "carbonClass": "C",
+   "shelfLifeDays": 21,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 3.5,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.98,
+   "stock": 90,
+   "inbound": []
+  },
+  {
+   "key": "eggs_free_range",
+   "gtin": "06439990002260",
+   "aimoSku": "AIMO-400234",
+   "name": "Free-range eggs M, 30-egg tray",
+   "brand": "Kanala Peltola",
+   "category": "dairy",
+   "kind": "eggs",
+   "variant": [
+    "free_range"
+   ],
+   "keywords": [
+    "eggs",
+    "kananmuna",
+    "egg"
+   ],
+   "unit": "pcs",
+   "packSize": 30,
+   "unitsPerCase": 6,
+   "caseQty": 180,
+   "unitPrice": 0.24,
+   "currency": "EUR",
+   "priceBasis": "per pcs",
+   "allergens": [
+    "eggs"
+   ],
+   "mayContain": [],
+   "diet": [
+    "milk_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-052"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "C",
+   "shelfLifeDays": 28,
+   "kgPerUnit": 0.06,
+   "co2eKgPerKg": 3.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 5400,
+   "inbound": []
+  },
+  {
+   "key": "eggs_liquid",
+   "gtin": "06439990002338",
+   "aimoSku": "AIMO-400247",
+   "name": "Pasteurised liquid whole egg 1 L",
+   "brand": "Kanala Peltola",
+   "category": "dairy",
+   "kind": "eggs",
+   "variant": [
+    "liquid"
+   ],
+   "keywords": [
+    "egg",
+    "liquid egg"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 10,
+   "caseQty": 10.0,
+   "unitPrice": 4.9,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "eggs"
+   ],
+   "mayContain": [],
+   "diet": [
+    "milk_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-052"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "C",
+   "shelfLifeDays": 28,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 3.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 200,
+   "inbound": []
+  },
+  {
+   "key": "oat_drink_kauraco",
+   "gtin": "06439990002406",
+   "aimoSku": "AIMO-400260",
+   "name": "Oat drink, enriched 1 L",
+   "brand": "Kaura&Co",
+   "category": "plant_based",
+   "kind": "plant_drink",
+   "variant": [
+    "oat"
+   ],
+   "keywords": [
+    "oat drink",
+    "oat",
+    "kaurajuoma",
+    "milk alternative",
+    "plant drink"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 10,
+   "caseQty": 10.0,
+   "unitPrice": 1.49,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "cereals_gluten"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-061"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 120,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 0.4,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 0,
+   "inbound": [
+    {
+     "inDays": 6,
+     "qty": 600
+    }
+   ]
+  },
+  {
+   "key": "oat_drink_aamukaura",
+   "gtin": "06439990002475",
+   "aimoSku": "AIMO-400273",
+   "name": "Barista oat drink 1 L",
+   "brand": "Aamukaura",
+   "category": "plant_based",
+   "kind": "plant_drink",
+   "variant": [
+    "oat",
+    "barista"
+   ],
+   "keywords": [
+    "oat drink",
+    "oat",
+    "barista",
+    "milk alternative",
+    "plant drink",
+    "milk"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 12,
+   "caseQty": 12.0,
+   "unitPrice": 1.6,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "cereals_gluten"
+   ],
+   "mayContain": [
+    "nuts"
+   ],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "SE",
+    "supplierId": "SUP-066"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 120,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 0.4,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.93,
+   "stock": 900,
+   "inbound": []
+  },
+  {
+   "key": "almond_drink_pahkinapuu",
+   "gtin": "06439990002543",
+   "aimoSku": "AIMO-400286",
+   "name": "Almond drink, unsweetened 1 L",
+   "brand": "Pähkinäpuu",
+   "category": "plant_based",
+   "kind": "plant_drink",
+   "variant": [
+    "almond"
+   ],
+   "keywords": [
+    "almond drink",
+    "milk alternative",
+    "plant drink"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 12,
+   "caseQty": 12.0,
+   "unitPrice": 1.79,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "nuts"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "ES",
+    "supplierId": "SUP-070"
+   },
+   "qualityGrade": 4.2,
+   "carbonClass": "A",
+   "shelfLifeDays": 120,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 0.4,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.92,
+   "stock": 500,
+   "inbound": []
+  },
+  {
+   "key": "hazelnut_drink_pahkinapuu",
+   "gtin": "06439990002611",
+   "aimoSku": "AIMO-400299",
+   "name": "Hazelnut drink 1 L",
+   "brand": "Pähkinäpuu",
+   "category": "plant_based",
+   "kind": "plant_drink",
+   "variant": [
+    "hazelnut"
+   ],
+   "keywords": [
+    "hazelnut drink",
+    "milk alternative",
+    "plant drink"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 12,
+   "caseQty": 12.0,
+   "unitPrice": 1.85,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "nuts"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "IT",
+    "supplierId": "SUP-070"
+   },
+   "qualityGrade": 4.2,
+   "carbonClass": "A",
+   "shelfLifeDays": 120,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 0.4,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.92,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "soy_drink_soijanord",
+   "gtin": "06439990002680",
+   "aimoSku": "AIMO-400312",
+   "name": "Soy drink, calcium-enriched 1 L",
+   "brand": "Soija Nord",
+   "category": "plant_based",
+   "kind": "plant_drink",
+   "variant": [
+    "soy"
+   ],
+   "keywords": [
+    "soy drink",
+    "soy",
+    "milk alternative",
+    "plant drink"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 12,
+   "caseQty": 12.0,
+   "unitPrice": 1.55,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "soybeans"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "EU Organic",
+     "issuer": "Ruokavirasto FI-EKO-201",
+     "validUntil": "2027-06-30"
+    }
+   ],
+   "origin": {
+    "country": "SE",
+    "supplierId": "SUP-073"
+   },
+   "qualityGrade": 4.3,
+   "carbonClass": "A",
+   "shelfLifeDays": 120,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 0.4,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.95,
+   "stock": 600,
+   "inbound": []
+  },
+  {
+   "key": "pea_drink_hernelabs",
+   "gtin": "06439990002758",
+   "aimoSku": "AIMO-400325",
+   "name": "Pea protein drink 1 L",
+   "brand": "Herne Labs",
+   "category": "plant_based",
+   "kind": "plant_drink",
+   "variant": [
+    "pea"
+   ],
+   "keywords": [
+    "pea drink",
+    "milk alternative",
+    "plant drink"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 12,
+   "caseQty": 12.0,
+   "unitPrice": 1.95,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-075"
+   },
+   "qualityGrade": 3.9,
+   "carbonClass": "A",
+   "shelfLifeDays": 120,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 0.4,
+   "leadTimeDays": 3,
+   "onTimeRate": 0.88,
+   "stock": 120,
+   "inbound": []
+  },
+  {
+   "key": "oat_cooking_base",
+   "gtin": "06439990002826",
+   "aimoSku": "AIMO-400338",
+   "name": "Oat cooking base 15% 1 L",
+   "brand": "Kaura&Co",
+   "category": "plant_based",
+   "kind": "plant_cream",
+   "variant": [
+    "oat"
+   ],
+   "keywords": [
+    "oat cream",
+    "cooking base",
+    "cream alternative"
+   ],
+   "unit": "L",
+   "packSize": 1.0,
+   "unitsPerCase": 12,
+   "caseQty": 12.0,
+   "unitPrice": 2.9,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "cereals_gluten"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-061"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 120,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 0.6,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "oat_yogurt_kauraco",
+   "gtin": "06439990002895",
+   "aimoSku": "AIMO-400351",
+   "name": "Oat-based yogurt alternative, plain 5 kg",
+   "brand": "Kaura&Co",
+   "category": "plant_based",
+   "kind": "plant_yogurt",
+   "variant": [
+    "oat"
+   ],
+   "keywords": [
+    "oat yogurt",
+    "yogurt alternative"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 1,
+   "caseQty": 5.0,
+   "unitPrice": 3.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "cereals_gluten"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-061"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 30,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 0.7,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 80,
+   "inbound": []
+  },
+  {
+   "key": "tofu_soijanord",
+   "gtin": "06439990002963",
+   "aimoSku": "AIMO-400364",
+   "name": "Organic firm tofu 1 kg",
+   "brand": "Soija Nord",
+   "category": "plant_based",
+   "kind": "tofu",
+   "variant": [
+    "firm"
+   ],
+   "keywords": [
+    "tofu"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 6.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "soybeans"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "EU Organic",
+     "issuer": "Ruokavirasto FI-EKO-201",
+     "validUntil": "2027-06-30"
+    }
+   ],
+   "origin": {
+    "country": "SE",
+    "supplierId": "SUP-073"
+   },
+   "qualityGrade": 4.3,
+   "carbonClass": "A",
+   "shelfLifeDays": 30,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 2.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.94,
+   "stock": 140,
+   "inbound": []
+  },
+  {
+   "key": "plant_mince_hernelabs",
+   "gtin": "06439990003038",
+   "aimoSku": "AIMO-400377",
+   "name": "Pea-based plant mince 2 kg",
+   "brand": "Herne Labs",
+   "category": "plant_based",
+   "kind": "plant_protein",
+   "variant": [
+    "mince",
+    "pea"
+   ],
+   "keywords": [
+    "plant mince",
+    "vegan mince",
+    "minced"
+   ],
+   "unit": "kg",
+   "packSize": 2.0,
+   "unitsPerCase": 4,
+   "caseQty": 8.0,
+   "unitPrice": 8.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-075"
+   },
+   "qualityGrade": 3.9,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.5,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.9,
+   "stock": 160,
+   "inbound": []
+  },
+  {
+   "key": "falafel_frozen",
+   "gtin": "06439990003106",
+   "aimoSku": "AIMO-400390",
+   "name": "Falafel balls, frozen 1 kg",
+   "brand": "Herne Labs",
+   "category": "plant_based",
+   "kind": "plant_protein",
+   "variant": [
+    "falafel"
+   ],
+   "keywords": [
+    "falafel"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 7.2,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "sesame"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-075"
+   },
+   "qualityGrade": 3.9,
+   "carbonClass": "A",
+   "shelfLifeDays": 365,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.5,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.9,
+   "stock": 200,
+   "inbound": []
+  },
+  {
+   "key": "vegan_spread",
+   "gtin": "06439990003175",
+   "aimoSku": "AIMO-400403",
+   "name": "Plant-based spread 60% 400 g",
+   "brand": "Kaura&Co",
+   "category": "plant_based",
+   "kind": "spread",
+   "variant": [
+    "vegan"
+   ],
+   "keywords": [
+    "spread",
+    "margarine",
+    "levite"
+   ],
+   "unit": "kg",
+   "packSize": 0.4,
+   "unitsPerCase": 20,
+   "caseQty": 8.0,
+   "unitPrice": 7.5,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-061"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 160,
+   "inbound": []
+  },
+  {
+   "key": "pasta_penne_aitta",
+   "gtin": "06439990003243",
+   "aimoSku": "AIMO-400416",
+   "name": "Durum wheat penne 5 kg",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "pasta",
+   "variant": [
+    "penne"
+   ],
+   "keywords": [
+    "pasta",
+    "penne"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 2,
+   "caseQty": 10.0,
+   "unitPrice": 2.1,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "cereals_gluten"
+   ],
+   "mayContain": [
+    "eggs"
+   ],
+   "diet": [
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "IT",
+    "supplierId": "SUP-080"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.2,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.97,
+   "stock": 800,
+   "inbound": []
+  },
+  {
+   "key": "pasta_gf_aitta",
+   "gtin": "06439990003311",
+   "aimoSku": "AIMO-400429",
+   "name": "Gluten-free corn-rice penne 2 kg",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "pasta",
+   "variant": [
+    "penne",
+    "gluten_free"
+   ],
+   "keywords": [
+    "pasta",
+    "gluten-free pasta"
+   ],
+   "unit": "kg",
+   "packSize": 2.0,
+   "unitsPerCase": 4,
+   "caseQty": 8.0,
+   "unitPrice": 5.6,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Crossed Grain",
+     "issuer": "AOECS",
+     "validUntil": "2027-01-31"
+    }
+   ],
+   "origin": {
+    "country": "IT",
+    "supplierId": "SUP-080"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.2,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.95,
+   "stock": 160,
+   "inbound": []
+  },
+  {
+   "key": "rice_jasmine",
+   "gtin": "06439990003380",
+   "aimoSku": "AIMO-400442",
+   "name": "Jasmine rice 10 kg",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "rice",
+   "variant": [
+    "jasmine"
+   ],
+   "keywords": [
+    "rice",
+    "riisi"
+   ],
+   "unit": "kg",
+   "packSize": 10.0,
+   "unitsPerCase": 1,
+   "caseQty": 10.0,
+   "unitPrice": 2.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "TH",
+    "supplierId": "SUP-081"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 2.5,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.96,
+   "stock": 900,
+   "inbound": []
+  },
+  {
+   "key": "rice_risotto",
+   "gtin": "06439990003458",
+   "aimoSku": "AIMO-400455",
+   "name": "Arborio risotto rice 5 kg",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "rice",
+   "variant": [
+    "arborio"
+   ],
+   "keywords": [
+    "rice",
+    "risotto"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 2,
+   "caseQty": 10.0,
+   "unitPrice": 3.6,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "IT",
+    "supplierId": "SUP-081"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 2.5,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.96,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "oat_flakes_peltola",
+   "gtin": "06439990003526",
+   "aimoSku": "AIMO-400468",
+   "name": "Rolled oat flakes 5 kg",
+   "brand": "Peltola Farms",
+   "category": "dry_goods",
+   "kind": "cereal",
+   "variant": [
+    "oat"
+   ],
+   "keywords": [
+    "oats",
+    "kaurahiutale",
+    "porridge"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 2,
+   "caseQty": 10.0,
+   "unitPrice": 1.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "cereals_gluten"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-085"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.98,
+   "stock": 700,
+   "inbound": []
+  },
+  {
+   "key": "oat_flakes_gf_peltola",
+   "gtin": "06439990003595",
+   "aimoSku": "AIMO-400481",
+   "name": "Gluten-free oat flakes 3 kg",
+   "brand": "Peltola Farms",
+   "category": "dry_goods",
+   "kind": "cereal",
+   "variant": [
+    "oat",
+    "gluten_free"
+   ],
+   "keywords": [
+    "oats",
+    "gluten-free oats",
+    "porridge"
+   ],
+   "unit": "kg",
+   "packSize": 3.0,
+   "unitsPerCase": 2,
+   "caseQty": 6.0,
+   "unitPrice": 3.8,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    },
+    {
+     "label": "Crossed Grain",
+     "issuer": "AOECS",
+     "validUntil": "2027-01-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-085"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.98,
+   "stock": 240,
+   "inbound": []
+  },
+  {
+   "key": "flour_wheat",
+   "gtin": "06439990003663",
+   "aimoSku": "AIMO-400494",
+   "name": "Wheat flour, all-purpose 10 kg",
+   "brand": "Peltola Farms",
+   "category": "dry_goods",
+   "kind": "flour",
+   "variant": [
+    "wheat"
+   ],
+   "keywords": [
+    "flour",
+    "vehnäjauho"
+   ],
+   "unit": "kg",
+   "packSize": 10.0,
+   "unitsPerCase": 1,
+   "caseQty": 10.0,
+   "unitPrice": 0.98,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "cereals_gluten"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-085"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.98,
+   "stock": 1200,
+   "inbound": []
+  },
+  {
+   "key": "oil_rapeseed",
+   "gtin": "06439990003731",
+   "aimoSku": "AIMO-400507",
+   "name": "Cold-pressed rapeseed oil 5 L",
+   "brand": "Peltola Farms",
+   "category": "dry_goods",
+   "kind": "oil",
+   "variant": [
+    "rapeseed"
+   ],
+   "keywords": [
+    "oil",
+    "rypsiöljy",
+    "rapeseed"
+   ],
+   "unit": "L",
+   "packSize": 5.0,
+   "unitsPerCase": 2,
+   "caseQty": 10.0,
+   "unitPrice": 3.2,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-085"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.98,
+   "stock": 600,
+   "inbound": []
+  },
+  {
+   "key": "sugar",
+   "gtin": "06439990003809",
+   "aimoSku": "AIMO-400520",
+   "name": "Granulated sugar 25 kg",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "sugar",
+   "variant": [
+    "granulated"
+   ],
+   "keywords": [
+    "sugar",
+    "sokeri"
+   ],
+   "unit": "kg",
+   "packSize": 25.0,
+   "unitsPerCase": 1,
+   "caseQty": 25.0,
+   "unitPrice": 1.15,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-080"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.98,
+   "stock": 1000,
+   "inbound": []
+  },
+  {
+   "key": "coffee_dark",
+   "gtin": "06439990003878",
+   "aimoSku": "AIMO-400533",
+   "name": "Dark roast ground coffee 1 kg",
+   "brand": "Kahvila Kaarna",
+   "category": "dry_goods",
+   "kind": "coffee",
+   "variant": [
+    "dark_roast"
+   ],
+   "keywords": [
+    "coffee",
+    "kahvi"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 14.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Fairtrade",
+     "issuer": "Fairtrade International",
+     "validUntil": "2027-09-30"
+    },
+    {
+     "label": "EU Organic",
+     "issuer": "Ruokavirasto FI-EKO-201",
+     "validUntil": "2027-06-30"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-090"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 9.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.97,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "coffee_medium",
+   "gtin": "06439990003946",
+   "aimoSku": "AIMO-400546",
+   "name": "Medium roast whole beans 1 kg",
+   "brand": "Kahvila Kaarna",
+   "category": "dry_goods",
+   "kind": "coffee",
+   "variant": [
+    "medium_roast"
+   ],
+   "keywords": [
+    "coffee",
+    "kahvi",
+    "beans"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 13.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Rainforest Alliance",
+     "issuer": "Rainforest Alliance",
+     "validUntil": "2027-05-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-090"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 9.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.97,
+   "stock": 400,
+   "inbound": []
+  },
+  {
+   "key": "tea_black",
+   "gtin": "06439990004011",
+   "aimoSku": "AIMO-400559",
+   "name": "Black tea, 100 bags",
+   "brand": "Teehetki",
+   "category": "dry_goods",
+   "kind": "tea",
+   "variant": [
+    "black"
+   ],
+   "keywords": [
+    "tea",
+    "tee"
+   ],
+   "unit": "pcs",
+   "packSize": 100,
+   "unitsPerCase": 10,
+   "caseQty": 1000,
+   "unitPrice": 0.045,
+   "currency": "EUR",
+   "priceBasis": "per pcs",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Rainforest Alliance",
+     "issuer": "Rainforest Alliance",
+     "validUntil": "2027-05-31"
+    }
+   ],
+   "origin": {
+    "country": "LK",
+    "supplierId": "SUP-091"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 0.002,
+   "co2eKgPerKg": 5.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.95,
+   "stock": 20000,
+   "inbound": []
+  },
+  {
+   "key": "tomatoes_crushed",
+   "gtin": "06439990004080",
+   "aimoSku": "AIMO-400572",
+   "name": "Crushed tomatoes 2.5 kg can",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "canned",
+   "variant": [
+    "tomato"
+   ],
+   "keywords": [
+    "tomatoes",
+    "crushed tomatoes",
+    "tomaattimurska"
+   ],
+   "unit": "kg",
+   "packSize": 2.5,
+   "unitsPerCase": 6,
+   "caseQty": 15.0,
+   "unitPrice": 1.7,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "IT",
+    "supplierId": "SUP-080"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.97,
+   "stock": 600,
+   "inbound": []
+  },
+  {
+   "key": "chickpeas",
+   "gtin": "06439990004158",
+   "aimoSku": "AIMO-400585",
+   "name": "Chickpeas in brine 2.5 kg",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "canned",
+   "variant": [
+    "chickpea"
+   ],
+   "keywords": [
+    "chickpeas",
+    "kikherne"
+   ],
+   "unit": "kg",
+   "packSize": 2.5,
+   "unitsPerCase": 6,
+   "caseQty": 15.0,
+   "unitPrice": 2.3,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "ES",
+    "supplierId": "SUP-080"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.97,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "lentils_red",
+   "gtin": "06439990004226",
+   "aimoSku": "AIMO-400598",
+   "name": "Red lentils 5 kg",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "pulses",
+   "variant": [
+    "lentil"
+   ],
+   "keywords": [
+    "lentils",
+    "linssi"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 2,
+   "caseQty": 10.0,
+   "unitPrice": 2.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "CA",
+    "supplierId": "SUP-080"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.97,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "peanut_butter",
+   "gtin": "06439990004295",
+   "aimoSku": "AIMO-400611",
+   "name": "Peanut butter, smooth 3 kg",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "nut_butter",
+   "variant": [
+    "peanut"
+   ],
+   "keywords": [
+    "peanut butter"
+   ],
+   "unit": "kg",
+   "packSize": 3.0,
+   "unitsPerCase": 2,
+   "caseQty": 6.0,
+   "unitPrice": 6.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "peanuts"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "US",
+    "supplierId": "SUP-080"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 3,
+   "onTimeRate": 0.93,
+   "stock": 60,
+   "inbound": []
+  },
+  {
+   "key": "mustard_dijon",
+   "gtin": "06439990004363",
+   "aimoSku": "AIMO-400624",
+   "name": "Dijon mustard 1 kg",
+   "brand": "Sinappila",
+   "category": "dry_goods",
+   "kind": "condiment",
+   "variant": [
+    "mustard"
+   ],
+   "keywords": [
+    "mustard",
+    "sinappi"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 5.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "mustard"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FR",
+    "supplierId": "SUP-093"
+   },
+   "qualityGrade": 4.3,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.95,
+   "stock": 120,
+   "inbound": []
+  },
+  {
+   "key": "soy_sauce",
+   "gtin": "06439990004431",
+   "aimoSku": "AIMO-400637",
+   "name": "Soy sauce 1.8 L",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "condiment",
+   "variant": [
+    "soy"
+   ],
+   "keywords": [
+    "soy sauce"
+   ],
+   "unit": "L",
+   "packSize": 1.8,
+   "unitsPerCase": 6,
+   "caseQty": 10.8,
+   "unitPrice": 3.8,
+   "currency": "EUR",
+   "priceBasis": "per L",
+   "allergens": [
+    "soybeans",
+    "cereals_gluten"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "JP",
+    "supplierId": "SUP-080"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.03,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.95,
+   "stock": 120,
+   "inbound": []
+  },
+  {
+   "key": "sesame_seeds",
+   "gtin": "06439990004509",
+   "aimoSku": "AIMO-400650",
+   "name": "Hulled sesame seeds 1 kg",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "seeds",
+   "variant": [
+    "sesame"
+   ],
+   "keywords": [
+    "sesame"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 6.2,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "sesame"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "IN",
+    "supplierId": "SUP-080"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.95,
+   "stock": 60,
+   "inbound": []
+  },
+  {
+   "key": "salt_sea",
+   "gtin": "06439990004578",
+   "aimoSku": "AIMO-400663",
+   "name": "Sea salt, fine 5 kg",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "salt",
+   "variant": [
+    "fine"
+   ],
+   "keywords": [
+    "salt",
+    "suola"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 2,
+   "caseQty": 10.0,
+   "unitPrice": 1.2,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FR",
+    "supplierId": "SUP-080"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.98,
+   "stock": 400,
+   "inbound": []
+  },
+  {
+   "key": "dried_cranberries",
+   "gtin": "06439990004646",
+   "aimoSku": "AIMO-400676",
+   "name": "Dried cranberries 1 kg",
+   "brand": "Mansikkala",
+   "category": "dry_goods",
+   "kind": "dried_fruit",
+   "variant": [
+    "cranberry"
+   ],
+   "keywords": [
+    "cranberries",
+    "dried fruit"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 8.2,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "sulphites"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "US",
+    "supplierId": "SUP-095"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.94,
+   "stock": 80,
+   "inbound": []
+  },
+  {
+   "key": "potatoes_new",
+   "gtin": "06439990004714",
+   "aimoSku": "AIMO-400689",
+   "name": "Potatoes, firm (yellow) 10 kg sack",
+   "brand": "Peltola Farms",
+   "category": "produce",
+   "kind": "potato",
+   "variant": [
+    "firm"
+   ],
+   "keywords": [
+    "potatoes",
+    "potato",
+    "peruna"
+   ],
+   "unit": "kg",
+   "packSize": 10.0,
+   "unitsPerCase": 1,
+   "caseQty": 10.0,
+   "unitPrice": 1.45,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-085"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "A",
+   "shelfLifeDays": 30,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 0.2,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 1500,
+   "inbound": []
+  },
+  {
+   "key": "potatoes_peeled",
+   "gtin": "06439990004783",
+   "aimoSku": "AIMO-400702",
+   "name": "Peeled potatoes, vacuum 5 kg",
+   "brand": "Peltola Farms",
+   "category": "produce",
+   "kind": "potato",
+   "variant": [
+    "peeled"
+   ],
+   "keywords": [
+    "potatoes",
+    "peeled potatoes"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 2,
+   "caseQty": 10.0,
+   "unitPrice": 2.1,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "sulphites"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-085"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "A",
+   "shelfLifeDays": 30,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 0.2,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.95,
+   "stock": 400,
+   "inbound": []
+  },
+  {
+   "key": "carrots",
+   "gtin": "06439990004851",
+   "aimoSku": "AIMO-400715",
+   "name": "Carrots 10 kg",
+   "brand": "Peltola Farms",
+   "category": "produce",
+   "kind": "root_veg",
+   "variant": [
+    "carrot"
+   ],
+   "keywords": [
+    "carrots",
+    "porkkana"
+   ],
+   "unit": "kg",
+   "packSize": 10.0,
+   "unitsPerCase": 1,
+   "caseQty": 10.0,
+   "unitPrice": 1.1,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-085"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "A",
+   "shelfLifeDays": 30,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 800,
+   "inbound": []
+  },
+  {
+   "key": "onions_yellow",
+   "gtin": "06439990004929",
+   "aimoSku": "AIMO-400728",
+   "name": "Yellow onions 10 kg",
+   "brand": "Peltola Farms",
+   "category": "produce",
+   "kind": "onion",
+   "variant": [
+    "yellow"
+   ],
+   "keywords": [
+    "onions",
+    "sipuli"
+   ],
+   "unit": "kg",
+   "packSize": 10.0,
+   "unitsPerCase": 1,
+   "caseQty": 10.0,
+   "unitPrice": 1.05,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-085"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "A",
+   "shelfLifeDays": 60,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 700,
+   "inbound": []
+  },
+  {
+   "key": "tomatoes_fresh",
+   "gtin": "06439990004998",
+   "aimoSku": "AIMO-400741",
+   "name": "Tomatoes, greenhouse 6 kg",
+   "brand": "Lasitarha Närpiö",
+   "category": "produce",
+   "kind": "tomato",
+   "variant": [
+    "greenhouse"
+   ],
+   "keywords": [
+    "tomatoes",
+    "tomaatti"
+   ],
+   "unit": "kg",
+   "packSize": 6.0,
+   "unitsPerCase": 1,
+   "caseQty": 6.0,
+   "unitPrice": 3.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-087"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "A",
+   "shelfLifeDays": 7,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.95,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "cucumber",
+   "gtin": "06439990005063",
+   "aimoSku": "AIMO-400754",
+   "name": "Cucumbers, greenhouse 5 kg",
+   "brand": "Lasitarha Närpiö",
+   "category": "produce",
+   "kind": "cucumber",
+   "variant": [
+    "greenhouse"
+   ],
+   "keywords": [
+    "cucumber",
+    "kurkku"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 1,
+   "caseQty": 5.0,
+   "unitPrice": 2.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-087"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "A",
+   "shelfLifeDays": 7,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.95,
+   "stock": 250,
+   "inbound": []
+  },
+  {
+   "key": "lettuce_iceberg",
+   "gtin": "06439990005131",
+   "aimoSku": "AIMO-400767",
+   "name": "Iceberg lettuce, 10 heads",
+   "brand": "Lasitarha Närpiö",
+   "category": "produce",
+   "kind": "salad",
+   "variant": [
+    "iceberg"
+   ],
+   "keywords": [
+    "lettuce",
+    "salad",
+    "jäävuorisalaatti"
+   ],
+   "unit": "pcs",
+   "packSize": 10,
+   "unitsPerCase": 1,
+   "caseQty": 10,
+   "unitPrice": 1.3,
+   "currency": "EUR",
+   "priceBasis": "per pcs",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-087"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "A",
+   "shelfLifeDays": 5,
+   "kgPerUnit": 0.5,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.94,
+   "stock": 400,
+   "inbound": []
+  },
+  {
+   "key": "celery",
+   "gtin": "06439990005209",
+   "aimoSku": "AIMO-400780",
+   "name": "Celery stalks 5 kg",
+   "brand": "Peltola Farms",
+   "category": "produce",
+   "kind": "celery",
+   "variant": [
+    "stalk"
+   ],
+   "keywords": [
+    "celery",
+    "selleri"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 1,
+   "caseQty": 5.0,
+   "unitPrice": 2.6,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "celery"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "ES",
+    "supplierId": "SUP-088"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "B",
+   "shelfLifeDays": 10,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.92,
+   "stock": 100,
+   "inbound": []
+  },
+  {
+   "key": "mushrooms",
+   "gtin": "06439990005278",
+   "aimoSku": "AIMO-400793",
+   "name": "Champignons 3 kg",
+   "brand": "Sienitila Kuusi",
+   "category": "produce",
+   "kind": "mushroom",
+   "variant": [
+    "champignon"
+   ],
+   "keywords": [
+    "mushrooms",
+    "herkkusieni"
+   ],
+   "unit": "kg",
+   "packSize": 3.0,
+   "unitsPerCase": 1,
+   "caseQty": 3.0,
+   "unitPrice": 4.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-089"
+   },
+   "qualityGrade": 4.2,
+   "carbonClass": "A",
+   "shelfLifeDays": 5,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.93,
+   "stock": 150,
+   "inbound": []
+  },
+  {
+   "key": "apples",
+   "gtin": "06439990005346",
+   "aimoSku": "AIMO-400806",
+   "name": "Apples, Finnish 8 kg",
+   "brand": "Hedelmätarha Ahvenanmaa",
+   "category": "produce",
+   "kind": "fruit",
+   "variant": [
+    "apple"
+   ],
+   "keywords": [
+    "apples",
+    "omena"
+   ],
+   "unit": "kg",
+   "packSize": 8.0,
+   "unitsPerCase": 1,
+   "caseQty": 8.0,
+   "unitPrice": 2.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-086"
+   },
+   "qualityGrade": 4.3,
+   "carbonClass": "A",
+   "shelfLifeDays": 14,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.95,
+   "stock": 400,
+   "inbound": []
+  },
+  {
+   "key": "bananas",
+   "gtin": "06439990005414",
+   "aimoSku": "AIMO-400819",
+   "name": "Bananas 18 kg",
+   "brand": "Tropiikki Trade",
+   "category": "produce",
+   "kind": "fruit",
+   "variant": [
+    "banana"
+   ],
+   "keywords": [
+    "bananas",
+    "banaani"
+   ],
+   "unit": "kg",
+   "packSize": 18.0,
+   "unitsPerCase": 1,
+   "caseQty": 18.0,
+   "unitPrice": 1.65,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Fairtrade",
+     "issuer": "Fairtrade International",
+     "validUntil": "2027-09-30"
+    }
+   ],
+   "origin": {
+    "country": "CO",
+    "supplierId": "SUP-096"
+   },
+   "qualityGrade": 3.9,
+   "carbonClass": "B",
+   "shelfLifeDays": 14,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.94,
+   "stock": 900,
+   "inbound": []
+  },
+  {
+   "key": "lemons",
+   "gtin": "06439990005483",
+   "aimoSku": "AIMO-400832",
+   "name": "Lemons 5 kg",
+   "brand": "Tropiikki Trade",
+   "category": "produce",
+   "kind": "fruit",
+   "variant": [
+    "lemon"
+   ],
+   "keywords": [
+    "lemons",
+    "sitruuna"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 1,
+   "caseQty": 5.0,
+   "unitPrice": 2.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "ES",
+    "supplierId": "SUP-096"
+   },
+   "qualityGrade": 3.9,
+   "carbonClass": "B",
+   "shelfLifeDays": 14,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.94,
+   "stock": 200,
+   "inbound": []
+  },
+  {
+   "key": "strawberries_frozen",
+   "gtin": "06439990005551",
+   "aimoSku": "AIMO-400845",
+   "name": "Strawberries, frozen 2.5 kg",
+   "brand": "Mansikkala",
+   "category": "produce",
+   "kind": "berries",
+   "variant": [
+    "strawberry",
+    "frozen"
+   ],
+   "keywords": [
+    "strawberries",
+    "mansikka",
+    "berries"
+   ],
+   "unit": "kg",
+   "packSize": 2.5,
+   "unitsPerCase": 4,
+   "caseQty": 10.0,
+   "unitPrice": 9.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-095"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 365,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 0.6,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "lingonberries_frozen",
+   "gtin": "06439990005629",
+   "aimoSku": "AIMO-400858",
+   "name": "Lingonberries, frozen 2 kg",
+   "brand": "Mansikkala",
+   "category": "produce",
+   "kind": "berries",
+   "variant": [
+    "lingonberry",
+    "frozen"
+   ],
+   "keywords": [
+    "lingonberries",
+    "puolukka",
+    "berries"
+   ],
+   "unit": "kg",
+   "packSize": 2.0,
+   "unitsPerCase": 5,
+   "caseQty": 10.0,
+   "unitPrice": 6.8,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-095"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 365,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 0.6,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 200,
+   "inbound": []
+  },
+  {
+   "key": "blueberries_frozen",
+   "gtin": "06439990005698",
+   "aimoSku": "AIMO-400871",
+   "name": "Wild blueberries, frozen 2 kg",
+   "brand": "Mansikkala",
+   "category": "produce",
+   "kind": "berries",
+   "variant": [
+    "blueberry",
+    "frozen"
+   ],
+   "keywords": [
+    "blueberries",
+    "mustikka",
+    "berries"
+   ],
+   "unit": "kg",
+   "packSize": 2.0,
+   "unitsPerCase": 5,
+   "caseQty": 10.0,
+   "unitPrice": 8.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    },
+    {
+     "label": "EU Organic",
+     "issuer": "Ruokavirasto FI-EKO-201",
+     "validUntil": "2027-06-30"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-095"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 365,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 0.6,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 220,
+   "inbound": []
+  },
+  {
+   "key": "beef_tenderloin",
+   "gtin": "06439990005766",
+   "aimoSku": "AIMO-400884",
+   "name": "Beef tenderloin, trimmed, approx. 2.5 kg",
+   "brand": "Pohjan Liha",
+   "category": "meat",
+   "kind": "beef",
+   "variant": [
+    "tenderloin"
+   ],
+   "keywords": [
+    "beef",
+    "tenderloin",
+    "naudan sisäfile"
+   ],
+   "unit": "kg",
+   "packSize": 2.5,
+   "unitsPerCase": 2,
+   "caseQty": 5.0,
+   "unitPrice": 44.5,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-101"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "E",
+   "shelfLifeDays": 10,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 30.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.95,
+   "stock": 60,
+   "inbound": []
+  },
+  {
+   "key": "beef_mince",
+   "gtin": "06439990005834",
+   "aimoSku": "AIMO-400897",
+   "name": "Minced beef 10% 2 kg",
+   "brand": "Pohjan Liha",
+   "category": "meat",
+   "kind": "beef",
+   "variant": [
+    "mince"
+   ],
+   "keywords": [
+    "beef",
+    "mince",
+    "jauheliha",
+    "minced"
+   ],
+   "unit": "kg",
+   "packSize": 2.0,
+   "unitsPerCase": 5,
+   "caseQty": 10.0,
+   "unitPrice": 9.2,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-101"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "E",
+   "shelfLifeDays": 10,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 30.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 400,
+   "inbound": []
+  },
+  {
+   "key": "chicken_breast",
+   "gtin": "06439990005902",
+   "aimoSku": "AIMO-400910",
+   "name": "Chicken breast fillet 2.5 kg",
+   "brand": "Kanatila Laine",
+   "category": "meat",
+   "kind": "chicken",
+   "variant": [
+    "breast"
+   ],
+   "keywords": [
+    "chicken",
+    "broileri",
+    "breast"
+   ],
+   "unit": "kg",
+   "packSize": 2.5,
+   "unitsPerCase": 4,
+   "caseQty": 10.0,
+   "unitPrice": 11.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-104"
+   },
+   "qualityGrade": 4.2,
+   "carbonClass": "D",
+   "shelfLifeDays": 7,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 4.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 500,
+   "inbound": []
+  },
+  {
+   "key": "pork_tenderloin",
+   "gtin": "06439990005971",
+   "aimoSku": "AIMO-400923",
+   "name": "Pork tenderloin 2 kg",
+   "brand": "Pohjan Liha",
+   "category": "meat",
+   "kind": "pork",
+   "variant": [
+    "tenderloin"
+   ],
+   "keywords": [
+    "pork",
+    "porsaan sisäfile"
+   ],
+   "unit": "kg",
+   "packSize": 2.0,
+   "unitsPerCase": 4,
+   "caseQty": 8.0,
+   "unitPrice": 12.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-101"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "D",
+   "shelfLifeDays": 10,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 6.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 200,
+   "inbound": []
+  },
+  {
+   "key": "ham_sliced",
+   "gtin": "06439990006046",
+   "aimoSku": "AIMO-400936",
+   "name": "Smoked ham slices 1 kg",
+   "brand": "Pohjan Liha",
+   "category": "meat",
+   "kind": "cold_cuts",
+   "variant": [
+    "ham"
+   ],
+   "keywords": [
+    "ham",
+    "kinkku"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 13.8,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-101"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "D",
+   "shelfLifeDays": 21,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 6.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 150,
+   "inbound": []
+  },
+  {
+   "key": "reindeer_saute",
+   "gtin": "06439990006114",
+   "aimoSku": "AIMO-400949",
+   "name": "Reindeer sauté, frozen 1 kg",
+   "brand": "Lapin Riista",
+   "category": "meat",
+   "kind": "game",
+   "variant": [
+    "reindeer"
+   ],
+   "keywords": [
+    "reindeer",
+    "poronkäristys"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 39.0,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-108"
+   },
+   "qualityGrade": 4.7,
+   "carbonClass": "E",
+   "shelfLifeDays": 365,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 15.0,
+   "leadTimeDays": 3,
+   "onTimeRate": 0.9,
+   "stock": 40,
+   "inbound": []
+  },
+  {
+   "key": "sausage_grill",
+   "gtin": "06439990006183",
+   "aimoSku": "AIMO-400962",
+   "name": "Grill sausages 1 kg",
+   "brand": "Pohjan Liha",
+   "category": "meat",
+   "kind": "sausage",
+   "variant": [
+    "grill"
+   ],
+   "keywords": [
+    "sausage",
+    "makkara"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 8,
+   "caseQty": 8.0,
+   "unitPrice": 7.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "mustard"
+   ],
+   "mayContain": [
+    "milk"
+   ],
+   "diet": [
+    "egg_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-101"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "D",
+   "shelfLifeDays": 21,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 5.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "bacon",
+   "gtin": "06439990006251",
+   "aimoSku": "AIMO-400975",
+   "name": "Bacon slices 1 kg",
+   "brand": "Pohjan Liha",
+   "category": "meat",
+   "kind": "pork",
+   "variant": [
+    "bacon"
+   ],
+   "keywords": [
+    "bacon",
+    "pekoni"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 10.5,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "DK",
+    "supplierId": "SUP-102"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "D",
+   "shelfLifeDays": 10,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 6.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.94,
+   "stock": 200,
+   "inbound": []
+  },
+  {
+   "key": "salmon_fillet",
+   "gtin": "06439990006329",
+   "aimoSku": "AIMO-400988",
+   "name": "Salmon fillet, skin-on, fresh 5 kg box",
+   "brand": "Saaristo Fish",
+   "category": "fish",
+   "kind": "salmon",
+   "variant": [
+    "fillet",
+    "fresh"
+   ],
+   "keywords": [
+    "salmon",
+    "lohi",
+    "fillet"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 1,
+   "caseQty": 5.0,
+   "unitPrice": 24.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "fish"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "ASC",
+     "issuer": "Aquaculture Stewardship Council",
+     "validUntil": "2027-02-28"
+    }
+   ],
+   "origin": {
+    "country": "NO",
+    "supplierId": "SUP-111"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "C",
+   "shelfLifeDays": 5,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 5.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.94,
+   "stock": 120,
+   "inbound": []
+  },
+  {
+   "key": "rainbow_trout",
+   "gtin": "06439990006398",
+   "aimoSku": "AIMO-401001",
+   "name": "Rainbow trout fillet, Finnish 5 kg",
+   "brand": "Saaristo Fish",
+   "category": "fish",
+   "kind": "trout",
+   "variant": [
+    "fillet",
+    "fresh"
+   ],
+   "keywords": [
+    "trout",
+    "kirjolohi",
+    "fillet"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 1,
+   "caseQty": 5.0,
+   "unitPrice": 21.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "fish"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-111"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "C",
+   "shelfLifeDays": 5,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 4.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.93,
+   "stock": 80,
+   "inbound": []
+  },
+  {
+   "key": "cod_loin",
+   "gtin": "06439990006466",
+   "aimoSku": "AIMO-401014",
+   "name": "Cod loin, frozen 4 kg",
+   "brand": "Pohjoisvesi",
+   "category": "fish",
+   "kind": "cod",
+   "variant": [
+    "loin",
+    "frozen"
+   ],
+   "keywords": [
+    "cod",
+    "turska"
+   ],
+   "unit": "kg",
+   "packSize": 4.0,
+   "unitsPerCase": 2,
+   "caseQty": 8.0,
+   "unitPrice": 18.6,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "fish"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "MSC",
+     "issuer": "Marine Stewardship Council",
+     "validUntil": "2027-03-31"
+    }
+   ],
+   "origin": {
+    "country": "IS",
+    "supplierId": "SUP-114"
+   },
+   "qualityGrade": 4.2,
+   "carbonClass": "C",
+   "shelfLifeDays": 365,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 3.5,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.95,
+   "stock": 160,
+   "inbound": []
+  },
+  {
+   "key": "baltic_herring",
+   "gtin": "06439990006534",
+   "aimoSku": "AIMO-401027",
+   "name": "Baltic herring fillets 3 kg",
+   "brand": "Saaristo Fish",
+   "category": "fish",
+   "kind": "herring",
+   "variant": [
+    "fillet"
+   ],
+   "keywords": [
+    "herring",
+    "silakka"
+   ],
+   "unit": "kg",
+   "packSize": 3.0,
+   "unitsPerCase": 2,
+   "caseQty": 6.0,
+   "unitPrice": 8.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "fish"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "MSC",
+     "issuer": "Marine Stewardship Council",
+     "validUntil": "2026-10-31"
+    },
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-111"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "C",
+   "shelfLifeDays": 4,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.5,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.92,
+   "stock": 90,
+   "inbound": []
+  },
+  {
+   "key": "pikeperch",
+   "gtin": "06439990006602",
+   "aimoSku": "AIMO-401040",
+   "name": "Pike-perch fillet, wild 3 kg",
+   "brand": "Järvikala",
+   "category": "fish",
+   "kind": "pikeperch",
+   "variant": [
+    "fillet"
+   ],
+   "keywords": [
+    "pike-perch",
+    "kuha",
+    "zander"
+   ],
+   "unit": "kg",
+   "packSize": 3.0,
+   "unitsPerCase": 1,
+   "caseQty": 3.0,
+   "unitPrice": 34.0,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "fish"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-116"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "C",
+   "shelfLifeDays": 4,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 2.5,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.9,
+   "stock": 30,
+   "inbound": []
+  },
+  {
+   "key": "shrimps",
+   "gtin": "06439990006671",
+   "aimoSku": "AIMO-401053",
+   "name": "Shrimps, cooked & peeled 1 kg",
+   "brand": "Pohjoisvesi",
+   "category": "fish",
+   "kind": "shellfish",
+   "variant": [
+    "shrimp"
+   ],
+   "keywords": [
+    "shrimps",
+    "katkarapu",
+    "prawns"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 6,
+   "caseQty": 6.0,
+   "unitPrice": 15.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "crustaceans"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "MSC",
+     "issuer": "Marine Stewardship Council",
+     "validUntil": "2027-03-31"
+    }
+   ],
+   "origin": {
+    "country": "GL",
+    "supplierId": "SUP-114"
+   },
+   "qualityGrade": 4.2,
+   "carbonClass": "C",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 8.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.94,
+   "stock": 120,
+   "inbound": []
+  },
+  {
+   "key": "mussels",
+   "gtin": "06439990006749",
+   "aimoSku": "AIMO-401066",
+   "name": "Blue mussels, cooked 1 kg",
+   "brand": "Pohjoisvesi",
+   "category": "fish",
+   "kind": "shellfish",
+   "variant": [
+    "mussel"
+   ],
+   "keywords": [
+    "mussels",
+    "simpukka"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 5,
+   "caseQty": 5.0,
+   "unitPrice": 7.8,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "molluscs"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "DK",
+    "supplierId": "SUP-114"
+   },
+   "qualityGrade": 4.2,
+   "carbonClass": "C",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 8.0,
+   "leadTimeDays": 3,
+   "onTimeRate": 0.9,
+   "stock": 60,
+   "inbound": []
+  },
+  {
+   "key": "rye_bread",
+   "gtin": "06439990006817",
+   "aimoSku": "AIMO-401079",
+   "name": "Sourdough rye bread, sliced 1 kg",
+   "brand": "Leipomo Ruis",
+   "category": "bakery",
+   "kind": "bread",
+   "variant": [
+    "rye"
+   ],
+   "keywords": [
+    "rye bread",
+    "ruisleipä",
+    "bread"
+   ],
+   "unit": "kg",
+   "packSize": 1.0,
+   "unitsPerCase": 8,
+   "caseQty": 8.0,
+   "unitPrice": 4.1,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "cereals_gluten"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-121"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 5,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 0.9,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.97,
+   "stock": 400,
+   "inbound": []
+  },
+  {
+   "key": "bread_rolls",
+   "gtin": "06439990006886",
+   "aimoSku": "AIMO-401092",
+   "name": "Wheat bread rolls 60 g, frozen 50 pcs",
+   "brand": "Leipomo Ruis",
+   "category": "bakery",
+   "kind": "bread",
+   "variant": [
+    "roll"
+   ],
+   "keywords": [
+    "bread rolls",
+    "rolls",
+    "sämpylä",
+    "bread"
+   ],
+   "unit": "pcs",
+   "packSize": 50,
+   "unitsPerCase": 4,
+   "caseQty": 200,
+   "unitPrice": 0.22,
+   "currency": "EUR",
+   "priceBasis": "per pcs",
+   "allergens": [
+    "cereals_gluten"
+   ],
+   "mayContain": [
+    "sesame",
+    "milk"
+   ],
+   "diet": [
+    "egg_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-121"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 365,
+   "kgPerUnit": 0.06,
+   "co2eKgPerKg": 0.9,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.97,
+   "stock": 4000,
+   "inbound": []
+  },
+  {
+   "key": "karelian_pies",
+   "gtin": "06439990006954",
+   "aimoSku": "AIMO-401105",
+   "name": "Karelian rice pies, frozen 60 pcs",
+   "brand": "Leipomo Ruis",
+   "category": "bakery",
+   "kind": "pastry",
+   "variant": [
+    "karelian"
+   ],
+   "keywords": [
+    "karelian pies",
+    "karjalanpiirakka",
+    "pies"
+   ],
+   "unit": "pcs",
+   "packSize": 60,
+   "unitsPerCase": 2,
+   "caseQty": 120,
+   "unitPrice": 0.39,
+   "currency": "EUR",
+   "priceBasis": "per pcs",
+   "allergens": [
+    "cereals_gluten",
+    "milk"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-121"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 365,
+   "kgPerUnit": 0.07,
+   "co2eKgPerKg": 1.6,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.97,
+   "stock": 1800,
+   "inbound": []
+  },
+  {
+   "key": "croissants",
+   "gtin": "06439990007029",
+   "aimoSku": "AIMO-401118",
+   "name": "Butter croissants, frozen 48 pcs",
+   "brand": "Leipomo Aamu",
+   "category": "bakery",
+   "kind": "pastry",
+   "variant": [
+    "croissant"
+   ],
+   "keywords": [
+    "croissants",
+    "pastry"
+   ],
+   "unit": "pcs",
+   "packSize": 48,
+   "unitsPerCase": 2,
+   "caseQty": 96,
+   "unitPrice": 0.48,
+   "currency": "EUR",
+   "priceBasis": "per pcs",
+   "allergens": [
+    "cereals_gluten",
+    "milk",
+    "eggs"
+   ],
+   "mayContain": [
+    "nuts"
+   ],
+   "diet": [
+    "vegetarian"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FR",
+    "supplierId": "SUP-124"
+   },
+   "qualityGrade": 4.1,
+   "carbonClass": "A",
+   "shelfLifeDays": 365,
+   "kgPerUnit": 0.07,
+   "co2eKgPerKg": 1.6,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.94,
+   "stock": 960,
+   "inbound": []
+  },
+  {
+   "key": "cinnamon_buns",
+   "gtin": "06439990007098",
+   "aimoSku": "AIMO-401131",
+   "name": "Cinnamon buns, frozen 40 pcs",
+   "brand": "Leipomo Aamu",
+   "category": "bakery",
+   "kind": "pastry",
+   "variant": [
+    "bun"
+   ],
+   "keywords": [
+    "cinnamon buns",
+    "korvapuusti",
+    "buns"
+   ],
+   "unit": "pcs",
+   "packSize": 40,
+   "unitsPerCase": 2,
+   "caseQty": 80,
+   "unitPrice": 0.55,
+   "currency": "EUR",
+   "priceBasis": "per pcs",
+   "allergens": [
+    "cereals_gluten",
+    "milk",
+    "eggs"
+   ],
+   "mayContain": [],
+   "diet": [
+    "nut_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-124"
+   },
+   "qualityGrade": 4.1,
+   "carbonClass": "A",
+   "shelfLifeDays": 365,
+   "kgPerUnit": 0.07,
+   "co2eKgPerKg": 1.6,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.95,
+   "stock": 800,
+   "inbound": []
+  },
+  {
+   "key": "gf_bread",
+   "gtin": "06439990007166",
+   "aimoSku": "AIMO-401144",
+   "name": "Gluten-free seeded bread 500 g",
+   "brand": "Leipomo Aamu",
+   "category": "bakery",
+   "kind": "bread",
+   "variant": [
+    "gluten_free"
+   ],
+   "keywords": [
+    "gluten-free bread",
+    "bread"
+   ],
+   "unit": "kg",
+   "packSize": 0.5,
+   "unitsPerCase": 10,
+   "caseQty": 5.0,
+   "unitPrice": 9.6,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "sesame"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Crossed Grain",
+     "issuer": "AOECS",
+     "validUntil": "2027-01-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-124"
+   },
+   "qualityGrade": 4.1,
+   "carbonClass": "A",
+   "shelfLifeDays": 5,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 0.9,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.93,
+   "stock": 120,
+   "inbound": []
+  },
+  {
+   "key": "sourdough_wheat",
+   "gtin": "06439990007234",
+   "aimoSku": "AIMO-401157",
+   "name": "Wheat sourdough loaf 700 g",
+   "brand": "Leipomo Ruis",
+   "category": "bakery",
+   "kind": "bread",
+   "variant": [
+    "sourdough"
+   ],
+   "keywords": [
+    "sourdough",
+    "bread"
+   ],
+   "unit": "kg",
+   "packSize": 0.7,
+   "unitsPerCase": 6,
+   "caseQty": 4.2,
+   "unitPrice": 6.3,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "cereals_gluten"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-121"
+   },
+   "qualityGrade": 4.6,
+   "carbonClass": "A",
+   "shelfLifeDays": 5,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 0.9,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 200,
+   "inbound": []
+  },
+  {
+   "key": "choc_dark_kaakaotalo",
+   "gtin": "06439990007302",
+   "aimoSku": "AIMO-401170",
+   "name": "Dark chocolate couverture 70% 2.5 kg",
+   "brand": "Kaakaotalo",
+   "category": "dry_goods",
+   "kind": "chocolate",
+   "variant": [
+    "dark"
+   ],
+   "keywords": [
+    "chocolate",
+    "dark chocolate",
+    "suklaa"
+   ],
+   "unit": "kg",
+   "packSize": 2.5,
+   "unitsPerCase": 4,
+   "caseQty": 10.0,
+   "unitPrice": 14.8,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "soybeans"
+   ],
+   "mayContain": [
+    "milk",
+    "nuts"
+   ],
+   "diet": [
+    "egg_free",
+    "vegetarian"
+   ],
+   "certificates": [
+    {
+     "label": "Rainforest Alliance",
+     "issuer": "Rainforest Alliance",
+     "validUntil": "2027-05-31"
+    }
+   ],
+   "origin": {
+    "country": "BE",
+    "supplierId": "SUP-097"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.95,
+   "stock": 80,
+   "inbound": []
+  },
+  {
+   "key": "choc_dark_nutfree",
+   "gtin": "06439990007371",
+   "aimoSku": "AIMO-401183",
+   "name": "Dark chocolate drops 60%, nut-free facility 2 kg",
+   "brand": "Suklaapaja",
+   "category": "dry_goods",
+   "kind": "chocolate",
+   "variant": [
+    "dark"
+   ],
+   "keywords": [
+    "chocolate",
+    "dark chocolate",
+    "suklaa"
+   ],
+   "unit": "kg",
+   "packSize": 2.0,
+   "unitsPerCase": 4,
+   "caseQty": 8.0,
+   "unitPrice": 16.2,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "soybeans"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Fairtrade",
+     "issuer": "Fairtrade International",
+     "validUntil": "2027-09-30"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-098"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.96,
+   "stock": 40,
+   "inbound": []
+  },
+  {
+   "key": "ham_christmas",
+   "gtin": "06439990007449",
+   "aimoSku": "AIMO-401196",
+   "name": "Christmas ham, cured, whole approx. 8 kg",
+   "brand": "Pohjan Liha",
+   "category": "meat",
+   "kind": "ham_whole",
+   "variant": [
+    "christmas"
+   ],
+   "keywords": [
+    "christmas ham",
+    "kinkku",
+    "joulukinkku",
+    "ham"
+   ],
+   "unit": "kg",
+   "packSize": 8.0,
+   "unitsPerCase": 1,
+   "caseQty": 8.0,
+   "unitPrice": 11.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-101"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "D",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.95,
+   "stock": 400,
+   "inbound": []
+  },
+  {
+   "key": "swede",
+   "gtin": "06439990007517",
+   "aimoSku": "AIMO-401209",
+   "name": "Swede (lanttu) 10 kg",
+   "brand": "Peltola Farms",
+   "category": "produce",
+   "kind": "root_veg",
+   "variant": [
+    "swede"
+   ],
+   "keywords": [
+    "swede",
+    "lanttu",
+    "rutabaga"
+   ],
+   "unit": "kg",
+   "packSize": 10.0,
+   "unitsPerCase": 1,
+   "caseQty": 10.0,
+   "unitPrice": 1.3,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-085"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "A",
+   "shelfLifeDays": 30,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "beetroot_cooked",
+   "gtin": "06439990007586",
+   "aimoSku": "AIMO-401222",
+   "name": "Beetroot, cooked & peeled 5 kg",
+   "brand": "Peltola Farms",
+   "category": "produce",
+   "kind": "beetroot",
+   "variant": [
+    "cooked"
+   ],
+   "keywords": [
+    "beetroot",
+    "punajuuri"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 2,
+   "caseQty": 10.0,
+   "unitPrice": 2.4,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-085"
+   },
+   "qualityGrade": 4.5,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.96,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "pickled_cucumber",
+   "gtin": "06439990007654",
+   "aimoSku": "AIMO-401235",
+   "name": "Pickled cucumbers 2.5 kg",
+   "brand": "Sinappila",
+   "category": "dry_goods",
+   "kind": "pickles",
+   "variant": [
+    "cucumber"
+   ],
+   "keywords": [
+    "pickled cucumber",
+    "suolakurkku",
+    "pickles"
+   ],
+   "unit": "kg",
+   "packSize": 2.5,
+   "unitsPerCase": 4,
+   "caseQty": 10.0,
+   "unitPrice": 3.9,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [
+    "mustard"
+   ],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-093"
+   },
+   "qualityGrade": 4.3,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.95,
+   "stock": 160,
+   "inbound": []
+  },
+  {
+   "key": "porridge_rice",
+   "gtin": "06439990007722",
+   "aimoSku": "AIMO-401248",
+   "name": "Porridge rice, round grain 5 kg",
+   "brand": "Aitta",
+   "category": "dry_goods",
+   "kind": "rice",
+   "variant": [
+    "porridge"
+   ],
+   "keywords": [
+    "porridge rice",
+    "puuroriisi",
+    "rice"
+   ],
+   "unit": "kg",
+   "packSize": 5.0,
+   "unitsPerCase": 2,
+   "caseQty": 10.0,
+   "unitPrice": 2.2,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [],
+   "origin": {
+    "country": "IT",
+    "supplierId": "SUP-081"
+   },
+   "qualityGrade": 4.0,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 2.5,
+   "leadTimeDays": 2,
+   "onTimeRate": 0.96,
+   "stock": 300,
+   "inbound": []
+  },
+  {
+   "key": "dill_fresh",
+   "gtin": "06439990007791",
+   "aimoSku": "AIMO-401261",
+   "name": "Fresh dill 0.5 kg",
+   "brand": "Lasitarha Närpiö",
+   "category": "produce",
+   "kind": "herbs",
+   "variant": [
+    "dill"
+   ],
+   "keywords": [
+    "dill",
+    "tilli",
+    "herbs"
+   ],
+   "unit": "kg",
+   "packSize": 0.5,
+   "unitsPerCase": 4,
+   "caseQty": 2.0,
+   "unitPrice": 14.0,
+   "currency": "EUR",
+   "priceBasis": "per kg",
+   "allergens": [],
+   "mayContain": [],
+   "diet": [
+    "egg_free",
+    "gluten_free",
+    "milk_free",
+    "nut_free",
+    "vegan"
+   ],
+   "certificates": [
+    {
+     "label": "Hyvää Suomesta",
+     "issuer": "Ruokatieto Yhdistys ry",
+     "validUntil": "2027-12-31"
+    }
+   ],
+   "origin": {
+    "country": "FI",
+    "supplierId": "SUP-087"
+   },
+   "qualityGrade": 4.4,
+   "carbonClass": "A",
+   "shelfLifeDays": 180,
+   "kgPerUnit": 1.0,
+   "co2eKgPerKg": 1.0,
+   "leadTimeDays": 1,
+   "onTimeRate": 0.94,
+   "stock": 40,
+   "inbound": []
+  }
+ ]
+}

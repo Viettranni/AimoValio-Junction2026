@@ -1,0 +1,61 @@
+{
+  "note": "Seeded buyer memory for Step 2 (Recall). Keys refer to gateway/data/catalog.json. Outcome labels follow docs/data-model/catalog_seed.sql (label_definition). usage = used / planned per guest for that need (1.0 = exactly as planned). Synthetic, for the demo.",
+  "buyers": {
+    "BUY-POHJOLA": {
+      "favourites": [
+        {"key": "milk_lf_semi_kaarna", "pinned": true},
+        {"key": "cream_whip_kaarna", "pinned": true},
+        {"key": "salmon_fillet", "pinned": true},
+        {"key": "beef_tenderloin", "pinned": true},
+        {"key": "choc_dark_kaakaotalo"},
+        {"key": "butter_kaarna"},
+        {"key": "bread_rolls"},
+        {"key": "coffee_dark"}
+      ],
+      "fallbacks": {"milk_lf_semi_kaarna": ["milk_lf_semi_maitokaari"]},
+      "orders": [
+        {"id": "PP-2025-1212", "date": "2025-12-12", "context": "event", "eventType": "gala", "name": "Christmas gala 2025",
+         "guests": 160, "dishes": ["salmon_starter", "beef_tenderloin", "choc_mousse", "bread_basket", "coffee_service"],
+         "lines": [
+           {"need": "salmon fillet", "key": "salmon_fillet", "usage": 0.90, "label": "right_sized"},
+           {"need": "beef tenderloin", "key": "beef_tenderloin", "usage": 0.94, "label": "right_sized"},
+           {"need": "whipping cream", "key": "cream_whip_kaarna", "usage": 0.82, "label": "over_ordered"},
+           {"need": "dark chocolate", "key": "choc_dark_kaakaotalo", "usage": 0.99, "label": "right_sized"},
+           {"need": "bread rolls", "key": "bread_rolls", "usage": 0.97, "label": "right_sized"}
+         ]},
+        {"id": "PP-2026-0314", "date": "2026-03-14", "context": "event", "eventType": "gala", "name": "Spring gala 2026",
+         "guests": 140, "dishes": ["salmon_starter", "beef_tenderloin", "choc_mousse", "bread_basket", "coffee_service"],
+         "lines": [
+           {"need": "salmon fillet", "key": "salmon_fillet", "usage": 0.88, "label": "right_sized"},
+           {"need": "beef tenderloin", "key": "beef_tenderloin", "usage": 0.95, "label": "right_sized"},
+           {"need": "whipping cream", "key": "cream_whip_kaarna", "usage": 0.84, "label": "over_ordered"},
+           {"need": "dark chocolate", "key": "choc_dark_kaakaotalo", "usage": 1.0, "label": "right_sized"},
+           {"need": "bread rolls", "key": "bread_rolls", "usage": 0.96, "label": "right_sized"}
+         ]},
+        {"id": "PP-2026-1102", "date": "2026-11-02", "context": "ad_hoc", "name": "Milk top-up",
+         "lines": [
+           {"need": "lactose-free milk", "key": "milk_lf_semi_kaarna", "qty": 600, "label": "right_sized"},
+           {"need": "lactose-free milk", "key": "milk_lf_semi_maitokaari", "qty": 400, "label": "good_substitute"}
+         ]}
+      ],
+      "leftovers": [
+        {"leftoverId": "LO-301", "key": "cream_whip_kaarna", "qty": 6, "bestBefore": "2026-11-25", "sourceLabel": "Thursday's lunch"}
+      ]
+    },
+    "BUY-KOULU": {
+      "favourites": [
+        {"key": "oat_drink_kauraco", "pinned": true},
+        {"key": "milk_skim_kaarna", "pinned": true},
+        {"key": "pasta_penne_aitta"}
+      ],
+      "fallbacks": {},
+      "orders": [
+        {"id": "PP-2026-1030", "date": "2026-10-30", "context": "ad_hoc", "name": "Oat drink for the week",
+         "lines": [{"need": "oat drink", "key": "oat_drink_kauraco", "qty": 60, "label": "right_sized"}]}
+      ],
+      "leftovers": []
+    },
+    "BUY-KAARI": {"favourites": [{"key": "soy_drink_soijanord", "pinned": true}], "fallbacks": {}, "orders": [], "leftovers": []},
+    "BUY-UUSI": {"favourites": [], "fallbacks": {}, "orders": [], "leftovers": []}
+  }
+}

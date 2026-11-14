@@ -50,6 +50,10 @@ export interface WidgetSession {
   fast?: boolean;
   setFast?: (on: boolean) => void;
   send: (text: string) => void;
+  /** Reads the buyer's notes (photo, PDF, Excel, CSV) and sends what was read as their message. Live mode only. */
+  attachDocument?: (file: File) => void;
+  /** True while an attached document is being read. */
+  reading?: boolean;
   choose: (itemId: string, ids: string[], freeText?: string) => void;
   change: (change: DraftChange) => void;
   checkout: Checkout;

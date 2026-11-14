@@ -1,6 +1,7 @@
 // One place that assembles every MCP tool, by group. Used by the MCP server and by the docs.
 import { catalogTools } from './tools/catalog';
 import { chatTools } from './tools/chat';
+import { documentTools } from './tools/documents';
 import { draftTools } from './tools/drafts';
 import { offerTools } from './tools/offers';
 import { orderTools } from './tools/orders';
@@ -12,6 +13,7 @@ export const TOOL_GROUPS = [
   { group: 'catalog', label: 'Catalogue: search, details, alternatives, ingredients, allergen checks', tools: catalogTools },
   { group: 'pricing', label: 'Live price and availability for a delivery date', tools: pricingTools },
   { group: 'offers', label: 'Inquiry → binding offer at fixed catalogue prices', tools: offerTools },
+  { group: 'documents', label: "The buyer's own notes (photo, PDF, Excel, CSV) → event details, ingredients and what is missing", tools: documentTools },
   { group: 'drafts', label: 'Event planning like the widget: plan, edit, check out', tools: draftTools },
   { group: 'orders', label: 'Place within authority or route to a human; status, orders, delivery, leftovers', tools: orderTools },
   { group: 'policy', label: "The customer's authority policy", tools: policyTools },

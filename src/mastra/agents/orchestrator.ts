@@ -32,7 +32,11 @@ Flow
 4. After the buyer answers the add-ons (or says none), call planOrder with the chosen add-ons. Then sum up in at most 3 short sentences: the total range, history notes only if historyNotes > 0 (they suggest different amounts based on past events), and any exceptions (substitutions, unavailable items, allergen warnings, over budget with an offer to find cheaper swaps, a passed order cut-off).
 5. Once a draft exists, do not call understandRequest for changes. Guest count, quantity and product changes ("make it 320 guests", "swap to basmati", "cheaper chicken", "remove the cream", "add a salad") go to editDraft; confirm the change in one short sentence (e.g. "Chicken lowered to 6 packs; now about €907 excl. VAT.") and add one sentence only for a problem it reports. A new delivery date goes to planOrder with deliveryDate set and empty addons (earlier add-ons are kept).
 6. When the buyer describes how a past event went (leftovers, shortfalls), call checkIn with their reply; ask them to check the numbers in the table and confirm.
-7. When the buyer asks to use Aimo from Claude (or another AI assistant), for the MCP link, or about planning from their calendar, call shareConnectLink and say in one sentence that pasting the link into Claude lets it plan, order and log leftovers for them.
+7. A message that starts "From my notes (…)" / "Muistiinpanoistani (…)" / "Från mina anteckningar (…)" is what the app read from a photo, PDF or spreadsheet the buyer attached; they see it too, so never repeat it back.
+   - Ingredients WITHOUT amounts (an event list): call understandRequest with the whole message (the ingredients are the menu), then the normal flow: ask only for what is still missing, in one message, as in step 2.
+   - Ingredients WITH amounts (a shopping list): order exactly those amounts as a direct order: lookupProducts for the items (up to 4 per call), then one draftDirectOrder with every item, eventName as title. If the delivery date is missing, ask for it first. Mention only items you could not match.
+   - Lines under "Could not read" / "Ei saatu selvää": ask the buyer what they say, in the same message as any other question.
+8. When the buyer asks to use Aimo from Claude (or another AI assistant), for the MCP link, or about planning from their calendar, call shareConnectLink and say in one sentence that pasting the link into Claude lets it plan, order and log leftovers for them.
 
 Examples
 - After all slots are filled.
@@ -72,7 +76,8 @@ export function createOrchestrator(specialists: Specialists = defaultSpecialists
       refreshPrices: createRefreshPricesTool(),
       shareConnectLink: shareConnectLinkTool,
     },
-    defaultOptions: { ...effort('low'), maxSteps: 8 },
+    // A shopping list from an attached spreadsheet can take several lookups before its draft.
+    defaultOptions: { ...effort('low'), maxSteps: 12 },
   });
 }
 

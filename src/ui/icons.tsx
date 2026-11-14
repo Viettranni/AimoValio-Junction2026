@@ -106,3 +106,9 @@ export const LeafIcon = (p: IconProps) => (
     <path d="M5 19l7-7" />
   </Icon>
 );
+
+export const PaperclipIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m21 11-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9" />
+  </Icon>
+);

@@ -316,7 +316,9 @@ function WidgetView({
             value={text}
             onChange={setText}
             onSubmit={send}
-            disabled={session.busy}
+            onAttach={session.attachDocument ? (file) => { if (view !== 'orders') go('chat'); session.attachDocument?.(file); } : undefined}
+            reading={session.reading}
+            disabled={session.busy || session.reading}
             focusKey={focusKey}
             lang={lang}
             placeholder={t(draft && draft.status !== 'submitted' ? 'composer.placeholderDraft' : 'composer.placeholder', lang)}

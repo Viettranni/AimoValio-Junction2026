@@ -7,6 +7,7 @@ import type {
   AuditEntry, CheckInEvent, ChoicesEvent, Draft, DraftChange, DraftDiff, DraftEvent, Intake, IntakeSlot,
   OrderSummary, ProgressEvent, Receipt, ReceiptEvent, SlotsEvent,
 } from '@/contracts';
+import { downscaleImage } from './downscale';
 import { describeEdit } from './editNote';
 import { showShelfCard, toolRunning } from './shelf';
 import { t, uiLangFor, type UiKey } from './i18n';
@@ -244,6 +245,30 @@ export function useLiveSession({
     void sendMessage({ text });
   };
 
+  const [reading, setReading] = useState(false);
+  const attachDocument = (file: File) => {
+    if (busy || reading) return;
+    setReading(true);
+    void (async () => {
+      try {
+        const body = new FormData();
+        body.append('file', await downscaleImage(file), file.name);
+        body.append('lang', uiLang);
+        const res = await fetch('/api/intake/document', { method: 'POST', body });
+        const json = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
+        if (!res.ok || !json.message) {
+          notify((id) => ({ id, kind: 'error', text: json.error ?? t('document.failed', uiLang) }));
+          return;
+        }
+        send(json.message);
+      } catch {
+        notify((id) => ({ id, kind: 'error', text: t('document.failed', uiLang) }));
+      } finally {
+        setReading(false);
+      }
+    })();
+  };
+
   const choose = (itemId: string, ids: string[], freeText?: string) => {
     const item = items.find((i) => i.id === itemId);
     if (item?.kind !== 'choices' || item.answer || busy) return;
@@ -440,7 +465,7 @@ export function useLiveSession({
 
   return {
     items, typing, busy, planning, editing, lang, intake, missing, draft, diff, receipt, orders, refreshOrders,
-    send, choose, change, fastForward, reset, retry, submitCheckIn, confirmCheckIn, openOrder, getAudit,
+    send, attachDocument, reading, choose, change, fastForward, reset, retry, submitCheckIn, confirmCheckIn, openOrder, getAudit,
     checkout, requestOffer, placeOrder, clearCheckout, getDelivery, nextDeliveryStep,
   };
 }

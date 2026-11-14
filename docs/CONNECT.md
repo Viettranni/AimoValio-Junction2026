@@ -9,7 +9,7 @@ The Aimo agent gateway is one MCP server, `aimo-gateway`, with two ways in:
 
 The demo key is `aimo-demo-agent-key`. It acts as `procurement-agent` buying for `helsinki-juhlapalvelu`, whose policy auto-approves orders up to €1,000 excl. VAT and sends the rest to Anna Virtanen (Purchasing manager). Set your own keys with `AIMO_AGENT_KEYS` (see `.env.example`). The customer always comes from the key, never from tool input.
 
-Both transports serve MCP 2026-07-28 clients and 2025-era clients (the ones that open with `initialize`). The stdio server reads `VALIO_API_KEY`, `VALIO_API_BASE` and `ANTHROPIC_API_KEY` from `.env.local` in the repo root when the client doesn't pass them.
+Both transports serve MCP 2026-07-28 clients and 2025-era clients (the ones that open with `initialize`); `src/mcp/stdio.test.ts` checks the stdio side. The stdio entry depends on a Mastra internal, pinned to `@mastra/mcp` 2.9.0 / `@modelcontextprotocol/server` 2.4.0; re-run that test after upgrading either. The stdio server reads `VALIO_API_KEY`, `VALIO_API_BASE` and `ANTHROPIC_API_KEY` from `.env.local` in the repo root when the client doesn't pass them.
 
 What each check below was verified with is noted in the section. "Not verified" means we couldn't click through that product's UI from here.
 
@@ -23,17 +23,21 @@ npx tsx src/mcp/stdio.ts        # or: stdio only (an MCP client normally starts 
 
 ## Claude Code
 
+Without touching your Claude Code settings, pass a config file per run:
+
 ```bash
-# stdio, from the repo root (the server starts in the project directory)
-claude mcp add aimo --env AIMO_AGENT_KEY=aimo-demo-agent-key -- npx tsx src/mcp/stdio.ts
-
-# or remote over HTTP (needs the app running)
-claude mcp add --transport http aimo-http http://localhost:3100/api/mcp --header "Authorization: Bearer aimo-demo-agent-key"
-
-claude mcp get aimo             # Status: ✔ Connected
+cat > /tmp/aimo-mcp.json <<'JSON'
+{ "mcpServers": { "aimo": { "type": "http", "url": "http://localhost:3100/api/mcp",
+  "headers": { "Authorization": "Bearer aimo-demo-agent-key" } } } }
+JSON
+claude -p "Plan a wedding for 300 guests on 2026-12-05, chicken and rice, 12 gluten-free, then check out." \
+  --mcp-config /tmp/aimo-mcp.json --strict-mcp-config \
+  --allowedTools "mcp__aimo__planEvent,mcp__aimo__getDraft,mcp__aimo__updateDraft,mcp__aimo__checkoutDraft,mcp__aimo__getOrderStatus,mcp__aimo__listOrders"
 ```
 
-Verified: both commands, `claude mcp get` shows ✔ Connected for each, and `claude -p` called `getAuthorityPolicy` over HTTP (answer: €1,000, Anna Virtanen). Remove with `claude mcp remove aimo -s local`.
+For stdio, use `{ "command": "npx", "args": ["tsx", "src/mcp/stdio.ts"], "env": { "AIMO_AGENT_KEY": "aimo-demo-agent-key" } }` as the server entry and run `claude` from the repo root. To add it permanently instead, `claude mcp add --transport http aimo http://localhost:3100/api/mcp --header "Authorization: Bearer aimo-demo-agent-key"`; note that this writes to your Claude Code config.
+
+Verified: the `claude -p` command above, over HTTP with a temporary config. Claude called `planEvent` then `checkoutDraft`; the draft came to €783.33 excl. VAT and was ordered within authority (VA-2026-99897), in 33 s. Round 1 also verified both `claude mcp add` forms (✔ Connected).
 
 ## Claude Desktop
 
@@ -90,12 +94,17 @@ Not verified here: downloading and running the Inspector was blocked in the envi
 
 ChatGPT connects to remote MCP servers only, over public HTTPS.
 
-1. Run the app: `npm run dev -- -p 3100`.
-2. Expose it: `cloudflared tunnel --url http://localhost:3100` (prints `https://<random>.trycloudflare.com`), or `ngrok http 3100`.
-3. In ChatGPT: Settings → Apps & Connectors → Advanced → turn on Developer mode, then Create a connector with URL `https://<random>.trycloudflare.com/api/mcp`. For authentication, use a bearer token / API key of `aimo-demo-agent-key` if your ChatGPT version offers it. If it only offers OAuth or none, the gateway will answer 401: put a reverse proxy that adds the header in front, or (demo only) run a tunnel to a separate instance with a throwaway key.
-4. In a chat, enable the connector and ask the lactose-free milk question.
+> **Tunnel only `/api/mcp`.** In this prototype `/approvals` and `/api/approvals/*` have no login: anyone who can reach them can approve orders, an agent included. A tunnel to the whole app (`cloudflared tunnel --url http://localhost:3100`) would publish them. Put the MCP-only proxy in front instead.
 
-Not verified: we didn't open a public tunnel or use the ChatGPT UI from here. Anyone with the tunnel URL and the key can place (simulated) orders, so use a throwaway key and stop the tunnel afterwards.
+1. Run the app: `npm run dev -- -p 3100`.
+2. Run the MCP-only proxy: `npx tsx scripts/mcp-only-proxy.ts`. It listens on :3200, forwards `/api/mcp` to the app and answers 404 for everything else.
+3. Tunnel the proxy, not the app: `cloudflared tunnel --url http://localhost:3200` (prints `https://<random>.trycloudflare.com`), or `ngrok http 3200`.
+4. In ChatGPT: Settings → Apps & Connectors → Advanced → turn on Developer mode, then create a connector with URL `https://<random>.trycloudflare.com/api/mcp`. Use bearer-token / API-key authentication with your agent key if your ChatGPT version offers it; without a key the gateway answers 401.
+5. In a chat, enable the connector and ask for the lactose-free milk or the wedding.
+
+Use a throwaway key (`AIMO_AGENT_KEYS`) and stop the tunnel afterwards: anyone with the URL and the key can place (simulated) orders. Browser pages on other sites are refused by the gateway's Origin check (add origins with `AIMO_ALLOWED_ORIGINS` if a browser client needs them).
+
+Verified: the proxy (404 for `/approvals` and `/api/approvals`, `tools/list` through `/api/mcp`). Not verified: we didn't open a public tunnel or use the ChatGPT UI from here.
 
 ## curl (Streamable HTTP)
 
@@ -125,13 +134,14 @@ Responses come back as one server-sent event (`event: message`, `data: {…}`). 
 ## A headless external agent
 
 ```bash
-npx tsx --env-file-if-exists=.env.local scripts/gateway-demo.ts           # 1,000 l → pending approval (Anna Virtanen)
+npx tsx --env-file-if-exists=.env.local scripts/gateway-demo.ts --event   # wedding: planEvent → updateDraft → checkoutDraft → listOrders
+npx tsx --env-file-if-exists=.env.local scripts/gateway-demo.ts           # 1,000 l → pending approval if over the limit (says so if not; --over)
 npx tsx --env-file-if-exists=.env.local scripts/gateway-demo.ts --small   # 100 l → ordered within authority
 npx tsx --env-file-if-exists=.env.local scripts/gateway-demo.ts --http    # same, over http://localhost:3100/api/mcp
 npx tsx --env-file-if-exists=.env.local scripts/gateway-demo.ts --llm     # Claude picks and orders through the same tools
 ```
 
-Then open http://localhost:3100/approvals to approve or reject. The agent sees the result with `getOrderStatus`.
+Then open http://localhost:3100/approvals to approve or reject. The agent sees the result with `getOrderStatus`. Set `AIMO_BASE_URL` if the app is not on http://localhost:3100. To keep demo runs out of the app's database, set `AIMO_DB_PATH` to another file (and `npm run seed` it) for the stdio runs.
 
 ## Choosing the model
 

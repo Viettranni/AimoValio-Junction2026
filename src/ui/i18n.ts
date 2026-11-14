@@ -7,7 +7,7 @@ const en = {
   'header.close': 'Minimise',
   'header.demo': 'Demo controls',
 
-  'greeting': 'Hi! Tell me about your event and I’ll put together a priced order draft.',
+  'greeting': 'Hi! Tell me about your event and I’ll put together a priced order draft. You can also attach a photo of your notes or an Excel list (📎).',
   'example.1': 'We have a wedding on 6 Dec, 300 guests, chicken and rice',
   'example.2': 'Corporate lunch for 80 next Friday, salmon and potatoes',
   'example.3': 'Christmas party for 150, you suggest the menu',
@@ -296,7 +296,7 @@ const fi: Dict = {
   'header.close': 'Pienennä',
   'header.demo': 'Demo-ohjaimet',
 
-  'greeting': 'Hei! Kerro tilaisuudestasi, niin kokoan hinnoitellun tilausluonnoksen.',
+  'greeting': 'Hei! Kerro tilaisuudestasi, niin kokoan hinnoitellun tilausluonnoksen. Voit myös liittää kuvan muistiinpanoistasi tai Excel-listan (📎).',
   'example.1': 'Meillä on häät 6.12., 300 vierasta, kanaa ja riisiä',
   'example.2': 'Yrityslounas 80 hengelle ensi perjantaina, lohta ja perunaa',
   'example.3': 'Pikkujoulut 150 hengelle, ehdota menu',
@@ -582,7 +582,7 @@ const sv: Dict = {
   'header.close': 'Minimera',
   'header.demo': 'Demokontroller',
 
-  'greeting': 'Hej! Berätta om ditt evenemang så sätter jag ihop ett prissatt beställningsutkast.',
+  'greeting': 'Hej! Berätta om ditt evenemang så sätter jag ihop ett prissatt beställningsutkast. Du kan också bifoga ett foto av dina anteckningar eller en Excel-lista (📎).',
   'example.1': 'Vi har bröllop den 6 dec, 300 gäster, kyckling och ris',
   'example.2': 'Företagslunch för 80 nästa fredag, lax och potatis',
   'example.3': 'Julfest för 150, föreslå en meny',

@@ -91,7 +91,7 @@ void (async () => {
       console.log(`  MCP for Claude Code     ${info.localMcpUrl}`);
       console.log(info.isPublic
         ? `  MCP for claude.ai       ${info.mcpUrl}\n                          (Settings → Connectors → Add custom connector → paste the URL)`
-        : '  MCP for claude.ai       (no public tunnel; see the warning above)');
+        : `  MCP for claude.ai       (no public tunnel${tunnelWanted ? '; see the warning above' : ': AIMO_TUNNEL=0'})`);
       console.log(`${line}\n`);
       return;
     } catch {

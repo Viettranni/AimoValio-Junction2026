@@ -293,7 +293,7 @@ export interface ChoicesEvent { id: string; question: string; options: Array<{ i
 export interface SlotsEvent { intake: Intake; missing: IntakeSlot[] }
 export interface DraftEvent { draft: Draft; diff?: DraftDiff }
 export interface ReceiptEvent { receipt: Receipt }
-export interface CheckInEvent { orderId: string; eventName: string; lines: Array<{ lineId: string; productName: string; quantity: number; unit: MeasureUnit }> }
+export interface CheckInEvent { orderId: string; eventName: string; lines: Array<{ lineId: string; productName: string; quantity: number; unit: MeasureUnit; leftoverQty?: number }> } // quantity = ordered; leftoverQty = parsed (+ left, − short) when known
 
 export type AimoDataPart =
   | { type: 'data-progress'; data: ProgressEvent }

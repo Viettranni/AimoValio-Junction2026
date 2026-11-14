@@ -6,6 +6,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Readable } from 'node:stream';
 import type { MCPServer } from '@mastra/mcp';
 import { AuthError, requestKey, resolveAgent } from '@/gateway/agents';
+import { publicBase } from '@/gateway/oauth';
 
 const NO_BODY = new Set([101, 204, 205, 304]);
 /** Largest JSON-RPC body accepted (an offer of 100 lines is a few kB). */
@@ -122,7 +123,11 @@ export async function handleMcpRequest(request: Request, server: MCPServer): Pro
     agent = resolveAgent(token);
   } catch (e) {
     if (!(e instanceof AuthError)) throw e;
-    return rpcError(401, -32001, `${e.message}: send Authorization: Bearer <agent key> or ?key=<agent key>`, { 'WWW-Authenticate': 'Bearer realm="aimo-gateway"' });
+    // RFC 9728: point OAuth clients (claude.ai's Connect) at the sign-in for this exact URL.
+    const metadata = `${publicBase(request)}/.well-known/oauth-protected-resource${new URL(request.url).pathname}`;
+    return rpcError(401, -32001, `${e.message}: send Authorization: Bearer <agent key>, or use the URL /api/mcp/<agent key>`, {
+      'WWW-Authenticate': `Bearer realm="aimo-gateway", resource_metadata="${metadata}"`,
+    });
   }
 
   const url = new URL(request.url);

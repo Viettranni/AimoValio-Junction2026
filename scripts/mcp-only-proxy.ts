@@ -1,4 +1,4 @@
-// Forwards ONLY the MCP endpoint (/api/mcp and /api/mcp/<key>) to the app, so a public tunnel never exposes /approvals
+// Forwards ONLY the MCP endpoint (/api/mcp and /api/mcp/<key>) and its OAuth sign-in to the app, so a public tunnel never exposes /approvals
 // or the other /api routes (which have no login in this prototype). `npm run dev` runs it in front of its tunnel and
 // logs every request (key redacted) to the terminal and data/mcp-access.log, to see what a connector actually sends.
 //   npx tsx scripts/mcp-only-proxy.ts          # listens on :3200, forwards to AIMO_BASE_URL (default http://localhost:3100)
@@ -8,10 +8,14 @@ import http from 'node:http';
 import { pathToFileURL } from 'node:url';
 
 const MCP_PATH = /^\/api\/mcp(\/[^/?]+)?\/?$/;
+/** The OAuth sign-in Claude's Connect runs (src/gateway/oauth.ts). */
+const OAUTH_PATH = /^\/(\.well-known\/(oauth-protected-resource|oauth-authorization-server)(\/.*)?|oauth\/(register|authorize|token))$/;
 export const ACCESS_LOG = 'data/mcp-access.log';
 
 /** The request line without secrets: the path key and ?key= become "***". */
-export const redact = (url: string) => url.replace(/^(\/api\/mcp\/)[^/?]+/, '$1***').replace(/([?&]key=)[^&]+/, '$1***');
+export const redact = (url: string) => url
+  .replace(/^(\/api\/mcp\/|\/\.well-known\/oauth-protected-resource\/api\/mcp\/)[^/?]+/, '$1***')
+  .replace(/([?&](key|code|resource|code_verifier)=)[^&]+/g, '$1***');
 
 /** Starts the proxy on `port`, forwarding the MCP endpoint (with its path and query) to `target`. */
 export function startMcpProxy(port: number, target: URL, log: (line: string) => void = () => {}): http.Server {
@@ -22,12 +26,13 @@ export function startMcpProxy(port: number, target: URL, log: (line: string) => 
       `${new Date().toISOString()} ${req.method} ${redact(req.url ?? '')} → ${status} ${Date.now() - started}ms`
       + ` origin=${req.headers.origin ?? '-'} ua=${(req.headers['user-agent'] ?? '-').slice(0, 60)}`,
     );
-    if (!MCP_PATH.test(path)) {
+    if (!MCP_PATH.test(path) && !OAUTH_PATH.test(path)) {
       res.writeHead(404, { 'content-type': 'text/plain' }).end('Only /api/mcp is served here\n');
       note(404);
       return;
     }
-    const headers = { ...req.headers, host: target.host };
+    // The app builds its public links (OAuth metadata) from the host the client used.
+    const headers = { ...req.headers, host: target.host, 'x-forwarded-host': req.headers.host ?? '', 'x-forwarded-proto': 'https' };
     const upstream = http.request({ hostname: target.hostname, port: target.port, path: req.url, method: req.method, headers }, (up) => {
       res.writeHead(up.statusCode ?? 502, up.headers);
       up.pipe(res);

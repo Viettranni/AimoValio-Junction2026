@@ -149,7 +149,7 @@ export function ShelfCard() {
   const { product, index, reduce } = useRoll(products);
 
   return (
-    <div className="w-[260px] max-w-[92%] overflow-hidden rounded-[14px_14px_14px_4px] border border-line bg-white" role="group" aria-label={t('shelf.title', lang)}>
+    <div className="relative w-[260px] max-w-[92%] overflow-hidden rounded-[14px_14px_14px_4px] border border-line bg-white" role="group" aria-label={t('shelf.title', lang)}>
       <div className="flex h-[62px] items-center gap-3 px-3">
         <span className="flex h-8 w-8 flex-none items-center justify-center overflow-hidden rounded-full bg-sky text-blue">
           {product && (reduce ? (

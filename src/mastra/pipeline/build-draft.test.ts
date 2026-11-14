@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import type { AimoDataPart, Draft, Receipt } from '@/contracts';
+import type { AimoDataPart, Draft, MenuComponent, Receipt } from '@/contracts';
 
 vi.hoisted(() => { process.env.AIMO_DB_PATH = ':memory:'; });
 vi.mock('@/catalog/load', async () => {
@@ -20,13 +20,13 @@ import { getDraftByConversation, listAudit, recordLeftovers, saveDraft, storeOrd
 import type { MenuComponentPlan } from '../agents/menu';
 import type { EditIntent } from '../agents/order';
 import type { PickProductsInput } from '../agents/product';
-import { DATE } from '../fixtures.test-util';
+import { DATE, products } from '../fixtures.test-util';
 import type { Specialists } from '../specialists';
 import { getAvailability, getPrices } from '@/valio/client';
 import { runEditDraft } from '../tools/edit-draft';
 import { runPlanOrder } from '../tools/plan-order';
 import { runUnderstandRequest } from '../tools/understand-request';
-import { buildDraft } from './build-draft';
+import { applyDietRules, buildDraft, byGranularity } from './build-draft';
 
 const ctx = { conversationId: 'conv-plan', customerId: 'helsinki-juhlapalvelu' };
 
@@ -36,7 +36,7 @@ const component = (o: Partial<MenuComponentPlan> & Pick<MenuComponentPlan, 'id' 
 });
 
 const menu: MenuComponentPlan[] = [
-  component({ id: 'c-chicken', label: 'Kana', category: 'poultry_main', searchTerms: { fi: 'broileri rintafilee', en: 'chicken breast fillet' } }),
+  component({ id: 'c-chicken', label: 'Kana', category: 'poultry_main', searchTerms: { fi: 'broileri rintafilee', en: 'chicken' } }),
   component({ id: 'c-rice', label: 'Riisi', category: 'grain_side', searchTerms: { fi: 'riisi', en: 'rice' } }),
   component({ id: 'c-bread', label: 'Leipä', category: 'bread', guests: 90, origin: 'addon', searchTerms: { fi: 'leipä', en: 'bread' } }),
   component({
@@ -69,11 +69,15 @@ function seedHistory() {
   const receipt: Receipt = {
     orderId: 'VA-2026-00001', simulated: true, customerId: ctx.customerId, eventName: 'Häät', eventType: 'wedding',
     deliveryDate: '2026-06-01', guests: 100,
-    lines: [{ lineId: 'l-1', productId: 'chk', productName: 'Chicken', packs: 5, quantity: 22, unit: 'kg', unitPrice: 37.4, unitPriceWithTax: 42.46, lineTotal: 187, lineTotalWithTax: 212.3 }],
+    lines: [
+      { lineId: 'l-1', productId: 'chk', productName: 'Chicken', packs: 5, quantity: 22, unit: 'kg', unitPrice: 37.4, unitPriceWithTax: 42.46, lineTotal: 187, lineTotalWithTax: 212.3 },
+      { lineId: 'l-2', productId: 'bas', productName: 'Basmati', packs: 2, quantity: 10, unit: 'kg', unitPrice: 13.4, unitPriceWithTax: 15.21, lineTotal: 26.8, lineTotalWithTax: 30.42 },
+    ],
     total: 187, totalWithTax: 212.3, vat: 25.3, co2Kg: null, minutesSaved: 20, submittedAt: '2026-05-20T09:00:00Z',
   };
-  storeOrder(receipt, new Map([['l-1', 'poultry_main']]));
-  recordLeftovers(receipt.orderId, [{ lineId: 'l-1', leftoverQty: 6.6 }]); // 30% left over
+  storeOrder(receipt, new Map([['l-1', 'poultry_main'], ['l-2', 'grain_side']]));
+  // Chicken: 30% left over. Basmati: 1% left over, too little to change any pack count.
+  recordLeftovers(receipt.orderId, [{ lineId: 'l-1', leftoverQty: 6.6 }, { lineId: 'l-2', leftoverQty: 0.1 }]);
 }
 
 const startDraft: Draft = {
@@ -139,7 +143,15 @@ describe('buildDraft', () => {
     expect(h.adjustment.basis).toBe('same_product');
     expect(h.suggestedPacks).toBe(5);
     expect(h.historyPacks).toBe(4); // 20 kg × (1 − 0.3) = 14 kg → 4 pieces
-    expect(line('c-rice').history).toBeUndefined();
+    expect(line('c-rice').history).toBeUndefined(); // basmati history exists but keeps 2 packs → no note
+  });
+
+  it('makes shared dishes without a diet variant meet every diet', () => {
+    const chicken = draft.components.find((c) => c.id === 'c-chicken')!;
+    expect(chicken.requiredDiet).toEqual(['gluten_free']);
+    expect(line('c-chicken').allergen.verdict).toBe('pass');
+    expect(draft.components.find((c) => c.id === 'c-bread')!.requiredDiet).toBeUndefined(); // has a gluten-free variant
+    expect(listAudit({ conversationId: ctx.conversationId }).some((a) => a.action === 'applyDietRules')).toBe(true);
   });
 
   it('computes totals, cut-off and saves a ready draft', () => {
@@ -249,6 +261,20 @@ describe('edits and re-plans on a ready draft', () => {
     await expect(runPlanOrder({ ctx: ctx2, addons: [], deliveryDate: '2020-01-01' }, deps)).rejects.toThrow(/too soon/);
   });
 
+  it('substitutes a product that only arrives after the delivery date, and shows the cut-off for the delivery date', async () => {
+    vi.mocked(getAvailability).mockImplementationOnce(async (ids) => {
+      const f = await import('../fixtures.test-util');
+      return new Map([...f.fakeAvailability(ids)].map(([id, a]) => [id, id === 'chk' ? { ...a, availableDate: '2026-12-20' } : a]));
+    });
+    await runPlanOrder({ ctx: ctx2, addons: [] }, deps);
+    const draft = getDraftByConversation(ctx2.conversationId)!;
+    const chicken = draft.lines.find((l) => l.componentId === 'c-chicken')!;
+    expect(chicken.productId).toBe('chk2');
+    expect(chicken.substituteFor?.reason).toBe('Earliest delivery 2026-12-20');
+    // basmati: earliest 2026-12-06 with cut-off 2026-12-03 10:00 → 3 days' lead → 2026-12-09 10:00 for 12 Dec
+    expect(draft.cutoff).toBe('2026-12-09T10:00:00Z');
+  });
+
   it('flags a passed order cut-off', async () => {
     vi.mocked(getAvailability).mockImplementationOnce(async (ids) => {
       const f = await import('../fixtures.test-util');
@@ -257,5 +283,38 @@ describe('edits and re-plans on a ready draft', () => {
     const summary = await runPlanOrder({ ctx: ctx2, addons: [] }, deps);
     expect(summary.exceptions.join(' ')).toMatch(/cut-off has passed for 2026-12-12/);
     expect(listAudit({ conversationId: ctx2.conversationId }).some((a) => a.action === 'cutoffPassed')).toBe(true);
+  });
+});
+
+describe('applyDietRules', () => {
+  const comp = (o: Partial<MenuComponent> & Pick<MenuComponent, 'id'>): MenuComponent => ({
+    label: o.id, searchTerms: { fi: '', en: '' }, category: 'sauce', origin: 'requested', guests: 100, requiredAmount: 1, requiredUnit: 'kg', ...o,
+  });
+
+  it('constrains shared items by every diet need no variant covers', () => {
+    const out = applyDietRules([
+      comp({ id: 'c-chicken', category: 'poultry_main' }),
+      comp({ id: 'c-chicken-gf', dietVariantOf: 'c-chicken', requiredDiet: ['gluten_free'], guests: 12 }),
+      comp({ id: 'c-seasoning', category: 'seasoning', origin: 'needed_for_cooking' }),
+    ], [{ diet: 'gluten_free', guests: 12 }, { diet: 'nuts', guests: 3 }]);
+    expect(out[0]).toMatchObject({ excludeAllergens: ['nuts'] });
+    expect(out[0].requiredDiet).toBeUndefined();
+    expect(out[1]).toMatchObject({ requiredDiet: ['gluten_free'] });
+    expect(out[1].excludeAllergens).toBeUndefined();
+    expect(out[2]).toMatchObject({ requiredDiet: ['gluten_free'], excludeAllergens: ['nuts'] });
+  });
+
+  it('leaves components alone without diets', () => {
+    const cs = [comp({ id: 'c-a' })];
+    expect(applyDietRules(cs, 'none')).toBe(cs);
+    expect(applyDietRules(cs, undefined)).toBe(cs);
+  });
+});
+
+describe('byGranularity', () => {
+  it('puts packs between 1/20 and 1/5 of the need first, keeping search order otherwise', () => {
+    const sized = (id: string, packSize: number) => ({ ...products[0], id, packSize });
+    const order = byGranularity([sized('huge', 15), sized('tiny', 0.5), sized('good', 4), sized('good2', 10)], 60).map((p) => p.id);
+    expect(order).toEqual(['good', 'good2', 'huge', 'tiny']);
   });
 });

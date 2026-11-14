@@ -1,9 +1,10 @@
 import type {
-  AllergenCheck, AvailabilityInfo, CatalogProduct, Draft, DraftLine, EventType, Intake, Lang, LineTag,
+  Allergen, AllergenCheck, AvailabilityInfo, CatalogProduct, DietFlag, Draft, DraftLine, EventType, Intake, Lang, LineTag,
   MenuComponent, PriceInfo, ProgressEvent, ProgressStepId, SearchHit,
 } from '@/contracts';
 import { checkAllergens, getProduct, searchProducts } from '@/catalog';
 import { listLeftoverRecords, now, saveDraft } from '@/db/repo';
+import { deliverableOn, effectiveCutoff } from '@/domain/cutoff';
 import { computeHistoryAdjustment } from '@/domain/history';
 import { requiredAmount } from '@/domain/portions';
 import { packsFor } from '@/domain/quantities';
@@ -72,7 +73,45 @@ export function findCandidates(c: MenuComponent): CatalogProduct[] {
   }
   const hits = [...best.values()].sort((a, b) => b.score - a.score).map((h) => h.product);
   const sameUnit = hits.filter((p) => p.packUnit === c.requiredUnit);
-  return (sameUnit.length ? sameUnit : hits).slice(0, CANDIDATES);
+  return byGranularity((sameUnit.length ? sameUnit : hits).slice(0, CANDIDATES), c.requiredAmount);
+}
+
+/**
+ * Stable reorder: packs between 1/20 and 1/5 of the need come first (finer adjustment, fewer leftovers),
+ * then larger packs, then tiny ones. Search order is kept within each group.
+ */
+export function byGranularity(products: CatalogProduct[], required: number): CatalogProduct[] {
+  const group = (p: CatalogProduct) => {
+    if (p.packSize <= 0 || required <= 0) return 1;
+    if (p.packSize >= required / 20 && p.packSize <= required / 5) return 0;
+    return p.packSize > required / 5 ? 1 : 2;
+  };
+  return products.map((p, i) => ({ p, i, g: group(p) })).sort((a, b) => a.g - b.g || a.i - b.i).map((x) => x.p);
+}
+
+const DIET_FLAGS: ReadonlySet<string> = new Set<DietFlag>(['lactose_free', 'gluten_free', 'vegan', 'vegetarian']);
+
+/**
+ * Every guest eats the shared components, so each one must meet every diet need that no
+ * diet variant of it covers (cooking items, sauces, and dishes the menu agent made no variant for).
+ */
+export function applyDietRules(components: MenuComponent[], diets: Intake['diets']): MenuComponent[] {
+  if (!Array.isArray(diets) || diets.length === 0) return components;
+  return components.map((c) => {
+    if (c.dietVariantOf) return c;
+    const variants = components.filter((v) => v.dietVariantOf === c.id);
+    const covered = (need: DietFlag | Allergen) =>
+      variants.some((v) => v.requiredDiet?.includes(need as DietFlag) || v.excludeAllergens?.includes(need as Allergen));
+    const open = unique(diets.map((d) => d.diet)).filter((d) => !covered(d));
+    if (!open.length) return c;
+    const requiredDiet = unique([...(c.requiredDiet ?? []), ...open.filter((d): d is DietFlag => DIET_FLAGS.has(d))]);
+    const excludeAllergens = unique([...(c.excludeAllergens ?? []), ...open.filter((d): d is Allergen => !DIET_FLAGS.has(d))]);
+    return {
+      ...c,
+      ...(requiredDiet.length ? { requiredDiet } : {}),
+      ...(excludeAllergens.length ? { excludeAllergens } : {}),
+    };
+  });
 }
 
 // ── Sourcing: search → pick → allergens → prices/stock ──
@@ -138,12 +177,13 @@ function substitute(
   sel: Selection, availability: Map<string, AvailabilityInfo>, date: string, lang: Lang,
 ): { selection: Selection; problem?: string } {
   const a = availability.get(sel.product.id);
-  if (!a || (a.deliverable && !a.salesBlock)) return { selection: sel };
-  const reason = a.salesBlock ? 'Sales block on the product' : `Not deliverable on ${date}`;
+  if (!a || deliverableOn(a, date)) return { selection: sel };
+  const late = a.deliverable && !a.salesBlock;
+  const reason = a.salesBlock ? 'Sales block on the product' : late ? `Earliest delivery ${a.availableDate}` : `Not deliverable on ${date}`;
   for (const altId of sel.alternatives) {
     const alt = availability.get(altId);
     const product = getProduct(altId);
-    if (!product || !alt?.deliverable || alt.salesBlock) continue;
+    if (!product || !alt || !deliverableOn(alt, date)) continue;
     const check = checkAllergens([altId], constraintsOf(sel.component))[0];
     if (check.verdict === 'fail' || (sel.allergen.verdict === 'pass' && check.verdict !== 'pass')) continue;
     return {
@@ -153,8 +193,8 @@ function substitute(
       },
     };
   }
-  const earliest = a.availableDate && a.availableDate > date ? `; earliest ${a.availableDate}` : '';
-  return { selection: sel, problem: `${sel.component.label}: ${sel.product.nameEn} ${reason.toLowerCase()}${earliest}, and no deliverable alternative` };
+  const earliest = !late && a.availableDate && a.availableDate > date ? `; earliest ${a.availableDate}` : '';
+  return { selection: sel, problem: `${sel.component.label}: ${sel.product.nameEn} ${reason.toLowerCase()}${earliest}, and no alternative deliverable by ${date}` };
 }
 
 export async function sourceComponents(
@@ -238,7 +278,9 @@ export async function sourceComponents(
 
 const ORIGIN_TAG: Partial<Record<MenuComponent['origin'], LineTag>> = { needed_for_cooking: 'needed_for_cooking', addon: 'addon' };
 
-export function toLine(sel: Selection, id: string, lang: Lang, sourced: Pick<Sourced, 'prices' | 'availability'>): DraftLine {
+export function toLine(
+  sel: Selection, id: string, lang: Lang, sourced: Pick<Sourced, 'prices' | 'availability'>, requestedDate: string,
+): DraftLine {
   const { component: c, product: p } = sel;
   const plan = packsFor(c.requiredAmount, p);
   const tags: LineTag[] = [];
@@ -256,7 +298,7 @@ export function toLine(sel: Selection, id: string, lang: Lang, sourced: Pick<Sou
     ...(sel.substituteFor ? { substituteFor: sel.substituteFor } : {}),
     alternatives: sel.alternatives,
   };
-  return repriceLine(line, p, sourced.prices.get(p.id), sourced.availability.get(p.id));
+  return repriceLine(line, p, sourced.prices.get(p.id), sourced.availability.get(p.id), requestedDate);
 }
 
 // ── History ──
@@ -273,6 +315,8 @@ export function attachHistory(lines: DraftLine[], components: MenuComponent[], e
     });
     if (!adjustment) return line;
     const historyPacks = packsFor(adjustment.adjustedQty, product).packs;
+    // A note that would not change the order is noise.
+    if (historyPacks === line.packs) return line;
     return { ...line, history: { adjustment, historyPacks, suggestedPacks: line.packs, choice: 'pending' as const } };
   });
 }
@@ -289,8 +333,11 @@ export interface PlanSummary {
   exceptions: string[];
 }
 
-export function earliestCutoff(lines: DraftLine[]): string | null {
-  return lines.map((l) => l.availability?.closingTime).filter((t): t is string => !!t).sort()[0] ?? null;
+/** The earliest order cut-off for delivery on `requestedDate` among the lines (see effectiveCutoff). */
+export function earliestCutoff(lines: DraftLine[], requestedDate: string): string | null {
+  const cutoffs = lines.map((l) => (l.availability ? effectiveCutoff(l.availability, requestedDate) : null))
+    .filter((t): t is string => !!t);
+  return cutoffs.sort((a, b) => Date.parse(a) - Date.parse(b))[0] ?? null;
 }
 
 /** Runs menu → product → allergen → pricing → history → order for the conversation's intake. */
@@ -304,14 +351,21 @@ export async function buildDraft(
   const stage: Stage = (step, status, extra) => progress(emit, lang, step, status, extra);
 
   await stage('understand', 'start');
-  const components = toComponents(await specialists.planMenu({ intake, addons }), eventType);
+  const planned = toComponents(await specialists.planMenu({ intake, addons }), eventType);
+  const components = applyDietRules(planned, intake.diets);
   audit(ctx.conversationId, 'menu', 'planMenu', `Planned ${components.length} components: ${components.map((c) => c.label).join(', ')}`, components);
+  const tightened = components.filter((c, i) => c !== planned[i]);
+  if (tightened.length) {
+    audit(ctx.conversationId, 'menu', 'applyDietRules',
+      `Shared items must suit every diet: constrained ${tightened.map((c) => c.label).join(', ')}`,
+      tightened.map((c) => ({ id: c.id, requiredDiet: c.requiredDiet, excludeAllergens: c.excludeAllergens })));
+  }
   await stage('understand', 'done', { count: components.length });
   await stage('ingredients', 'start');
   await stage('ingredients', 'done', { count: components.length, ticker: components.map((c) => c.label) });
 
   const sourced = await sourceComponents(components, intake, { specialists, ctx, stage });
-  let lines = sourced.selections.map((s, i) => toLine(s, `l-${i + 1}`, lang, sourced));
+  let lines = sourced.selections.map((s, i) => toLine(s, `l-${i + 1}`, lang, sourced, intake.deliveryDate ?? ''));
 
   await stage('history', 'start');
   lines = attachHistory(lines, components, eventType, ctx.customerId);
@@ -323,7 +377,7 @@ export async function buildDraft(
   await stage('draft', 'start');
   const totals = computeTotals(lines, intake.budget);
   const today = now();
-  const cutoff = earliestCutoff(lines);
+  const cutoff = earliestCutoff(lines, intake.deliveryDate ?? '');
   const exceptions = [...sourced.exceptions];
   if (cutoff && Date.parse(cutoff) < today.getTime()) {
     const passed = `The order cut-off has passed for ${intake.deliveryDate} (${cutoff}); offer the next possible date`;

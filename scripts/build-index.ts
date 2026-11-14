@@ -45,6 +45,12 @@ function readCsv(file: string): Map<string, number> {
   return map;
 }
 
+/** Valio gives the lot size of KG products in kg; we order in packs (pieces of packSize kg). */
+function lotInPacks(salesUnit: string, allowedLotSize: number, packSize: number): number {
+  if (salesUnit.toUpperCase() === 'KG' && packSize > 0) return Math.max(1, Math.ceil(allowedLotSize / packSize));
+  return allowedLotSize < 1 ? 1 : allowedLotSize;
+}
+
 const pick = (l: Localized | undefined, lang: string) => l?.find((x) => x.language === lang)?.value.trim();
 
 const reliability = readCsv('reliability.csv');
@@ -70,6 +76,7 @@ for (const p of raw) {
     (s?.names ?? []).map((n) => n.value),
   );
 
+  const units = deriveUnits(p);
   catalog.push({
     id: String(p.id),
     nameEn: en,
@@ -77,8 +84,8 @@ for (const p of raw) {
     ...(pick(s?.names, 'sv') ? { nameSv: pick(s?.names, 'sv') } : {}),
     category: String(p.category),
     salesUnit: p.salesUnit,
-    ...deriveUnits(p),
-    allowedLotSize: p.allowedLotSize,
+    ...units,
+    allowedLotSize: lotInPacks(p.salesUnit, p.allowedLotSize, units.packSize),
     temperature: temperature(p.temperatureCondition),
     vendor: p.vendorName ?? '',
     allergens,

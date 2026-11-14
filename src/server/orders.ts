@@ -2,6 +2,7 @@ import type { Draft, DraftLine, Receipt } from '@/contracts';
 import { getProduct } from '@/catalog';
 import { getDb, type Db } from '@/db/client';
 import { appendAudit, getDraftByConversation, getReceipt, insertOrder, listAudit, nextOrderId, now, saveDraft } from '@/db/repo';
+import { effectiveCutoff } from '@/domain/cutoff';
 import { getAvailability } from '@/valio/client';
 
 export type Problem = { lineId: string; reason: string };
@@ -14,12 +15,15 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 export const minutesSaved = (lineCount: number) => Math.min(60, 5 + 3 * lineCount);
 
 /** Rejection reasons for one line against fresh availability; empty when it can be ordered. */
-function lineProblems(line: DraftLine, avail: Awaited<ReturnType<typeof getAvailability>>, nowMs: number): string[] {
+function lineProblems(
+  line: DraftLine, avail: Awaited<ReturnType<typeof getAvailability>>, nowMs: number, deliveryDate: string,
+): string[] {
   const reasons: string[] = [];
   const a = avail.get(line.productId);
   if (!a || !a.deliverable) reasons.push('no longer deliverable on the delivery date');
   else {
-    if (a.closingTime && Date.parse(a.closingTime) < nowMs) reasons.push('order cut-off has passed');
+    const cutoff = effectiveCutoff(a, deliveryDate);
+    if (cutoff && Date.parse(cutoff) < nowMs) reasons.push('order cut-off has passed');
     if (a.availableAmount !== null) {
       const product = getProduct(line.productId);
       // KG-sold products report availability in kg, other products in packs.
@@ -75,7 +79,7 @@ export async function approveAndSubmit(conversationId: string, db: Db = getDb())
   const nowDate = now(db);
   const avail = await getAvailability(draft.lines.map((l) => l.productId), draft.intake.deliveryDate);
   const problems = draft.lines.flatMap((l) =>
-    lineProblems(l, avail, nowDate.getTime()).map((reason) => ({ lineId: l.id, reason })));
+    lineProblems(l, avail, nowDate.getTime(), draft.intake.deliveryDate as string).map((reason) => ({ lineId: l.id, reason })));
   if (problems.length) {
     appendAudit({
       conversationId, actor: 'order', action: 'approveRejected',

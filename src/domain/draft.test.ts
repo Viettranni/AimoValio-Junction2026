@@ -94,3 +94,15 @@ describe('applyDraftChange', () => {
     expect(r.draft.lines[0]).toMatchObject({ packs: 10, quantity: 60 });
   });
 });
+
+describe('applyDraftChange cut-off', () => {
+  it('uses the effective cut-off for the delivery date, not the raw earliest closing time', () => {
+    const availability = {
+      productId: 'p-1', deliverable: true, salesBlock: false, logisticModel: 'Stock' as const, availableAmount: 100,
+      availableDate: '2026-11-16', closingTime: '2026-11-10T14:00:00+0200', fetchedAt: '',
+    };
+    const d = draft({ intake: { guests: 300, eventType: 'party', budget: 'none', deliveryDate: '2026-12-06' }, lines: [line({ packs: 9, quantity: 54, availability })] });
+    const { draft: next } = applyDraftChange(d, { kind: 'setPacks', lineId: 'l-1', packs: 10 }, ctx);
+    expect(next.cutoff).toBe('2026-11-30T14:00:00+0200');
+  });
+});

@@ -1,4 +1,5 @@
-import type { AvailabilityInfo, CatalogProduct, DraftLine, LineTag, PriceInfo } from '@/contracts';
+import type { AvailabilityInfo, CatalogProduct, DraftLine, ISODate, LineTag, PriceInfo } from '@/contracts';
+import { deliverableOn } from '@/domain/cutoff';
 
 type PricedProduct = Pick<CatalogProduct, 'salesUnit' | 'packSize'>;
 
@@ -25,9 +26,10 @@ export function availablePacks(product: PricedProduct, availability: Availabilit
 
 export function stockTags(
   product: PricedProduct & Pick<CatalogProduct, 'reliability'>, availability: AvailabilityInfo | undefined, packs: number,
+  requestedDate: ISODate,
 ): LineTag[] {
   if (!availability) return [];
-  if (!availability.deliverable) return ['unavailable'];
+  if (!deliverableOn(availability, requestedDate)) return ['unavailable'];
   const tags: LineTag[] = [availability.logisticModel === 'Terminal' ? 'supplier_delivered' : 'in_stock'];
   const stock = availablePacks(product, availability);
   const unreliable = product.reliability !== null && product.reliability < RELIABILITY_WARNING;
@@ -38,7 +40,8 @@ export function stockTags(
 /** Applies Valio price and stock data to a line: per-pack prices and stock tags. */
 export function repriceLine(
   line: DraftLine, product: CatalogProduct, price: PriceInfo | undefined, availability: AvailabilityInfo | undefined,
+  requestedDate: ISODate,
 ): DraftLine {
-  const tags = [...line.tags.filter((t) => !STOCK_TAGS.has(t)), ...stockTags(product, availability, line.packs)];
+  const tags = [...line.tags.filter((t) => !STOCK_TAGS.has(t)), ...stockTags(product, availability, line.packs, requestedDate)];
   return { ...line, ...packPrice(product, price), tags, price, availability };
 }

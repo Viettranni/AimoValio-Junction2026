@@ -4,6 +4,7 @@ import { products } from '../fixtures.test-util';
 import { availablePacks, packPrice, stockTags } from './reprice';
 
 const chickenKg = products.find((p) => p.id === 'chk')!; // salesUnit KG, 4.4 kg piece
+const D = '2026-12-06';
 const riceBox = products.find((p) => p.id === 'jas')!;  // salesUnit KI, 5 kg box
 
 const price = (o: Partial<PriceInfo> = {}): PriceInfo => ({ productId: 'x', ok: true, price: 8.5, priceWithTax: 9.65, currency: 'EUR', fetchedAt: '', ...o });
@@ -35,11 +36,13 @@ describe('availablePacks', () => {
 
 describe('stockTags', () => {
   it('tags stock, Terminal, shortfalls and unreliable suppliers', () => {
-    expect(stockTags(riceBox, avail(), 3)).toEqual(['in_stock']);
-    expect(stockTags(riceBox, avail({ logisticModel: 'Terminal', availableAmount: null }), 3)).toEqual(['supplier_delivered']);
-    expect(stockTags(chickenKg, avail({ availableAmount: 10 }), 5)).toEqual(['in_stock', 'may_deliver_short']);
-    expect(stockTags({ ...riceBox, reliability: 0.8 }, avail(), 1)).toEqual(['in_stock', 'may_deliver_short']);
-    expect(stockTags(riceBox, avail({ deliverable: false }), 1)).toEqual(['unavailable']);
-    expect(stockTags(riceBox, undefined, 1)).toEqual([]);
+    expect(stockTags(riceBox, avail(), 3, D)).toEqual(['in_stock']);
+    expect(stockTags(riceBox, avail({ logisticModel: 'Terminal', availableAmount: null }), 3, D)).toEqual(['supplier_delivered']);
+    expect(stockTags(chickenKg, avail({ availableAmount: 10 }), 5, D)).toEqual(['in_stock', 'may_deliver_short']);
+    expect(stockTags({ ...riceBox, reliability: 0.8 }, avail(), 1, D)).toEqual(['in_stock', 'may_deliver_short']);
+    expect(stockTags(riceBox, avail({ deliverable: false }), 1, D)).toEqual(['unavailable']);
+    expect(stockTags(riceBox, undefined, 1, D)).toEqual([]);
+    expect(stockTags(riceBox, avail({ availableDate: '2026-12-10' }), 1, D)).toEqual(['unavailable']); // arrives too late
+    expect(stockTags(riceBox, avail({ availableDate: '2026-11-16' }), 1, D)).toEqual(['in_stock']);
   });
 });

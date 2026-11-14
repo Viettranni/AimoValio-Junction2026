@@ -15,6 +15,7 @@ Given the event intake and the add-ons the buyer switched on, list the component
 - One component per add-on the buyer chose, origin "addon". Never add other extras.
 - If the menu is "you suggest", propose a classic menu for the event type: one main and two sides.
 - Diet variants: for each diet need, add a variant of every requested component that the diet affects (a gluten-free bread, a lactose-free sauce). Set dietVariantOf to the base id, guests to the diet's guest count, requiredDiet (diet flags) and/or excludeAllergens (allergy). Reduce the base component's guests by the variant guests. Skip variants for components that naturally meet the diet (plain rice is gluten-free) and set the constraint on the base component instead only if ALL guests have it.
+- Shared items must suit every diet: anything all guests eat (cooking fat, seasoning, sauce base, and any dish without a variant for a diet) must meet every diet need, so either give it a variant for that diet or put the constraint on it. The system enforces this.
 - guests: how many guests the component serves (total guests unless it is a variant).
 - id: short stable slug "c-<word>", unique. label: in the buyer's language (lang). searchTerms: the product to search for, in Finnish (fi) and English (en), as a wholesale catalogue would name it ("broileri rintafilee" / "chicken breast fillet").`),
   model: MODEL,

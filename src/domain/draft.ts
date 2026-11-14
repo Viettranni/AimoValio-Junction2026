@@ -1,6 +1,7 @@
 import type {
   CatalogProduct, Draft, DraftChange, DraftDiff, DraftLine, MenuComponent,
 } from '@/contracts';
+import { effectiveCutoff } from './cutoff';
 import { requiredAmount } from './portions';
 import { packsFor } from './quantities';
 import { computeTotals } from './totals';
@@ -70,7 +71,7 @@ export function applyDraftChange(draft: Draft, change: DraftChange, ctx: Ctx): {
 
   const touched = new Set([...diff.changedLineIds, ...diff.addedLineIds]);
   lines = lines.map((l) => (touched.has(l.id) ? withTag(l) : withoutTag(l)));
-  const closings = lines.map((l) => l.availability?.closingTime).filter((t): t is string => !!t).sort();
+  const closings = lines.map((l) => (l.availability ? effectiveCutoff(l.availability, intake.deliveryDate ?? '') : null)).filter((t): t is string => !!t).sort((a, b) => Date.parse(a) - Date.parse(b));
 
   return {
     draft: { ...draft, intake, components, lines, totals: computeTotals(lines, intake.budget), cutoff: closings[0] ?? null },

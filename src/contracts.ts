@@ -46,7 +46,7 @@ export interface CatalogProduct {
   packSize: number;
   packUnit: MeasureUnit;
   packDescription: string;        // human, English: "4 × 1.5 kg box"
-  allowedLotSize: number;         // minimum order step in sales units
+  allowedLotSize: number;         // minimum order step in packs (sales units; KG products normalised to packs)
   temperature: Temperature;
   vendor: string;
   /** Contains these allergens; 'unknown' when no ingredient data exists. Never treat 'unknown' as safe. */

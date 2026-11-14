@@ -32,6 +32,7 @@ async function plan(
   intent: EditIntent, draft: Draft, ctx: AimoContext, specialists: Specialists, instruction: string,
 ): Promise<Planned> {
   const lang = draft.intake.lang ?? 'en';
+  const date = draft.intake.deliveryDate ?? '';
   const line = draft.lines.find((l) => l.id === intent.lineId);
   switch (intent.kind) {
     case 'setPacks':
@@ -71,7 +72,7 @@ async function plan(
             const tags: LineTag[] = l.tags.filter((t) => t !== 'allergens_unknown');
             if (sel.allergen.verdict === 'unknown') tags.push('allergens_unknown');
             const named = { ...l, productName: productName(sel.product, lang), alternatives: sel.alternatives, tags, ...(substituteFor ? { substituteFor } : {}) };
-            return repriceLine(named, sel.product, price, availability);
+            return repriceLine(named, sel.product, price, availability, date);
           }),
         }),
         problems: sourced.exceptions,
@@ -89,7 +90,7 @@ async function plan(
       const sourced = await sourceComponents([component], draft.intake, { specialists, ctx, request: instruction, priceCandidates: true });
       const sel = sourced.selections[0];
       if (!sel) return { note: `No product found for "${searchTerms.en}"` };
-      const [newLine] = attachHistory([toLine(sel, nextLineId(draft), lang, sourced)], [component], eventType, ctx.customerId);
+      const [newLine] = attachHistory([toLine(sel, nextLineId(draft), lang, sourced, date)], [component], eventType, ctx.customerId);
       return {
         change: { kind: 'addLine', line: newLine },
         draft: { ...draft, components: [...draft.components, component] },
@@ -143,15 +144,16 @@ export async function runEditDraft({ ctx, instruction }: { ctx: AimoContext; ins
   // Each applyDraftChange only flags its own lines; flag every line touched by this edit,
   // and re-derive its stock tags from the stored Valio data since pack counts changed.
   const touched = new Set([...changed, ...added]);
+  const date = draft.intake.deliveryDate ?? '';
   const lines: DraftLine[] = draft.lines.map((l) => {
     const tags = l.tags.filter((t) => t !== 'updated');
     if (!touched.has(l.id)) return { ...l, tags };
     const product = getProduct(l.productId);
-    const repriced = product ? repriceLine(l, product, l.price, l.availability) : l;
+    const repriced = product ? repriceLine(l, product, l.price, l.availability, date) : l;
     return { ...repriced, tags: [...repriced.tags.filter((t) => t !== 'updated'), 'updated'] };
   });
   draft = {
-    ...draft, lines, totals: computeTotals(lines, draft.intake.budget), cutoff: earliestCutoff(lines), updatedAt: now().toISOString(),
+    ...draft, lines, totals: computeTotals(lines, draft.intake.budget), cutoff: earliestCutoff(lines, date), updatedAt: now().toISOString(),
   };
   saveDraft(draft);
   await emit({ type: 'data-draft', data: { draft, diff } });

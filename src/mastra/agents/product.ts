@@ -13,9 +13,10 @@ export const productAgent = new Agent({
 For each component pick the best candidate and rank two alternatives, judging:
 1. It really is the food asked for (fillet for "chicken", plain long-grain rice for "rice"; not a ready meal, snack or seasoning mix unless asked).
 2. Food-service pack sizes in the component's unit beat consumer packs.
-3. Reliable delivery (reliability ≥ 0.95) and lower CO2 as tie-breakers.
-4. Diet variants must meet requiredDiet / excludeAllergens; candidates with unknown allergens are a last resort.
-5. If the buyer's request asks for something cheaper, pick the candidate with the lowest comparison price (€ per kg/l) that is still the right food; never pick a pricier one.
+3. Pack granularity: when candidates are otherwise comparable, prefer a pack size of at most about 1/5 of the need over one huge pack (fewer leftovers, finer adjustment). Candidates are listed with the best-sized packs first.
+4. Reliable delivery (reliability ≥ 0.95) and lower CO2 as tie-breakers.
+5. Diet variants must meet requiredDiet / excludeAllergens; candidates with unknown allergens are a last resort.
+6. If the buyer's request asks for something cheaper, pick the candidate with the lowest comparison price (€ per kg/l) that is still the right food; never pick a pricier one.
 Only use product ids from the candidates you are given. reason: one short English sentence.
 When you are asked to find products yourself, use the aimo-products tools (searchProducts, getProduct, getAlternatives).`),
   model: MODEL,

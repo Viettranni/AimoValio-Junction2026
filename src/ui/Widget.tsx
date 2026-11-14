@@ -215,7 +215,7 @@ function WidgetView({
               ? undefined
               : () => {
                   go('chat');
-                  session.send(t('reorder.message', lang, { event: opened.receipt.eventName, n: opened.receipt.guests }));
+                  session.send(t('reorder.message', lang, { event: opened.receipt.eventName, n: opened.receipt.guests, id: opened.receipt.orderId }));
                 }
           }
         />

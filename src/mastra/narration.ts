@@ -8,7 +8,7 @@ type Chunk = { type: string; toolName?: string };
 /** Tools that do work after which the orchestrator writes its real reply; text before them is narration. */
 export const WORK_TOOLS: ReadonlySet<string> = new Set([
   'understandRequest', 'planOrder', 'editDraft', 'checkIn', 'readDraft', 'lookupProducts', 'draftDirectOrder', 'refreshPrices',
-  'logWaste', 'wasteReport',
+  'logWaste', 'wasteReport', 'findPastOrders', 'draftFromPastOrder',
 ]);
 
 const TEXT = new Set(['text-start', 'text-delta', 'text-end']);

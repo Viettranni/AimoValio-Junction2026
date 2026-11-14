@@ -43,7 +43,10 @@ function groupOf(p: CatalogProduct): PortionCategory {
   return p.packUnit === 'l' ? 'beverage' : 'veg_side';
 }
 
-export async function runDirectOrder(input: DirectOrderInput, ctx: AimoContext, emit: Emit) {
+/** Event details a reorder carries over from the past order (guests, event type and name) onto the draft. */
+export type DirectOrderIntake = Partial<Pick<import('@/contracts').Intake, 'guests' | 'eventType' | 'eventName'>>;
+
+export async function runDirectOrder(input: DirectOrderInput, ctx: AimoContext, emit: Emit, carry: DirectOrderIntake = {}) {
   const existing = getDraftByConversation(ctx.conversationId);
   if (existing?.status === 'ready') {
     if (pendingOfferFor(existing)) throw new Error('The open draft is waiting for the purchasing manager\'s approval; it cannot be replaced until they decide.');
@@ -111,6 +114,7 @@ export async function runDirectOrder(input: DirectOrderInput, ctx: AimoContext, 
     deliveryDate: date, lang, budget: 'none' as const, diets: 'none' as const, eventType: 'other' as const,
     eventName: input.title?.trim() || lines.map((l) => l.productName).slice(0, 2).join(', '),
     menu: lines.map((l) => l.productName),
+    ...carry,
   };
   const draft: Draft = {
     id: randomUUID(), conversationId: ctx.conversationId, customerId: ctx.customerId, intake, components, lines,

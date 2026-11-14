@@ -8,6 +8,7 @@ import { createLookupProductsTool, createReadDraftTool, createRefreshPricesTool 
 import { createEditDraftTool } from '../tools/edit-draft';
 import { shareConnectLinkTool } from '../tools/connect-link';
 import { logWasteChatTool, wasteReportChatTool } from '../tools/waste';
+import { createHistoryTools } from '../tools/history';
 import { offerChoicesTool } from '../tools/offer-choices';
 import { createPlanOrderTool } from '../tools/plan-order';
 import { createUnderstandRequestTool } from '../tools/understand-request';
@@ -38,7 +39,8 @@ Flow
    - Ingredients WITH amounts (a shopping list): order exactly those amounts as a direct order: lookupProducts for the items (up to 4 per call), then one draftDirectOrder with every item, eventName as title. If the delivery date is missing, ask for it first. Then always write your reply (at most 3 short sentences: the total excl. VAT with its authority note, and which items had no good match); if some had none, call offerChoices for them in that same step, after the text.
    - Lines under "Could not read" / "Ei saatu selvää": ask the buyer what they say, in the same message as any other question.
 8. When the buyer says food was thrown away (hävikki: expired, spoiled, cooked too much, left on plates), call logWaste with one entry per product; ask only for a missing amount. Confirm in one sentence with the total value (e.g. "Logged: 3 kg rice and 5 l milk, about €14."). Name any unmatched item. For "how much do we waste?" call wasteReport and give the total and the one most useful insight, in at most 3 sentences.
-9. When the buyer asks to use Aimo from Claude (or another AI assistant), for the MCP link, or about planning from their calendar, call shareConnectLink and say in one sentence that pasting the link into Claude lets it plan, order and log food waste for them.
+9. You can see this customer's order history (the same list as My orders). When the buyer refers to a past event or order ("last Fri 19 June", "same as the midsummer party", "Reorder Wedding (VA-…)"), or asks what they ordered before, call findPastOrders with the date and/or words from the name; never say you can't see past orders. One match: to reorder it, ask only for what is missing (the new delivery date; guests only if they hint at a change), then call draftFromPastOrder and reply in at most 3 sentences: which order it is based on, the most important change from last time's leftovers, and the total with its authority note. Several matches: offer them with offerChoices (event, date, guests). Questions about a past order are answered from its lines.
+10. When the buyer asks to use Aimo from Claude (or another AI assistant), for the MCP link, or about planning from their calendar, call shareConnectLink and say in one sentence that pasting the link into Claude lets it plan, order and log food waste for them.
 
 Examples
 - After all slots are filled.
@@ -81,6 +83,7 @@ export function createOrchestrator(specialists: Specialists = defaultSpecialists
       refreshPrices: createRefreshPricesTool(),
       shareConnectLink: shareConnectLinkTool,
       logWaste: logWasteChatTool,
+      ...createHistoryTools(),
       wasteReport: wasteReportChatTool,
     },
     // A shopping list from an attached spreadsheet can take several lookups before its draft.

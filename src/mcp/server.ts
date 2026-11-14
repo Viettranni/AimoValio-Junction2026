@@ -35,7 +35,12 @@ readOrderDocument(text | fileBase64 | fileUrl) reads it into event details and i
 missing and questions to ask. Ask them (never guess), then flow (b) with planEventArgs, or flow (a) for a shopping list with amounts.
 If you can see the photo or sheet yourself, pass what it says as text.
 
-## (d) Food waste (hävikki)
+## (d) Plan from the buyer's calendar
+Read their calendar with your own calendar tool (e.g. Google Calendar) for the coming weeks, then planFromCalendar(events) (or icsUrl).
+Skip already_ordered and not_food events. Ask the open questions for all events in one go, then planEvent per event, earliest and
+urgent ones first, and checkoutDraft when the buyer agrees. The prompt plan-my-calendar walks through it.
+
+## (e) Food waste (hävikki)
 logWaste(entries: name or productId, quantity, unit, reason) whenever the buyer says food was thrown away; getWasteReport(from, to)
 for the € value, CO₂, what is wasted most and what to order less of. Event leftovers per order line still go to reportLeftovers.
 
@@ -77,6 +82,12 @@ const resources: MCPServerResources = {
 
 const prompts: MCPServerPrompts = {
   listPrompts: async () => [{
+    name: 'plan-my-calendar',
+    description: "Read my calendar for the coming weeks and plan Valio Aimo orders for every food event on it",
+    arguments: [
+      { name: 'weeks', description: 'How many weeks ahead (default 4)', required: false },
+    ],
+  }, {
     name: 'order-request',
     description: 'Buy something from Valio Aimo within your authority, following the playbook',
     arguments: [
@@ -86,6 +97,17 @@ const prompts: MCPServerPrompts = {
     ],
   }],
   getPromptMessages: async ({ name, args }) => {
+    if (name === 'plan-my-calendar') {
+      const weeks = Math.min(Math.max(Number(args?.weeks) || 4, 1), 26);
+      const text = `Plan my catering orders for the next ${weeks} weeks from my calendar.
+1. Read my calendar events from today for ${weeks} weeks with your calendar tool (title, start, description, location).
+2. Call planFromCalendar with those events and horizonDays ${weeks * 7}.
+3. Show me a short list: each food event with its date, guests and status. Skip not_food; for already_ordered, name the order.
+4. Ask me every open question at once (guests, menu, diets, budget), urgent events first.
+5. Then planEvent for each event I confirm, with planEventArgs plus my answers, and show the total per event.
+6. Check out (checkoutDraft) only the ones I approve. If one needs sign-off, tell me who approves it and why. Never negotiate prices.`;
+      return [{ role: 'user', content: { type: 'text', text } }];
+    }
     if (name !== 'order-request') throw new Error(`Prompt not found: ${name}`);
     const text = `I need ${args?.need} delivered on ${args?.deliveryDate}.${args?.requirements ? ` Requirements: ${args.requirements}.` : ''}
 Follow the Aimo playbook (resource aimo://playbook).
@@ -107,6 +129,7 @@ export const aimoGatewayServer = new MCPServer({
     'Event flow: planEvent → updateDraft → checkoutDraft → getDeliveryStatus → getOrder → reportLeftovers. ' +
     'Notes, photos or Excel lists from the buyer: readOrderDocument, ask what is missing, then planEvent. ' +
     'Food thrown away: logWaste; waste overview: getWasteReport. ' +
+    'Upcoming events in the buyer\'s calendar: read it with your calendar tool, then planFromCalendar. ' +
     'Prices are fixed (no negotiation). Orders outside your authority wait for a human approver; you cannot approve.',
   tools: registryTools(),
   resources,

@@ -44,6 +44,8 @@ export interface WidgetSession {
   /** The order submitted in this conversation, if any. */
   receipt: Receipt | null;
   orders: OrderSummary[];
+  /** Re-reads My orders, e.g. on opening it: orders placed elsewhere (an external agent over MCP) show up too. */
+  refreshOrders?: () => void;
   /** Fast mode exists only for the scripted demo; live mode has no such switch. */
   fast?: boolean;
   setFast?: (on: boolean) => void;

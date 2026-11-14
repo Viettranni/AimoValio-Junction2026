@@ -58,8 +58,8 @@ export function ReceiptView({
               <h2 className="text-[16px] font-semibold tracking-[-0.01em] text-navy">{t('receipt.sent', lang)}</h2>
             </div>
             <p className="mt-1 text-[12px] text-muted">
-              {receipt.eventName} · {t('receipt.delivery', lang, { d: formatDay(receipt.deliveryDate, lang) })} ·{' '}
-              {t('sheet.guests', lang, { n: receipt.guests })}
+              {receipt.eventName} · {t('receipt.delivery', lang, { d: formatDay(receipt.deliveryDate, lang) })}
+              {receipt.guests > 0 && <> · {t('sheet.guests', lang, { n: receipt.guests })}</>}
             </p>
           </div>
           <motion.div

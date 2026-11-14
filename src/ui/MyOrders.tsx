@@ -80,7 +80,7 @@ export function MyOrders({
                     <DeliveryChip o={o} lang={lang} />
                   </span>
                   <span className="block text-[11.5px] text-muted tabular-nums">
-                    {formatDay(o.eventDate, lang)} · {t('sheet.guests', lang, { n: o.guests })} · {o.orderId}
+                    {formatDay(o.eventDate, lang)}{o.guests > 0 && <> · {t('sheet.guests', lang, { n: o.guests })}</>} · {o.orderId}
                   </span>
                 </span>
                 <span className="flex-none text-right tabular-nums">

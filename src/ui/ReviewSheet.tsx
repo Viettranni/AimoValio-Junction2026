@@ -183,7 +183,7 @@ export function ReviewSheet({
         {pendingNotes > 0 && (
           <p className="aimo-glow mt-3 flex items-center gap-2 rounded-lg px-2.5 py-2 text-[11.5px] text-ink-soft">
             <HistoryIcon size={14} className="flex-none text-warm-icon" />
-            {t('review.pending', lang, { n: pendingNotes })}
+            {pendingNotes === 1 ? t('review.pending.one', lang) : t('review.pending', lang, { n: pendingNotes })}
           </p>
         )}
 

@@ -281,7 +281,11 @@ function WidgetView({
           <HeaderButton
             label={t('header.orders', lang)}
             active={view === 'orders'}
-            onClick={() => (view === 'orders' ? backFromOrders() : go('orders'))}
+            onClick={() => {
+              if (view === 'orders') return backFromOrders();
+              session.refreshOrders?.();
+              go('orders');
+            }}
           >
             <OrdersIcon size={16} />
           </HeaderButton>

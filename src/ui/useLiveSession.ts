@@ -439,7 +439,7 @@ export function useLiveSession({
     ).catch(() => []);
 
   return {
-    items, typing, busy, planning, editing, lang, intake, missing, draft, diff, receipt, orders,
+    items, typing, busy, planning, editing, lang, intake, missing, draft, diff, receipt, orders, refreshOrders,
     send, choose, change, fastForward, reset, retry, submitCheckIn, confirmCheckIn, openOrder, getAudit,
     checkout, requestOffer, placeOrder, clearCheckout, getDelivery, nextDeliveryStep,
   };

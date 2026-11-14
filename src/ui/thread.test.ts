@@ -41,6 +41,13 @@ describe('deriveThread', () => {
     expect(items[3]).toMatchObject({ event: connect });
   });
 
+  it('drops a reply that is only stray <br> tags', () => {
+    const items = deriveThread(input({
+      messages: [user('u1', 'a'), { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: '<br>\n\n<br>' }, { type: 'text', text: 'Hi<br>there' }] }],
+    }));
+    expect(items.filter((i) => i.kind === 'assistant').map((i) => (i.kind === 'assistant' ? i.text : ''))).toEqual(['Hi\nthere']);
+  });
+
   it('shows progress under the user turn it belongs to', () => {
     const items = deriveThread(input({
       messages: [user('u1', 'a'), { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'ok' }] }, user('u2', 'b')],

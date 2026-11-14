@@ -34,3 +34,18 @@ export function sameKind(c: MenuComponent, original: CatalogProduct, candidate: 
   const anchored = tokens.filter((t) => originalName.includes(t));
   return (anchored.length ? anchored : tokens).some((t) => name.includes(t));
 }
+
+const words = (s: string) => s.toLowerCase().split(/[^a-zåäö]+/).filter((t) => t.length >= 4 && !NOISE.has(t));
+
+/**
+ * Whether `candidate` may replace `original` on a line the buyer asked to swap ("swap to basmati", "a lactose-free
+ * cream sauce"). Stricter than sameKind, whose single shared word let a cream sauce become ice cream ("cream") or
+ * soy sauce ("sauce") live: the candidate must be in the same category group as the original (first four digits of
+ * Valio's category code), or its name must contain every key word the buyer asked for, in English or in Finnish.
+ */
+export function swapFits(original: CatalogProduct, candidate: CatalogProduct, request: { fi: string; en: string }): boolean {
+  if (SNACK.test(`${candidate.nameFi} ${candidate.nameEn}`) && !SNACK.test(`${request.fi} ${request.en} ${original.nameFi} ${original.nameEn}`)) return false;
+  if (original.category.length >= 4 && candidate.category.slice(0, 4) === original.category.slice(0, 4)) return true;
+  const name = `${candidate.nameFi} ${candidate.nameEn}`.toLowerCase();
+  return [words(request.en), words(request.fi)].some((ws) => ws.length > 0 && ws.every((w) => name.includes(w)));
+}

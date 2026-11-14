@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getProduct } from '@/catalog';
 import { appendAudit, getDraftByConversation, now, saveDraft } from '@/db/repo';
 import { applyDraftChange } from '@/domain/draft';
+import { pendingOfferFor } from '@/gateway/store';
 import { failure, jsonError, parseBody, parseQuery } from '../http';
 
 const changeSchema = z.discriminatedUnion('kind', [
@@ -29,6 +30,8 @@ export async function POST(req: Request) {
     const draft = getDraftByConversation(conversationId);
     if (!draft) return jsonError('No draft for this conversation', 404);
     if (draft.status === 'submitted') return jsonError('This order has already been submitted', 400);
+    // The approver signs off on exactly what the offer lists; edits would be silently dropped by that order.
+    if (pendingOfferFor(draft)) return jsonError('This order is waiting for approval; the draft can\'t change until the approver decides', 409);
     const result = applyDraftChange(draft, change, { getProduct });
     saveDraft({ ...result.draft, updatedAt: now().toISOString() });
     appendAudit({

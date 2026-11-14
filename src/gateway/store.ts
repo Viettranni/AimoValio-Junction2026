@@ -37,6 +37,11 @@ export function listOffers(customerId: string, db?: Db): Offer[] {
     .orderBy(desc(gatewayOffers.createdAt)).all().map((r) => JSON.parse(r.json) as Offer);
 }
 
+/** The offer of this draft that waits for a human approver, if any: the draft must not change meanwhile. */
+export function pendingOfferFor(draft: { id: string; customerId: string }, db?: Db): Offer | undefined {
+  return listOffers(draft.customerId, db).find((o) => o.draftId === draft.id && o.status === 'pending_approval');
+}
+
 export function saveApproval(a: Approval, db?: Db): void {
   const row = {
     id: a.approvalId, offerId: a.offerId, customerId: a.customerId, agentId: a.agentId, status: a.status,

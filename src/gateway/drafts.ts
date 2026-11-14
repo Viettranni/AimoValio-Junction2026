@@ -27,7 +27,7 @@ import { deliverySummaryFor, syncDelivery } from './deliveries';
 import { fetchValio, STALE_PRICE_MS } from './lookup';
 import { actorFor, GatewayError, quote } from './offers';
 import { placeOrder } from './orders';
-import { listApprovalRows, listOffers, saveOffer } from './store';
+import { listApprovalRows, pendingOfferFor, saveOffer } from './store';
 import type { Change, GatewayContext, Offer, OrderPreferences, PlaceOrderResult, Requirements } from './types';
 
 const MAX_GUESTS = 5000;
@@ -310,9 +310,7 @@ export async function updateDraft(draftId: string, changes: AgentDraftChange[], 
   return { ...draftView(draft), diff, problems };
 }
 
-export function pendingOfferFor(draft: Draft) {
-  return listOffers(draft.customerId).find((o) => o.draftId === draft.id && o.status === 'pending_approval');
-}
+export { pendingOfferFor };
 
 export interface DraftQuote {
   draftId: string;

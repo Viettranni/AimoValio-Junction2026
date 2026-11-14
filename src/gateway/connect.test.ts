@@ -3,17 +3,17 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PRESET_CONNECT_KEY, requestKey, resolveAgent } from './agents';
-import { connectInfo } from './connect';
+import { HOSTED_BASE_URL, connectInfo } from './connect';
 
 const missing = path.join(tmpdir(), 'no-such-connect.json');
 
 describe('connect link', () => {
-  it('uses the preset key and the local origin without a tunnel', () => {
+  it('uses the preset key and the hosted demo URL without a tunnel', () => {
     const info = connectInfo('http://localhost:3100', {}, missing);
     expect(info).toEqual({
       key: PRESET_CONNECT_KEY,
-      isPublic: false,
-      mcpUrl: `http://localhost:3100/api/mcp/${PRESET_CONNECT_KEY}`,
+      isPublic: true,
+      mcpUrl: `${HOSTED_BASE_URL}/api/mcp/${PRESET_CONNECT_KEY}`,
       localMcpUrl: `http://localhost:3100/api/mcp/${PRESET_CONNECT_KEY}`,
     });
   });

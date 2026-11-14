@@ -7,6 +7,9 @@ import { connectKey } from './agents';
 
 export const CONNECT_FILE = path.join('data', 'connect.json');
 
+/** The public demo deployment; behind Render's proxy the request origin is localhost, so it can't be derived. */
+export const HOSTED_BASE_URL = 'https://aimovalio-junction2026.onrender.com';
+
 export interface ConnectInfo {
   /** The link to paste into Claude: public when a tunnel is up, else local. */
   mcpUrl: string;
@@ -34,6 +37,6 @@ const mcpLink = (base: string, key: string) => `${base.replace(/\/+$/, '')}/api/
 export function connectInfo(requestOrigin: string | null, env: Env = process.env, file = CONNECT_FILE): ConnectInfo {
   const key = connectKey(env);
   const local = env.AIMO_BASE_URL || requestOrigin || `http://localhost:${env.PORT ?? 3100}`;
-  const pub = tunnelBaseUrl(file) ?? env.AIMO_PUBLIC_URL ?? null;
-  return { mcpUrl: mcpLink(pub ?? local, key), localMcpUrl: mcpLink(local, key), isPublic: !!pub, key };
+  const pub = tunnelBaseUrl(file) ?? env.AIMO_PUBLIC_URL ?? HOSTED_BASE_URL;
+  return { mcpUrl: mcpLink(pub, key), localMcpUrl: mcpLink(local, key), isPublic: true, key };
 }

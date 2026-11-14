@@ -6,11 +6,13 @@ import type { Draft, DraftLine, UiLang } from '@/contracts';
 import type { OfferLine } from '@/gateway/types';
 import { formatDateTime, formatDay, formatMoney, formatQty, formatTime } from './format';
 import { dietLabel, t } from './i18n';
-import { ArrowLeftIcon, CheckIcon, ClockIcon, HistoryIcon } from './icons';
+import { ArrowLeftIcon, CheckIcon, ClockIcon, ExternalLinkIcon, HistoryIcon } from './icons';
 import { approvalReasons, firstName, offerCountdown, priceChanges, roleLabel } from './offerCard';
 import { shortName } from './productName';
 import type { Checkout } from './session';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './styles';
+
+const APPROVALS_URL = '/approvals';
 
 /** Re-render once a second while an offer's countdown runs. */
 function useTick(active: boolean) {
@@ -306,6 +308,16 @@ function StatusCard({
               {approvalReasons(checkout.reasons, checkout, lang).map((r) => <li key={r}>{r}</li>)}
             </ul>
             <p className="mt-2 text-[12px] text-navy">{t('pending.wait', lang, { first: firstName(checkout.approver.name) })}</p>
+            {/* New tab: the chat keeps polling and updates itself once the approver decides. */}
+            <a
+              href={APPROVALS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`mt-2.5 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] ${PRIMARY_BUTTON}`}
+            >
+              {t('pending.open', lang)}
+              <ExternalLinkIcon size={13} />
+            </a>
           </div>
         );
       case 'rejected':

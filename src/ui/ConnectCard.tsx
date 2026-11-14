@@ -95,7 +95,7 @@ export function ConnectCard({ info, lang, tone = 'light' }: { info: ConnectEvent
         <span className="min-w-0 truncate">{t('connect.code', lang)} <code className="font-mono text-navy">claude mcp add …</code></span>
         <button
           type="button"
-          onClick={async () => setDone((await copyText(claudeCodeCommand(info.localMcpUrl))) ? 'code' : null)}
+          onClick={async () => setDone((await copyText(claudeCodeCommand(info.mcpUrl))) ? 'code' : null)}
           className="flex-none font-semibold text-blue hover:underline"
         >
           {done === 'code' ? t('connect.copied', lang) : t('connect.copyCommand', lang)}

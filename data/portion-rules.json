@@ -1,0 +1,17 @@
+{
+  "poultry_main": { "unit": "kg", "perGuest": { "default": 0.18, "wedding": 0.20 } },
+  "meat_main": { "unit": "kg", "perGuest": { "default": 0.18, "wedding": 0.20 } },
+  "fish_main": { "unit": "kg", "perGuest": { "default": 0.16, "wedding": 0.18 } },
+  "veg_main": { "unit": "kg", "perGuest": { "default": 0.20 } },
+  "grain_side": { "unit": "kg", "perGuest": { "default": 0.08 } },
+  "potato_side": { "unit": "kg", "perGuest": { "default": 0.25 } },
+  "veg_side": { "unit": "kg", "perGuest": { "default": 0.12 } },
+  "salad": { "unit": "kg", "perGuest": { "default": 0.10 } },
+  "sauce": { "unit": "l", "perGuest": { "default": 0.08 } },
+  "bread": { "unit": "kg", "perGuest": { "default": 0.06 } },
+  "dessert": { "unit": "kg", "perGuest": { "default": 0.12 } },
+  "dairy": { "unit": "l", "perGuest": { "default": 0.05 } },
+  "beverage": { "unit": "l", "perGuest": { "default": 0.3 } },
+  "cooking_fat": { "unit": "kg", "perGuest": { "default": 0.01 } },
+  "seasoning": { "unit": "kg", "perGuest": { "default": 0.003 } }
+}

@@ -16,8 +16,13 @@ export interface OrderDetails {
 /** What the widget needs from a conversation, whether scripted (fixture) or backed by the API (live). */
 export interface WidgetSession {
   items: ThreadItem[];
+  /** The assistant is working with nothing else on screen saying so: the chat shows the shelf card. */
   typing: boolean;
   busy: boolean;
+  /** Planning has started and its draft has not arrived: the sheet opens with skeleton rows. */
+  planning: boolean;
+  /** An edit is in flight: the line ids it touches ("" or an empty list: the whole sheet, e.g. a chat edit); null when idle. */
+  editing: string[] | null;
   lang: Lang | undefined;
   intake: Intake | null;
   missing: IntakeSlot[];

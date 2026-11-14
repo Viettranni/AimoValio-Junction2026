@@ -31,7 +31,9 @@ Start the app on port 3100 (`npm run dev -- -p 3100`, see Run it). Everything be
 
 3. **The human sign-off:** http://localhost:3100/approvals. Anna sees the agent, the total, why it needs her and the lines. Approve re-checks Valio and places the (simulated) order, or re-quotes if a price moved; Reject tells the agent. No MCP tool can approve. (In this prototype the page has no login; see Assumptions.)
 
-4. **One client among many, the chef's widget:** http://localhost:3100/demo-host?demo=1. The same pipeline, behind a chat. The orchestrator is also an MCP tool (`chatWithAimo`), and its drafts can be checked out with `checkoutDraft`.
+4. **One client among many, the chef's widget:** http://localhost:3100/demo-host?demo=1. The same pipeline behind a chat, and the **same gateway**: Review shows a fixed-price offer ("Prices fixed until 14:32 · Offer OF-…", with a countdown and any price changes), and Approve is the gateway's `placeOrder` with the same authority policy as Claude over MCP. A 300-guest wedding (about €780) orders straight away; a 700-guest one (about €1,480) shows "Sent to Anna Virtanen for approval" with the reason, and the widget updates by itself when she approves on `/approvals`. The orchestrator is also an MCP tool (`chatWithAimo`), and its drafts can be checked out with `checkoutDraft`.
+
+5. **Delivery you can follow:** the receipt shows a simulated delivery timeline (Received → Confirmed → Picking → Out for delivery with an ETA window → Delivered, plus the supplier track for terminal lines). **Next delivery step** in the demo controls walks it forward; lines from less reliable products may arrive short, with the reason, and the leftover check-in is prefilled with them. External agents see the same thing through `getDeliveryStatus`.
 
 ## Run it
 
@@ -52,7 +54,7 @@ npm run dev -- -p 3100         # http://localhost:3100/demo-host?demo=1 (the doc
 | `VALIO_API_KEY` | Key for the Valio Aimo challenge API (prices, availability) |
 | `VALIO_API_BASE` | `https://junction26.valioaimo.fi` |
 
-Open http://localhost:3100/demo-host?demo=1: a mock Valio Aimo page with the widget in the corner. `?demo=1` shows the demo controls; **Reset demo** in those controls re-seeds the database (same as `npm run seed`), and **Fast-forward to day after event** jumps to the day after delivery for the leftover check-in.
+Open http://localhost:3100/demo-host?demo=1: a mock Valio Aimo page with the widget in the corner. `?demo=1` shows the demo controls; **Reset demo** in those controls re-seeds the database (same as `npm run seed`), **Next delivery step** advances the demo clock to the latest order's next delivery state, and **Fast-forward to day after event** jumps to the day after delivery for the leftover check-in.
 
 Optional: set `AIMO_DB_PATH` to keep the SQLite database somewhere other than `data/aimo.sqlite`, `AIMO_AGENT_KEYS` / `AIMO_AGENT_KEY` for agent identities (see `.env.example`), and `AIMO_MODEL` for another model (e.g. `openai/<model>` with `OPENAI_API_KEY`).
 
@@ -77,7 +79,7 @@ npx tsx src/mcp/stdio.ts       # stdio, run from the project root; identity from
 # Streamable HTTP: POST http://localhost:3100/api/mcp with Authorization: Bearer <agent key> (runs with npm run dev -- -p 3100)
 ```
 
-Tools by group: catalogue (`searchProducts`, `getProduct`, `getAlternatives`, `getIngredients`, `checkAllergens`), pricing (`getPriceAndAvailability`), offers (`requestOffer`), drafts (`planEvent`, `getDraft`, `updateDraft`, `checkoutDraft`), orders (`placeOrder`, `getOrderStatus`, `listOrders`, `getOrder`, `reportLeftovers`), policy (`getAuthorityPolicy`) and assistant (`chatWithAimo`). Resources `aimo://policy` and `aimo://playbook`, prompt `order-request`. The demo key is `aimo-demo-agent-key` (set your own with `AIMO_AGENT_KEYS`, see `.env.example`). Setup for each client: [`docs/CONNECT.md`](docs/CONNECT.md).
+Tools by group: catalogue (`searchProducts`, `getProduct`, `getAlternatives`, `getIngredients`, `checkAllergens`), pricing (`getPriceAndAvailability`), offers (`requestOffer`), drafts (`planEvent`, `getDraft`, `updateDraft`, `checkoutDraft`), orders (`placeOrder`, `getOrderStatus`, `listOrders`, `getOrder`, `getDeliveryStatus`, `reportLeftovers`), policy (`getAuthorityPolicy`) and assistant (`chatWithAimo`). Resources `aimo://policy` and `aimo://playbook`, prompt `order-request`. The demo key is `aimo-demo-agent-key` (set your own with `AIMO_AGENT_KEYS`, see `.env.example`). Setup for each client: [`docs/CONNECT.md`](docs/CONNECT.md).
 
 ### Embed it on any site
 
@@ -109,11 +111,11 @@ Folders: `src/app` (pages and API routes, incl. `/api/mcp` and `/approvals`), `s
 
 ## Assumptions and limits
 
-- **Orders are simulated.** Valio exposes no order endpoint, so approval (by the buyer in the widget, by the gateway within an agent's authority, or by the approver on `/approvals`) writes a receipt to the local database ("Demo order. Nothing is charged."). Past orders and leftovers for the demo customer are seeded.
+- **Orders are simulated.** Valio exposes no order endpoint, so an order (placed by the gateway within an agent's authority, the widget included, or approved by the approver on `/approvals`) writes a receipt to the local database ("Demo order. Nothing is charged."). Past orders and leftovers for the demo customer are seeded.
 - **Authentication is demo-grade.** Agents use static API keys mapped to a customer (`AIMO_AGENT_KEYS`); the widget's customer id comes from the embed snippet. **The approval page `/approvals` and `/api/approvals/*` are unauthenticated:** anyone who can reach the app, an agent included, could approve. Run it on localhost only and, if you tunnel for ChatGPT, tunnel only `/api/mcp` (docs/CONNECT.md). Production needs Valio's customer login, per-agent OAuth and customer-specific prices (the challenge API returns list prices for one customer).
 - **Authority policy** is a constant per customer in `src/gateway/policies.ts` (demo: auto-approve up to €1,000 excl. VAT per delivery date and day, approver Anna Virtanen, no peanuts by default). Production would let the customer edit it.
 - **Allergen data is heuristic.** Allergens are parsed from ingredient text with keyword rules. Products with no ingredient list, or whose allergens come only from the product name, are "unknown" and never treated as safe: the buyer must tick each one on the review screen before approving. Production needs verified allergen data.
-- **In the widget, approval is the buyer's click.** No widget agent can submit; external agents order only through the gateway's policy and human sign-off. The Approve button re-checks stock, cut-off, prices (a price older than 10 minutes that couldn't be refreshed blocks approval) and allergens, and never drops a failing line silently.
+- **In the widget, approval is the buyer's click, through the gateway.** No widget agent can submit. The Approve button is `placeOrder` under the widget's server-side identity, with the same policy and human sign-off as external agents; it re-checks stock, cut-off, prices (a price older than 10 minutes that couldn't be refreshed blocks approval) and allergens, and never drops a failing line silently. Delivery after ordering is simulated (deterministic per order).
 - Prices are list prices excl. VAT from the challenge API; the price range shown while history choices are open comes from quantity bands, not price uncertainty.
 - Portion rules (grams per guest by component and event type) are a hand-written table in `data/portion-rules.json`.
 - Fixed UI text is in English, Finnish and Swedish; the assistant replies in the buyer's language.

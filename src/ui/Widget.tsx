@@ -255,7 +255,7 @@ function WidgetView({
   })();
 
   const card = (
-    <div className={`flex h-full w-full flex-col overflow-hidden bg-white md:flex-row ${running ? '' : 'aimo-paused'}`}>
+    <div className={`relative flex h-full w-full flex-col overflow-hidden bg-white md:flex-row ${running ? '' : 'aimo-paused'}`}>
       <section
         className={`flex min-h-0 flex-col ${expanded ? 'h-[46%] flex-none border-b border-line md:h-full md:w-[380px] md:border-b-0 md:border-r' : 'h-full w-full'}`}
       >

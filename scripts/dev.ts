@@ -94,7 +94,8 @@ void (async () => {
         && spawnSync('pbcopy', { input: info.mcpUrl }).status === 0;
       console.log(info.isPublic
         ? `  MCP for claude.ai       ${info.mcpUrl}${copied ? '  (copied to clipboard)' : ''}\n`
-          + `                          Open https://claude.ai/customize/connectors → Add → Add custom connector → paste`
+          + `  Add it to Claude        https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Aimo&connectorUrl=${encodeURIComponent(info.mcpUrl)}\n`
+          + `                          (opens the Add custom connector dialog pre-filled; click Add)`
         : `  MCP for claude.ai       (no public tunnel${tunnelWanted ? '; see the warning above' : ': AIMO_TUNNEL=0'})`);
       console.log(`${line}\n`);
       return;

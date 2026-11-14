@@ -23,9 +23,12 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-/** claude.ai's connector settings. There is no documented link that pre-fills a custom connector, so this opens the page
- * with the link already on the clipboard: Add → Add custom connector → paste. */
-export const CLAUDE_CONNECTORS_URL = 'https://claude.ai/customize/connectors';
+/**
+ * claude.ai's "Add custom connector" dialog, pre-filled with the name and URL (modal=add-custom-connector, connectorName,
+ * connectorUrl). Not in Anthropic's docs but used by MCP providers; the link is also copied in case the form opens empty.
+ */
+export const claudeAddConnectorUrl = (mcpUrl: string, name = 'Aimo') =>
+  `https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=${encodeURIComponent(name)}&connectorUrl=${encodeURIComponent(mcpUrl)}`;
 
 /** Claude Code adds the server with one command, no pasting in a UI. */
 export const claudeCodeCommand = (localMcpUrl: string) => `claude mcp add --transport http aimo "${localMcpUrl}"`;
@@ -47,7 +50,7 @@ export function ConnectCard({ info, lang, tone = 'light' }: { info: ConnectEvent
   const openInClaude = async () => {
     // Copy first: once the new tab has focus, this page may no longer write to the clipboard.
     const copied = await copyText(info.mcpUrl);
-    window.open(CLAUDE_CONNECTORS_URL, '_blank', 'noopener');
+    window.open(claudeAddConnectorUrl(info.mcpUrl), '_blank', 'noopener');
     setDone(copied ? 'opened' : null);
   };
 

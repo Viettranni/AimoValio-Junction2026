@@ -72,6 +72,16 @@ describe('getPrices', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('retries a stalled request twice before giving up', async () => {
+    fetchMock
+      .mockRejectedValueOnce(new Error('timeout'))
+      .mockRejectedValueOnce(new Error('timeout'))
+      .mockResolvedValueOnce(json(sample('sample-price.json')));
+    const prices = await getPrices(['460000'], '2026-12-06');
+    expect(prices.get('460000')?.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
   it('throws ValioUnavailableError when failing without a cache', async () => {
     fetchMock.mockRejectedValue(new Error('network'));
     await expect(getPrices(['460000'], '2026-12-06')).rejects.toBeInstanceOf(ValioUnavailableError);
@@ -86,7 +96,7 @@ describe('getPrices', () => {
     fetchMock.mockRejectedValue(new Error('down'));
     const second = (await getPrices(['460000'], '2026-12-06')).get('460000');
     expect(second).toEqual(first);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });
 

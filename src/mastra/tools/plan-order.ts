@@ -2,7 +2,7 @@ import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import type { Intake } from '@/contracts';
 import { getDraftByConversation, now } from '@/db/repo';
-import { nextOrderableDate } from '@/domain/cutoff';
+import { deliverableOn, nextOrderableDate } from '@/domain/cutoff';
 import { pendingOfferFor } from '@/gateway/store';
 import { intakeExtractionSchema } from '../agents/intake';
 import { getAimoContext, type AimoContext } from '../context';
@@ -34,12 +34,13 @@ export async function runPlanOrder(
   if (missing.length) throw new Error(`Cannot plan yet; still missing: ${missing.join(', ')}.`);
   // Re-planning keeps the add-ons the buyer already chose unless new ones are given.
   const previous = draft.components.filter((c) => c.origin === 'addon' && !c.dietVariantOf).map((c) => c.label);
-  const { summary } = await buildDraft({ draft, addons: addons.length ? addons : previous, ctx }, deps);
+  const { draft: built, summary } = await buildDraft({ draft, addons: addons.length ? addons : previous, ctx }, deps);
   // A passed cut-off is no dead end: name the first date that can still be ordered, for a one-tap choice.
   const today = now();
   const date = draft.intake.deliveryDate;
-  if (date && summary.cutoff && Date.parse(summary.cutoff) < today.getTime()) {
-    const next = nextOrderableDate(date, summary.cutoff, today);
+  const late = built.lines.some((l) => l.availability && !deliverableOn(l.availability, date ?? ''));
+  if (date && (late || (summary.cutoff && Date.parse(summary.cutoff) < today.getTime()))) {
+    const next = nextOrderableDate(built.lines.flatMap((l) => (l.availability ? [l.availability] : [])), date, today);
     if (next) {
       return {
         ...summary, nextPossibleDate: next,

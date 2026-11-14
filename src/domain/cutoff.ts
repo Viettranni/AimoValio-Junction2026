@@ -25,16 +25,22 @@ export function effectiveCutoff(a: AvailabilityInfo, requestedDate: ISODate): st
 }
 
 /**
- * The first delivery date after `requestedDate` whose cut-off (the same lead time as `cutoff`, which has passed)
- * is still ahead of `now`. Sundays are skipped. Null without a cut-off.
+ * The first delivery date after `requestedDate` on which every product can be delivered (Valio's earliest date)
+ * and whose order cut-off (effectiveCutoff) is still ahead of `now`. Sundays are skipped. Null when no
+ * availability is known or nothing fits within 60 days.
  */
-export function nextOrderableDate(requestedDate: ISODate, cutoff: string | null, now: Date): ISODate | null {
-  if (!cutoff) return null;
-  const leadMs = Date.parse(`${requestedDate}T00:00:00Z`) - Date.parse(cutoff);
+export function nextOrderableDate(availabilities: AvailabilityInfo[], requestedDate: ISODate, now: Date): ISODate | null {
+  const known = availabilities.filter((a) => a.deliverable && !a.salesBlock);
+  if (!known.length) return null;
   for (let day = dayNumber(requestedDate) + 1; day < dayNumber(requestedDate) + 60; day++) {
-    const date = fromDayNumber(day);
     if (new Date(day * DAY_MS).getUTCDay() === 0) continue;
-    if (Date.parse(`${date}T00:00:00Z`) - leadMs > now.getTime()) return date;
+    const date = fromDayNumber(day);
+    const ok = known.every((a) => {
+      if (!deliverableOn(a, date)) return false;
+      const cutoff = effectiveCutoff(a, date);
+      return !cutoff || Date.parse(cutoff) > now.getTime();
+    });
+    if (ok) return date;
   }
   return null;
 }

@@ -3,7 +3,7 @@ import type { SystemMessage } from '@mastra/core/llm';
 import { defaultSpecialists, type Specialists } from '../specialists';
 import { createCheckInTool } from '../tools/check-in';
 import { createDirectOrderTool } from '../tools/direct-order';
-import { createLookupProductsTool, createReadDraftTool } from '../tools/lookup';
+import { createLookupProductsTool, createReadDraftTool, createRefreshPricesTool } from '../tools/lookup';
 import { createEditDraftTool } from '../tools/edit-draft';
 import { offerChoicesTool } from '../tools/offer-choices';
 import { createPlanOrderTool } from '../tools/plan-order';
@@ -65,6 +65,7 @@ export function createOrchestrator(specialists: Specialists = defaultSpecialists
       readDraft: createReadDraftTool(),
       lookupProducts: createLookupProductsTool(),
       draftDirectOrder: createDirectOrderTool(),
+      refreshPrices: createRefreshPricesTool(),
     },
     defaultOptions: { ...effort('low'), maxSteps: 8 },
   });

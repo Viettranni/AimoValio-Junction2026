@@ -31,15 +31,18 @@ describe('effectiveCutoff', () => {
 });
 
 describe('nextOrderableDate', () => {
-  const cutoff = '2026-11-19T14:00:00+0200'; // for delivery on Friday 20 Nov
-  it('moves to the first date whose cut-off is still ahead', () => {
-    expect(nextOrderableDate('2026-11-20', cutoff, new Date('2026-11-20T07:00:00Z'))).toBe('2026-11-21');
+  // Valio: earliest delivery Mon 16 Nov, ordered by Thu 12 Nov 14:00 (a four-day lead time).
+  const a = avail({ availableDate: '2026-11-16', closingTime: '2026-11-12T14:00:00+0200' });
+  it('moves to the first date every product can be delivered and still ordered for', () => {
+    // Sat 14 Nov 14:22Z: the 18th's cut-off (Sat 14 Nov 12:00Z) has passed, the 19th's (Sun 12:00Z) has not.
+    expect(nextOrderableDate([a], '2026-11-15', new Date('2026-11-14T14:22:00Z'))).toBe('2026-11-19');
+    expect(nextOrderableDate([a], '2026-11-15', new Date('2026-11-12T10:00:00Z'))).toBe('2026-11-16');
   });
-  it('skips Sundays and dates whose shifted cut-off has passed too', () => {
-    // Saturday 21 Nov 10:00Z: Saturday's cut-off (Fri 12:00Z) has passed; Sunday's would not have, but Sunday is skipped.
-    expect(nextOrderableDate('2026-11-20', cutoff, new Date('2026-11-21T10:00:00Z'))).toBe('2026-11-23');
+  it('skips Sundays', () => {
+    const b = avail({ availableDate: '2026-11-21', closingTime: '2026-11-20T14:00:00+0200' });
+    expect(nextOrderableDate([b], '2026-11-21', new Date('2026-11-20T08:00:00Z'))).toBe('2026-11-23');
   });
-  it('is null without a cut-off', () => {
-    expect(nextOrderableDate('2026-11-20', null, new Date())).toBeNull();
+  it('is null without usable availability', () => {
+    expect(nextOrderableDate([], '2026-11-20', new Date())).toBeNull();
   });
 });

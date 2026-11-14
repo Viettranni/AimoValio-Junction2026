@@ -5,6 +5,7 @@
 Our own chat widget for caterers is one client of the same platform: describe the event ("wedding, 300 guests, chicken and rice") and get a priced, stock-checked order draft that learns from past leftovers.
 
 - Agent gateway, tools and MCP: [`MCP.md`](MCP.md) · Connect Claude / ChatGPT / Cursor / Inspector / curl: [`docs/CONNECT.md`](docs/CONNECT.md)
+- Hosted demo: https://aimovalio-junction2026.onrender.com/demo-host (see [Hosted demo](#hosted-demo-render))
 - Architecture: [`ARCHITECTURE.md`](ARCHITECTURE.md) · Spec: [`spec.md`](spec.md) · Build summary: [`SUMMARY.md`](SUMMARY.md) · UI mockups: [`docs/mockups/`](docs/mockups/)
 
 Stack: Next.js 16 + TypeScript · MCP (Mastra `MCPServer`, stdio + Streamable HTTP) · Mastra agents on Claude Opus 5.5 · SQLite (Drizzle) · MiniSearch.
@@ -41,6 +42,10 @@ Start everything with `npm run dev` (port 3100, see Run it). Everything below us
 
 8. **Delivery you can follow:** the receipt shows a simulated delivery timeline (Received → Confirmed → Picking → Out for delivery with an ETA window → Delivered, plus the supplier track for terminal lines). **Next delivery step** in the demo controls walks it forward; lines from less reliable products may arrive short, with the reason, and the leftover check-in is prefilled with them. External agents see the same thing through `getDeliveryStatus`.
 
+9. **Analytiikka (Finnish):** the glowing **Analytiikka** link in the main menu (the AI star marks it) opens `/analytiikka`, with its own tab row: **Analytiikka** (`/analytiikka/oivallukset`) is a year story plus ask-a-question exploration over the order data ("Kulutus kuukausittain"), answered with a chart, a table and a forecast where it fits; **Ravintolat** (`/analytiikka/ravintolat`) shows each customer's sites with spend, trend and waste; **Hyväksynnät** links to the approval page. Questions are answered by a rules engine over a query spec compiled to SQL (no model needed); with `ANTHROPIC_API_KEY` set, Claude Haiku can take over the harder questions. A **demo** data set ships in `data/insights/`; **live** mode reads this app's own orders. The page says which mode is on.
+
+10. **Approvals from anywhere:** the main menu has a **Hyväksynnät** tab with a count of orders waiting for sign-off, and when the chat's order needs approval its card shows **Avaa hyväksynnät**, which opens `/approvals` in a new tab while the chat keeps waiting for the decision.
+
 ## Run it
 
 Requirements: Node 22 and npm.
@@ -63,6 +68,23 @@ npm run dev                    # http://localhost:3100/demo-host?demo=1
 Open http://localhost:3100/demo-host?demo=1: a mock Valio Aimo page with the widget in the corner. `?demo=1` shows the demo controls; **Reset demo** in those controls re-seeds the database (same as `npm run seed`), **Next delivery step** advances the demo clock to the latest order's next delivery state, and **Fast-forward to day after event** jumps to the day after delivery for the leftover check-in.
 
 Optional: set `AIMO_DB_PATH` to keep the SQLite database somewhere other than `data/aimo.sqlite`, `AIMO_AGENT_KEYS` / `AIMO_AGENT_KEY` for agent identities (see `.env.example`), and `AIMO_MODEL` for another model (e.g. `openai/<model>` with `OPENAI_API_KEY`).
+
+### Hosted demo (Render)
+
+The app runs on Render's free web service at https://aimovalio-junction2026.onrender.com (start at `/demo-host`). Service settings:
+
+| Setting | Value |
+| --- | --- |
+| Root directory | *(empty, the repo root)* |
+| Build command | `npm ci && npm run build` |
+| Start command | `npm run seed && npm start` |
+| Environment | `NODE_VERSION=22`, `NODE_ENV=production`; optional `ANTHROPIC_API_KEY` (chat), `VALIO_API_KEY` and `VALIO_API_BASE` (live Valio prices). Set the keys in Render's Environment tab only. |
+
+- **The free instance sleeps** after about 15 minutes without traffic; the first visit then takes about a minute. An external uptime pinger (UptimeRobot, cron-job.org) hitting a page every 5–10 minutes keeps it awake.
+- **The database resets on every restart or deploy**: the free tier has no persistent disk, so `npm run seed` recreates the demo data on start and orders placed during a session are lost.
+- **The MCP copy-paste link** points at the hosted URL (`HOSTED_BASE_URL` in `src/gateway/connect.ts`), because behind Render's proxy the request origin is `localhost`. A tunnel or `AIMO_PUBLIC_URL` still takes precedence.
+- **Without `ANTHROPIC_API_KEY`** the chat is off, but Analytiikka, approvals, MCP lookups and the scripted widget (`/embed?fixture=1`) work.
+- **Public by design, demo data only:** on the hosted demo `/approvals` and the demo controls are reachable by anyone with the link (see Assumptions). Don't put real customer data or a key with a large budget on it.
 
 ### Tests
 
@@ -113,15 +135,16 @@ The quantities, totals, pack rounding, history ratios and cut-offs are pure func
 
 **What goes through MCP.** Everything an external agent needs: catalogue, live prices and availability, offers, orders within authority, approvals status and the policy (see [`MCP.md`](MCP.md) section 5; the service layer is `src/gateway`). The widget's draft pipeline also calls `checkAllergens` through our own MCP client (`src/mcp/client.ts`) on the stdio server, the same way an external agent would; if the server can't be reached, the same check runs in-process and a single warning is logged. Product search for the draft runs in-process for speed.
 
-Folders: `src/app` (pages and API routes, incl. `/api/mcp` and `/approvals`), `src/gateway` (agent gateway: lookup, offers, orders, policy, approvals, identity), `src/mastra` (agents, tools, pipeline), `src/mcp` (MCP server, tool registry, tools, HTTP adapter, client), `src/domain` (pure logic), `src/catalog` (index, search, allergen parsing), `src/valio` (API client with a 10-minute cache), `src/db` (SQLite schema, seed), `src/ui` (widget), `public/widget.js` (embed script).
+Folders: `src/app` (pages and API routes, incl. `/api/mcp` and `/approvals`), `src/gateway` (agent gateway: lookup, offers, orders, policy, approvals, identity), `src/mastra` (agents, tools, pipeline), `src/mcp` (MCP server, tool registry, tools, HTTP adapter, client), `src/domain` (pure logic), `src/catalog` (index, search, allergen parsing), `src/valio` (API client with a 10-minute cache), `src/db` (SQLite schema, seed), `src/ui` (widget), `src/insights` (analytics engine: query spec, charts, forecast, rules analyst), `src/features` (Analytiikka, Ravintolat and approvals UI), `public/widget.js` (embed script).
 
 ## Assumptions and limits
 
 - **Orders are simulated.** Valio exposes no order endpoint, so an order (placed by the gateway within an agent's authority, the widget included, or approved by the approver on `/approvals`) writes a receipt to the local database ("Demo order. Nothing is charged."). Past orders and leftovers for the demo customer are seeded.
-- **Authentication is demo-grade.** Agents use static API keys mapped to a customer (`AIMO_AGENT_KEYS`); the widget's customer id comes from the embed snippet. **The approval page `/approvals` and `/api/approvals/*` are unauthenticated:** anyone who can reach the app, an agent included, could approve. Run it on localhost only and, if you tunnel for ChatGPT, tunnel only `/api/mcp` (docs/CONNECT.md). Production needs Valio's customer login, per-agent OAuth and customer-specific prices (the challenge API returns list prices for one customer).
+- **Authentication is demo-grade.** Agents use static API keys mapped to a customer (`AIMO_AGENT_KEYS`); the widget's customer id comes from the embed snippet. **The approval page `/approvals` and `/api/approvals/*` are unauthenticated:** anyone who can reach the app, an agent included, could approve. Run it on localhost only and, if you tunnel for ChatGPT, tunnel only `/api/mcp` (docs/CONNECT.md). The hosted Render demo accepts this risk for demo data only. Production needs Valio's customer login, per-agent OAuth and customer-specific prices (the challenge API returns list prices for one customer).
 - **Authority policy** is a constant per customer in `src/gateway/policies.ts` (demo: auto-approve up to €1,000 excl. VAT per delivery date and day, approver Anna Virtanen, no peanuts by default). Production would let the customer edit it.
 - **Allergen data is heuristic.** Allergens are parsed from ingredient text with keyword rules. Products with no ingredient list, or whose allergens come only from the product name, are "unknown" and never treated as safe: the buyer must tick each one on the review screen before approving. Production needs verified allergen data.
 - **In the widget, approval is the buyer's click, through the gateway.** No widget agent can submit. The Approve button is `placeOrder` under the widget's server-side identity, with the same policy and human sign-off as external agents; it re-checks stock, cut-off, prices (a price older than 10 minutes that couldn't be refreshed blocks approval) and allergens, and never drops a failing line silently. Delivery after ordering is simulated (deterministic per order).
 - Prices are list prices excl. VAT from the challenge API; the price range shown while history choices are open comes from quantity bands, not price uncertainty.
 - Portion rules (grams per guest by component and event type) are a hand-written table in `data/portion-rules.json`.
-- Fixed UI text is in English, Finnish and Swedish; the assistant replies in the buyer's language.
+- Fixed UI text is in English, Finnish and Swedish; the assistant replies in the buyer's language. Analytiikka is Finnish only; product and brand names stay as in the catalogue.
+- Analytiikka's demo data set (`data/insights/`) is synthetic and exported once from the earlier Python prototype; live mode has no agent-activity or demand rows, and Ravintolat uses demo data only.

@@ -5,6 +5,7 @@ import type { DraftTotals, UiLang } from '@/contracts';
 import { CountUp } from './CountUp';
 import { formatMoney } from './format';
 import { t } from './i18n';
+import { PRIMARY_BUTTON } from './styles';
 
 /** Ice-blue footer: estimated total range, budget bar, the one primary action. */
 export function TotalsFooter({
@@ -14,14 +15,15 @@ export function TotalsFooter({
   lang,
 }: {
   totals: DraftTotals;
-  onReview: () => void;
+  /** Omitted once the order is sent: there is nothing left to review. */
+  onReview?: () => void;
   /** While lines are still arriving the total is not final, so it is not shown yet. */
   settling?: boolean;
   lang: UiLang;
 }) {
   const money = (n: number) => formatMoney(n, lang);
-  // A range until every history choice is made, then one number.
-  const single = totals.collapsed;
+  // A range until every history choice is made, then one number (a range of equal ends is one number too).
+  const single = totals.collapsed || Math.round(totals.low) === Math.round(totals.high);
   const budget = totals.budget;
   const used = budget ? Math.min(totals.high / budget, 1) : 0;
 
@@ -73,14 +75,16 @@ export function TotalsFooter({
           )}
         </AnimatePresence>
       </div>
-      <button
-        type="button"
-        onClick={onReview}
-        disabled={settling}
-        className="flex-none rounded-lg bg-blue px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(0,32,91,0.15)] transition-[background-color,opacity] hover:bg-blue-hover disabled:opacity-40"
-      >
-        {t('totals.review', lang)}
-      </button>
+      {onReview && (
+        <button
+          type="button"
+          onClick={onReview}
+          disabled={settling}
+          className={`flex-none rounded-lg px-4 py-2.5 text-[13px] ${PRIMARY_BUTTON}`}
+        >
+          {t('totals.review', lang)}
+        </button>
+      )}
     </div>
   );
 }

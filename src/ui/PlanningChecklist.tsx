@@ -27,7 +27,7 @@ function reduceSteps(events: ProgressEvent[]): StepState[] {
 export function PlanningChecklist({ events, lang }: { events: ProgressEvent[]; lang: UiLang }) {
   const steps = reduceSteps(events);
   return (
-    <div className="rounded-xl border border-line bg-white px-3.5 py-3 shadow-[0_1px_2px_rgba(0,32,91,0.04)]">
+    <div className="rounded-xl border border-line bg-white px-3.5 py-3 shadow-sm">
       <ol className="space-y-2">
         <AnimatePresence initial={false}>
           {steps.map((s) => (
@@ -44,7 +44,7 @@ export function PlanningChecklist({ events, lang }: { events: ProgressEvent[]; l
                   {t(`step.${s.step}`, lang)}
                 </div>
                 {!s.done && s.ticker && <Ticker names={s.ticker} />}
-                {s.done && s.result && (
+                {s.done && s.result && s.result !== t(`step.${s.step}`, lang) && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -72,7 +72,7 @@ function StepDot({ done }: { done: boolean }) {
           <motion.path
             d="M3.4 6.2l1.8 1.8 3.4-3.6"
             fill="none"
-            stroke="#fff"
+            stroke="white"
             strokeWidth="1.6"
             strokeLinecap="round"
             strokeLinejoin="round"

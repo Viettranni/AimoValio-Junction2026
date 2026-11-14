@@ -106,11 +106,3 @@ export const LeafIcon = (p: IconProps) => (
     <path d="M5 19l7-7" />
   </Icon>
 );
-
-/** The widget mark: a speech bubble holding a simple list, same as the host launcher. */
-export const AimoMark = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4 3.5V17h0a2 2 0 0 1-2-2z" />
-    <path d="M8.5 9h7M8.5 12.5h4.5" />
-  </Icon>
-);

@@ -20,6 +20,8 @@ export function ChatThread({
   onExample,
   onChoice,
   onCheckIn,
+  onCheckInConfirm,
+  onRetry,
 }: {
   items: ThreadItem[];
   typing: boolean;
@@ -29,6 +31,8 @@ export function ChatThread({
   onExample: (text: string) => void;
   onChoice: (itemId: string, ids: string[], freeText?: string) => void;
   onCheckIn: (itemId: string, text: string) => void;
+  onCheckInConfirm: (itemId: string, entries: Array<{ lineId: string; leftoverQty: number }>) => Promise<void>;
+  onRetry: () => void;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const started = items.some((i) => i.kind === 'user');
@@ -80,7 +84,9 @@ export function ChatThread({
             case 'assistant':
               return (
                 <motion.div key={item.id} {...enter}>
-                  <AssistantBubble>{item.text}</AssistantBubble>
+                  <AssistantBubble>
+                    <LightText text={item.text} />
+                  </AssistantBubble>
                 </motion.div>
               );
             case 'choices':
@@ -103,7 +109,30 @@ export function ChatThread({
             case 'checkin':
               return (
                 <motion.div key={item.id} {...enter} className="pr-4">
-                  <CheckInCard event={item.event} answer={item.answer} lang={lang} onSubmit={(text) => onCheckIn(item.id, text)} />
+                  <CheckInCard
+                    event={item.event}
+                    answer={item.answer}
+                    confirmed={item.confirmed}
+                    lang={lang}
+                    onSubmit={(text) => onCheckIn(item.id, text)}
+                    onConfirm={(entries) => onCheckInConfirm(item.id, entries)}
+                  />
+                </motion.div>
+              );
+            case 'error':
+              return (
+                <motion.div
+                  key={item.id}
+                  {...enter}
+                  role="status"
+                  className="flex max-w-[92%] items-center gap-3 rounded-[14px_14px_14px_4px] border border-line bg-white px-3 py-2 text-[12.5px] leading-[18px] text-ink-soft"
+                >
+                  <span className="flex-1">{item.text}</span>
+                  {item.retry && (
+                    <button type="button" onClick={onRetry} className="flex-none font-semibold text-blue hover:underline">
+                      {t('chat.retry', lang)}
+                    </button>
+                  )}
                 </motion.div>
               );
           }
@@ -126,4 +155,28 @@ function AssistantBubble({ children }: { children: React.ReactNode }) {
       {children}
     </div>
   );
+}
+
+/**
+ * Model replies sometimes carry a little markdown. Keep bold and line breaks, drop list markers and
+ * headings, so the bubble stays prose rather than a rendered document.
+ */
+function LightText({ text }: { text: string }) {
+  const lines = text
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*(?:[-*•]|#{1,6}|\d+\.)\s+/, '').trim())
+    .filter(Boolean);
+  return lines.map((line, i) => (
+    <p key={i} className={i > 0 ? 'mt-1.5' : undefined}>
+      {line.split(/(\*\*[^*]+\*\*)/).map((chunk, j) =>
+        chunk.startsWith('**') && chunk.endsWith('**') ? (
+          <b key={j} className="font-semibold">
+            {chunk.slice(2, -2)}
+          </b>
+        ) : (
+          chunk
+        ),
+      )}
+    </p>
+  ));
 }

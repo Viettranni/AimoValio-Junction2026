@@ -1,0 +1,44 @@
+import type {
+  AuditEntry, Draft, DraftChange, DraftDiff, Intake, IntakeSlot, Lang, LeftoverRecord, OrderSummary, Receipt,
+} from '@/contracts';
+import type { ThreadItem } from './thread';
+
+export interface ApproveResult {
+  receipt?: Receipt;
+  problems?: Array<{ lineId: string; reason: string }>;
+}
+
+export interface OrderDetails {
+  receipt: Receipt;
+  leftovers: LeftoverRecord[];
+}
+
+/** What the widget needs from a conversation, whether scripted (fixture) or backed by the API (live). */
+export interface WidgetSession {
+  items: ThreadItem[];
+  typing: boolean;
+  busy: boolean;
+  lang: Lang | undefined;
+  intake: Intake | null;
+  missing: IntakeSlot[];
+  draft: Draft | null;
+  diff: DraftDiff | null;
+  /** The order submitted in this conversation, if any. */
+  receipt: Receipt | null;
+  orders: OrderSummary[];
+  /** Fast mode exists only for the scripted demo; live mode has no such switch. */
+  fast?: boolean;
+  setFast?: (on: boolean) => void;
+  send: (text: string) => void;
+  choose: (itemId: string, ids: string[], freeText?: string) => void;
+  change: (change: DraftChange) => void;
+  approve: () => Promise<ApproveResult>;
+  fastForward: () => void;
+  reset: () => void;
+  retry: () => void;
+  submitCheckIn: (itemId: string, text: string) => void;
+  confirmCheckIn: (itemId: string, entries: Array<{ lineId: string; leftoverQty: number }>) => Promise<void>;
+  openOrder: (orderId: string) => Promise<OrderDetails | null>;
+  /** Decision log for this conversation, or for one past order. */
+  getAudit: (orderId?: string) => Promise<AuditEntry[]>;
+}

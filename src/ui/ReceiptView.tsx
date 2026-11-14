@@ -1,25 +1,36 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
-import type { Receipt, UiLang } from '@/contracts';
+import type { LeftoverRecord, Receipt, UiLang } from '@/contracts';
 import { formatDay, formatMoney, formatNumber, formatQty } from './format';
 import { t } from './i18n';
-import { ClockIcon, LeafIcon, PrintIcon } from './icons';
+import { ClockIcon, HistoryIcon, LeafIcon, PrintIcon } from './icons';
+import { SECONDARY_BUTTON } from './styles';
 
 /** Order confirmation. The order number is "stamped" in; the decision log unfolds underneath. */
 export function ReceiptView({
   receipt,
   onOpenAudit,
   audit,
+  leftovers,
+  onReorder,
   lang,
 }: {
   receipt: Receipt;
   onOpenAudit: () => void;
   /** The rendered decision log, shown when present. */
   audit?: React.ReactNode;
+  /** Recorded check-in figures for this order, when there are any. */
+  leftovers?: LeftoverRecord[];
+  onReorder?: () => void;
   lang: UiLang;
 }) {
   const money = (n: number) => formatMoney(n, lang, 2);
+  const leftoverOf = (lineId: string) => leftovers?.find((r) => r.lineId === lineId);
+  const leftoverText = (r: LeftoverRecord) =>
+    r.leftoverQty === 0
+      ? t('receipt.usedUp', lang)
+      : t(r.leftoverQty > 0 ? 'receipt.leftLine' : 'receipt.shortLine', lang, { q: formatQty(Math.abs(r.leftoverQty), r.unit, lang) });
 
   return (
     <div className="flex max-h-full flex-col overflow-hidden rounded-[10px] border border-line bg-white shadow-card">
@@ -50,7 +61,7 @@ export function ReceiptView({
             transition={{ type: 'spring', stiffness: 380, damping: 18, delay: 0.35 }}
             className="flex-none rounded-md border-[1.5px] border-navy px-2.5 py-1 text-center"
           >
-            <div className="text-[13px] font-semibold tracking-[0.04em] text-navy tabular-nums">{receipt.orderId}</div>
+            <div className="font-display text-[17px] font-bold tracking-[0.06em] text-navy tabular-nums">{receipt.orderId}</div>
             <div className="text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted">{t('receipt.simulated', lang)}</div>
           </motion.div>
         </header>
@@ -67,12 +78,20 @@ export function ReceiptView({
 
         <ul className="mx-5 mt-3 divide-y divide-line text-[12.5px]">
           {receipt.lines.map((l) => (
-            <li key={l.lineId} className="flex items-baseline justify-between gap-3 py-1.5">
-              <span className="min-w-0 truncate text-navy">{l.productName}</span>
-              <span className="flex flex-none items-baseline gap-4 tabular-nums">
-                <span className="text-ink-soft">{formatQty(l.quantity, l.unit, lang)}</span>
-                <span className="w-20 text-right font-medium text-navy">{money(l.lineTotal)}</span>
-              </span>
+            <li key={l.lineId} className="py-1.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="min-w-0 truncate text-navy">{l.productName}</span>
+                <span className="flex flex-none items-baseline gap-4 tabular-nums">
+                  <span className="text-ink-soft">{formatQty(l.quantity, l.unit, lang)}</span>
+                  <span className="w-20 text-right font-medium text-navy">{money(l.lineTotal)}</span>
+                </span>
+              </div>
+              {leftoverOf(l.lineId) && (
+                <div className="flex items-center gap-1 text-[11px] text-warm-ink tabular-nums">
+                  <HistoryIcon size={11} className="text-warm-icon" />
+                  {leftoverText(leftoverOf(l.lineId)!)}
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -106,7 +125,12 @@ export function ReceiptView({
           )}
         </AnimatePresence>
 
-        <div className="aimo-no-print flex gap-4 px-5 pb-4 pt-4 text-[12px] font-medium">
+        <div className="aimo-no-print flex flex-wrap items-center gap-4 px-5 pb-4 pt-4 text-[12px] font-medium">
+          {onReorder && (
+            <button type="button" onClick={onReorder} className={`rounded-lg px-3.5 py-2 text-[12.5px] ${SECONDARY_BUTTON}`}>
+              {t('receipt.reorder', lang)}
+            </button>
+          )}
           <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-blue hover:underline">
             <PrintIcon size={14} />
             {t('receipt.print', lang)}

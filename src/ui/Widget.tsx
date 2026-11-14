@@ -1,8 +1,9 @@
 'use client';
 
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
+import Image from 'next/image';
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import type { IntakeSlot } from '@/contracts';
+import type { AuditEntry, IntakeSlot } from '@/contracts';
 import { AuditTimeline } from './AuditTimeline';
 import { ChatThread } from './ChatThread';
 import { Composer } from './Composer';
@@ -10,13 +11,15 @@ import { DemoControls } from './DemoControls';
 import { DraftSheet } from './DraftSheet';
 import { customerDisplayName } from './fixtures';
 import { t, uiLangFor, type UiKey } from './i18n';
-import { AimoMark, ChevronDownIcon, OrdersIcon } from './icons';
+import { ChevronDownIcon, OrdersIcon } from './icons';
 import { MyOrders } from './MyOrders';
 import { ReceiptView } from './ReceiptView';
 import { ReviewSheet } from './ReviewSheet';
 import { SlotChips } from './SlotChips';
 import type { ResizeState, WidgetView } from './thread';
+import type { ApproveResult, OrderDetails, WidgetSession } from './session';
 import { useFixtureSession } from './useFixtureSession';
+import { useLiveSession } from './useLiveSession';
 
 const noSubscribe = () => () => {};
 const useEmbedded = () => useSyncExternalStore(noSubscribe, () => window.self !== window.top, () => false);
@@ -42,35 +45,55 @@ const paneMotion = {
   transition: { duration: 0.24, ease: [0.22, 1, 0.36, 1] as const },
 };
 
-export function Widget({
-  conversationId,
-  customerId,
-  mode,
-  demo,
-  parentOrigin,
-}: {
+interface WidgetProps {
   conversationId: string;
   customerId: string;
   mode: 'live' | 'fixture';
   demo: boolean;
   /** The host page's origin, passed by widget.js; size messages go only there. */
   parentOrigin?: string;
-}) {
-  const session = useFixtureSession({ conversationId, customerId, live: mode === 'live' });
+}
+
+/** Live mode talks to the backend; fixture mode plays the scripted demo without an API key. */
+export function Widget(props: WidgetProps) {
+  return props.mode === 'live' ? <LiveWidget {...props} /> : <FixtureWidget {...props} />;
+}
+
+function LiveWidget(props: WidgetProps) {
+  const browserLang = useBrowserLang();
+  const session = useLiveSession({ initialConversationId: props.conversationId, customerId: props.customerId, fallbackLang: browserLang });
+  return <WidgetView {...props} session={session} examples={LIVE_EXAMPLES} />;
+}
+
+function FixtureWidget(props: WidgetProps) {
+  const session = useFixtureSession({ conversationId: props.conversationId, customerId: props.customerId });
+  return <WidgetView {...props} session={session} examples={FIXTURE_EXAMPLES} />;
+}
+
+function WidgetView({
+  customerId,
+  demo,
+  parentOrigin,
+  session,
+  examples,
+}: WidgetProps & { session: WidgetSession; examples: UiKey[] }) {
   const embedded = useEmbedded();
   const browserLang = useBrowserLang();
   const lang = uiLangFor(session.lang ?? browserLang);
 
   const [view, setView] = useState<WidgetView>('chat');
-  const [openOrderId, setOpenOrderId] = useState<string | null>(null);
-  const [auditOpen, setAuditOpen] = useState(false);
+  const [opened, setOpened] = useState<OrderDetails | null>(null);
+  const [audit, setAudit] = useState<AuditEntry[] | null>(null);
+  // Problems from the last approval hold only for the draft version they were found on.
+  const [rejected, setRejected] = useState<{ at: string; problems: NonNullable<ApproveResult['problems']> } | null>(null);
   const [text, setText] = useState('');
   const [focusKey, setFocusKey] = useState(0);
 
   const { draft, receipt } = session;
   const expanded = draft !== null || view !== 'chat';
-  const shownReceipt =
-    view === 'receipt' ? session.orders.find((o) => o.summary.orderId === openOrderId)?.receipt ?? receipt : null;
+  const sentHere = receipt !== null && draft?.status === 'submitted';
+  const problems = rejected && draft && rejected.at === draft.updatedAt ? rejected.problems : undefined;
+  const lineProblems = problems && Object.fromEntries(problems.filter((p) => p.lineId).map((p) => [p.lineId, p.reason]));
 
   const postResize = (state: ResizeState) => {
     if (parentOrigin) window.parent.postMessage({ type: 'aimo:resize', state }, parentOrigin);
@@ -84,18 +107,33 @@ export function Widget({
     document.documentElement.lang = lang;
   }, [lang]);
 
+  const go = (next: WidgetView) => {
+    setAudit(null);
+    setView(next);
+  };
   const send = (value: string) => {
-    if (view !== 'orders') setView('chat');
+    // A sent order stays on its receipt; anything else returns to the live draft.
+    if (view !== 'orders' && !(view === 'receipt' && sentHere)) go('chat');
     session.send(value);
   };
-  const openReceipt = (orderId: string) => {
-    setOpenOrderId(orderId);
-    setAuditOpen(false);
-    setView('receipt');
+  const showReceipt = (details: OrderDetails) => {
+    setOpened(details);
+    go('receipt');
   };
+  const openOrder = async (orderId: string) => {
+    const details = await session.openOrder(orderId);
+    if (details) showReceipt(details);
+  };
+  const backFromOrders = () => (sentHere ? showReceipt({ receipt: receipt!, leftovers: [] }) : go('chat'));
   const approve = async () => {
-    const sent = await session.approve();
-    if (sent) openReceipt(sent.orderId);
+    const result = await session.approve();
+    if (result.receipt) showReceipt({ receipt: result.receipt, leftovers: [] });
+    else if (result.problems?.length && draft) setRejected({ at: draft.updatedAt, problems: result.problems });
+    return result;
+  };
+  const toggleAudit = async (orderId?: string) => {
+    if (audit) return setAudit(null);
+    setAudit(await session.getAudit(orderId));
   };
   const editSlot = (slot: IntakeSlot) => {
     setText(SLOT_PREFILL[slot](session.intake?.guests));
@@ -103,37 +141,56 @@ export function Widget({
   };
   const reset = () => {
     session.reset();
-    setView('chat');
-    setOpenOrderId(null);
+    go('chat');
+    setOpened(null);
     setText('');
   };
 
-  const auditFor = (orderId: string) =>
-    orderId === receipt?.orderId ? session.audit : session.audit.filter((e) => e.orderId === orderId);
-
+  const auditNode = audit ? <AuditTimeline entries={audit} lang={lang} /> : undefined;
   const pane = (() => {
     if (view === 'orders')
-      return (
-        <MyOrders
-          orders={session.orders.map((o) => o.summary)}
-          onOpen={openReceipt}
-          onBack={draft || receipt ? () => setView(receipt && draft?.status === 'submitted' ? 'receipt' : 'chat') : undefined}
-          lang={lang}
-        />
-      );
-    if (view === 'receipt' && shownReceipt)
+      return <MyOrders orders={session.orders} onOpen={openOrder} onBack={draft || receipt ? backFromOrders : undefined} lang={lang} />;
+    if (view === 'receipt' && opened)
       return (
         <ReceiptView
-          receipt={shownReceipt}
+          receipt={opened.receipt}
+          leftovers={opened.leftovers}
           lang={lang}
-          onOpenAudit={() => setAuditOpen((o) => !o)}
-          audit={auditOpen ? <AuditTimeline entries={auditFor(shownReceipt.orderId)} lang={lang} /> : undefined}
+          audit={auditNode}
+          onOpenAudit={() => toggleAudit(opened.receipt.orderId)}
+          onReorder={
+            opened.receipt.orderId === receipt?.orderId
+              ? undefined
+              : () => {
+                  go('chat');
+                  session.send(t('reorder.message', lang, { event: opened.receipt.eventName, n: opened.receipt.guests }));
+                }
+          }
         />
       );
     if (view === 'review' && draft)
-      return <ReviewSheet draft={draft} onApprove={approve} onBack={() => setView('chat')} lang={lang} />;
+      return (
+        <ReviewSheet
+          draft={draft}
+          problems={problems}
+          onApprove={approve}
+          onBack={() => go('chat')}
+          onOpenAudit={() => toggleAudit()}
+          audit={auditNode}
+          lang={lang}
+        />
+      );
     if (draft)
-      return <DraftSheet draft={draft} diff={session.diff} onChange={session.change} onReview={() => setView('review')} lang={lang} />;
+      return (
+        <DraftSheet
+          draft={draft}
+          diff={session.diff}
+          problems={lineProblems}
+          onChange={session.change}
+          onReview={() => go('review')}
+          lang={lang}
+        />
+      );
     return null;
   })();
 
@@ -143,8 +200,9 @@ export function Widget({
         className={`flex min-h-0 flex-col ${expanded ? 'h-[46%] flex-none border-b border-line md:h-full md:w-[380px] md:border-b-0 md:border-r' : 'h-full w-full'}`}
       >
         <header className="flex flex-none items-center gap-2.5 bg-navy px-3.5 py-3 text-white">
-          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/10">
-            <AimoMark size={17} />
+          {/* The robot is petrol, so it sits on a white disc to read on the petrol header. */}
+          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white">
+            <Image src="/aimo-bot.svg" alt="" width={24} height={24} />
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-[13.5px] font-semibold leading-[18px]">{t('header.title', lang)}</div>
@@ -156,13 +214,13 @@ export function Widget({
               lang={lang}
               onFastForward={session.fastForward}
               onReset={reset}
-              onToggleFast={() => session.setFast(!session.fast)}
+              onToggleFast={session.setFast && (() => session.setFast!(!session.fast))}
             />
           )}
           <HeaderButton
             label={t('header.orders', lang)}
             active={view === 'orders'}
-            onClick={() => setView(view === 'orders' ? (receipt && draft?.status === 'submitted' ? 'receipt' : 'chat') : 'orders')}
+            onClick={() => (view === 'orders' ? backFromOrders() : go('orders'))}
           >
             <OrdersIcon size={16} />
           </HeaderButton>
@@ -177,10 +235,12 @@ export function Widget({
           items={session.items}
           typing={session.typing}
           lang={lang}
-          examples={mode === 'fixture' ? FIXTURE_EXAMPLES : LIVE_EXAMPLES}
+          examples={draft || receipt ? [] : examples}
           onExample={send}
           onChoice={session.choose}
           onCheckIn={session.submitCheckIn}
+          onCheckInConfirm={session.confirmCheckIn}
+          onRetry={session.retry}
         />
 
         <div className="flex-none px-3 pb-3 pt-1">
@@ -211,7 +271,7 @@ export function Widget({
           >
             <AnimatePresence mode="wait">
               <motion.div
-                key={view === 'receipt' ? `receipt-${shownReceipt?.orderId}` : view}
+                key={view === 'receipt' ? `receipt-${opened?.receipt.orderId}` : view}
                 {...paneMotion}
                 className="mx-auto flex min-h-0 w-full max-w-[780px] flex-1 flex-col"
               >

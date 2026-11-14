@@ -16,7 +16,7 @@ export default async function EmbedPage({
     <Widget
       conversationId={crypto.randomUUID()}
       customerId={first(params.customer) ?? 'helsinki-juhlapalvelu'}
-      mode={first(params.mode) === 'live' ? 'live' : 'fixture'}
+      mode={first(params.fixture) === '1' ? 'fixture' : 'live'}
       demo={first(params.demo) === '1'}
       parentOrigin={first(params.parentOrigin)}
     />

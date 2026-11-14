@@ -24,8 +24,8 @@ export function HistoryNote({
   const suggestedQty = formatQty(history.suggestedPacks * size, line.unit, lang);
   const last = adjustment.last;
 
-  // After rounding to packs a pending note can suggest exactly the current amount; then there is nothing to choose.
-  if (choice === 'pending' && history.historyPacks === history.suggestedPacks) {
+  // After rounding to packs history can land on exactly the suggested amount; then there is nothing to choose.
+  if (history.historyPacks === history.suggestedPacks) {
     return (
       <div className="flex items-center gap-1.5 px-0.5 text-[11px] text-muted tabular-nums" title={t('history.basis', lang, { n: adjustment.sampleSize })}>
         <HistoryIcon size={12} className="flex-none" />
@@ -61,14 +61,14 @@ export function HistoryNote({
             <button
               type="button"
               onClick={() => onChoose('history')}
-              className="flex-none rounded-full border border-warm-border bg-white px-2.5 py-[3px] text-[11px] font-semibold text-warm-ink shadow-[0_1px_2px_rgba(138,90,0,0.08)] transition-colors hover:border-warm-icon tabular-nums"
+              className="flex-none rounded-full border border-warm-border bg-white px-2.5 py-[3px] text-[11px] font-semibold text-warm-ink shadow-sm transition-colors hover:border-warm-icon tabular-nums"
             >
               {t('history.use', lang, { q: historyQty })}
             </button>
             <button
               type="button"
               onClick={() => onChoose('suggested')}
-              className="flex-none rounded-full px-1.5 py-[3px] text-[11px] font-semibold text-[#8a7a5c] transition-colors hover:text-warm-ink"
+              className="flex-none rounded-full px-1.5 py-[3px] text-[11px] font-semibold text-warm-ink/70 transition-colors hover:text-warm-ink"
             >
               {t('history.keep', lang)}
             </button>

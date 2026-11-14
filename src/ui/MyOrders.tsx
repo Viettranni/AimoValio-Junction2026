@@ -30,7 +30,7 @@ export function MyOrders({
   return (
     <div className="flex max-h-full flex-col overflow-hidden rounded-[10px] border border-line bg-white shadow-card">
       <header className="flex items-baseline justify-between gap-3 border-b-2 border-blue px-4 pb-3 pt-3.5">
-        <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-navy">{t('orders.title', lang)}</h2>
+        <h2 className="font-display text-[19px] font-bold uppercase leading-none tracking-[0.02em] text-navy">{t('orders.title', lang)}</h2>
         {onBack && (
           <button type="button" onClick={onBack} className="inline-flex items-center gap-1 text-[12px] font-medium text-blue hover:underline">
             <ArrowLeftIcon size={13} />

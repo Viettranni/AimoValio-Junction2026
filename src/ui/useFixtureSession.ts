@@ -37,13 +37,14 @@ import {
   planningScript,
 } from './fixtures';
 import { formatMoney, formatNumber, formatQtyDelta } from './format';
+import type { WidgetSession } from './session';
 import type { ThreadItem } from './thread';
 
 /** Scales every scripted delay in fast mode. */
 const FAST_FACTOR = 0.35;
 
 type Phase = 'greeting' | 'intake' | 'addons' | 'planning' | 'draft' | 'sent';
-export interface OrderRecord {
+interface OrderRecord {
   summary: OrderSummary;
   receipt: Receipt;
 }
@@ -85,7 +86,7 @@ function rangeText(draft: Draft): string {
 }
 
 /** Plays the scripted wedding demo and keeps a local draft. Same surface a live session will offer. */
-export function useFixtureSession({ conversationId, customerId, live }: { conversationId: string; customerId: string; live: boolean }) {
+export function useFixtureSession({ conversationId, customerId }: { conversationId: string; customerId: string }): WidgetSession {
   const [items, setItems] = useState<ThreadItem[]>([{ id: 'greet', kind: 'greeting' }]);
   const [typing, setTyping] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -338,10 +339,6 @@ export function useFixtureSession({ conversationId, customerId, live }: { conver
     const text = raw.trim();
     if (!text) return;
     push({ id: nextId(), kind: 'user', text });
-    if (live) {
-      say('Live planning isn’t connected in this build yet.');
-      return;
-    }
     switch (phaseRef.current) {
       case 'greeting':
       case 'sent':
@@ -502,9 +499,21 @@ export function useFixtureSession({ conversationId, customerId, live }: { conver
   };
 
   return {
-    items, typing, busy, lang, intake, missing, draft, diff, receipt, orders, audit, fast,
-    send, choose, change, approve, fastForward, submitCheckIn, reset, setFast,
+    items, typing, busy, lang, intake, missing, draft, diff, receipt, fast, setFast,
+    orders: orders.map((o) => o.summary),
+    send, choose, change, fastForward, submitCheckIn, reset,
+    approve: async () => {
+      const sent = await approve();
+      return sent ? { receipt: sent } : {};
+    },
+    retry: () => {},
+    // The scripted check-in saves straight from the free-text reply, so there is no table to confirm.
+    confirmCheckIn: async () => {},
+    openOrder: async (orderId) => {
+      const order = ordersRef.current.find((o) => o.summary.orderId === orderId);
+      return order ? { receipt: order.receipt, leftovers: [] } : null;
+    },
+    getAudit: async (orderId) =>
+      !orderId || orderId === receipt?.orderId ? audit : audit.filter((e) => e.orderId === orderId),
   };
 }
-
-export type WidgetSession = ReturnType<typeof useFixtureSession>;

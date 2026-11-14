@@ -9,9 +9,9 @@ import { CloseIcon, MinusIcon, PlusIcon } from './icons';
 import { HistoryNote } from './HistoryNote';
 
 const TAG_TONE: Partial<Record<LineTag, string>> = {
-  may_deliver_short: 'bg-[#fff4e0] text-warn',
-  allergens_unknown: 'bg-[#fdecea] text-danger',
-  unavailable: 'bg-[#fdecea] text-danger',
+  may_deliver_short: 'bg-warn/10 text-warn',
+  allergens_unknown: 'bg-danger/10 text-danger',
+  unavailable: 'bg-danger/10 text-danger',
 };
 
 export const SHEET_COLUMNS = 'grid grid-cols-[minmax(0,1fr)_auto_76px_22px] items-center gap-x-3';
@@ -22,6 +22,7 @@ export function DraftRow({
   onChange,
   lang,
   readOnly,
+  problem,
 }: {
   line: DraftLine;
   /** A new value replays the soft-blue "changed" flash. */
@@ -29,6 +30,8 @@ export function DraftRow({
   onChange: (change: DraftChange) => void;
   lang: UiLang;
   readOnly?: boolean;
+  /** Why the last approval rejected this line. */
+  problem?: string;
 }) {
   const size = line.packs > 0 ? line.quantity / line.packs : 0;
   const lineTotal = line.unitPrice === null ? null : line.unitPrice * line.packs;
@@ -65,6 +68,7 @@ export function DraftRow({
               </span>
             ))}
           </div>
+          {problem && <div className="mt-1 text-[11.5px] font-medium text-warn">{problem}</div>}
           {line.substituteFor && (
             <div className="mt-1 text-[11px] text-muted">
               ← {line.substituteFor.productName} · {line.substituteFor.reason}

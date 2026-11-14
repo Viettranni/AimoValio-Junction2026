@@ -14,10 +14,11 @@ export function DemoControls({
   onToggleFast,
   lang,
 }: {
-  fast: boolean;
+  /** Omit both to hide the fast-mode switch (live mode has none). */
+  fast?: boolean;
   onFastForward: () => void;
   onReset: () => void;
-  onToggleFast: () => void;
+  onToggleFast?: () => void;
   lang: UiLang;
 }) {
   const [open, setOpen] = useState(false);
@@ -60,12 +61,14 @@ export function DemoControls({
             <div className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">{t('demo.title', lang)}</div>
             <MenuButton onClick={act(onFastForward)}>{t('demo.ff', lang)}</MenuButton>
             <MenuButton onClick={act(onReset)}>{t('demo.reset', lang)}</MenuButton>
-            <MenuButton onClick={onToggleFast}>
-              <span className="flex-1">{t('demo.fast', lang)}</span>
-              <span className={`relative h-4 w-7 rounded-full transition-colors ${fast ? 'bg-blue' : 'bg-line'}`}>
-                <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-[left] ${fast ? 'left-3.5' : 'left-0.5'}`} />
-              </span>
-            </MenuButton>
+            {onToggleFast && (
+              <MenuButton onClick={onToggleFast}>
+                <span className="flex-1">{t('demo.fast', lang)}</span>
+                <span className={`relative h-4 w-7 rounded-full transition-colors ${fast ? 'bg-blue' : 'bg-line'}`}>
+                  <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-[left] ${fast ? 'left-3.5' : 'left-0.5'}`} />
+                </span>
+              </MenuButton>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

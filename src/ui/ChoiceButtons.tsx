@@ -6,6 +6,7 @@ import type { ChoicesEvent, UiLang } from '@/contracts';
 import { t } from './i18n';
 import { CheckIcon } from './icons';
 import type { ChoiceAnswer } from './thread';
+import { SECONDARY_BUTTON } from './styles';
 
 /** Quick-reply buttons. Single choice submits on tap; multi choice collects and submits with "Done". An option id "none" is exclusive. */
 export function ChoiceButtons({
@@ -99,7 +100,7 @@ export function ChoiceButtons({
               type="button"
               onClick={submit}
               disabled={selected.length === 0 && !text.trim()}
-              className="rounded-full bg-navy px-3.5 py-1.5 text-[12.5px] font-semibold text-white transition-opacity disabled:opacity-30"
+              className={`rounded-full px-3.5 py-1.5 text-[12.5px] ${SECONDARY_BUTTON}`}
             >
               {t('choices.done', lang)}
             </button>

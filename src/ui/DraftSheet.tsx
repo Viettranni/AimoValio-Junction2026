@@ -43,12 +43,15 @@ export function DraftSheet({
   diff,
   onChange,
   onReview,
+  problems,
   lang,
 }: {
   draft: Draft;
   diff: DraftDiff | null;
   onChange: (change: DraftChange) => void;
   onReview: () => void;
+  /** Reasons from a failed approval, by line id, shown on the rows until the draft changes. */
+  problems?: Record<string, string>;
   lang: UiLang;
 }) {
   const { intake } = draft;
@@ -58,7 +61,7 @@ export function DraftSheet({
   return (
     <div className="flex max-h-full flex-col overflow-hidden rounded-[10px] border border-line bg-white shadow-card">
       <header className="flex items-baseline justify-between gap-3 border-b-2 border-blue px-4 pb-3 pt-3.5">
-        <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-navy">{t('sheet.title', lang)}</h2>
+        <h2 className="font-display text-[19px] font-bold uppercase leading-none tracking-[0.02em] text-navy">{t('sheet.title', lang)}</h2>
         <span className="truncate text-[12px] text-muted tabular-nums">
           {intake.eventName}
           {intake.deliveryDate && ` · ${formatDay(intake.deliveryDate, lang)}`}
@@ -109,6 +112,7 @@ export function DraftSheet({
                     onChange={onChange}
                     readOnly={draft.status === 'submitted'}
                     flashKey={changed.has(line.id) ? draft.updatedAt : undefined}
+                    problem={problems?.[line.id]}
                   />
                 ))}
               </AnimatePresence>
@@ -117,7 +121,7 @@ export function DraftSheet({
         </AnimatePresence>
       </div>
 
-      <TotalsFooter totals={draft.totals} onReview={onReview} settling={draft.status === 'building'} lang={lang} />
+      <TotalsFooter totals={draft.totals} onReview={draft.status === 'submitted' ? undefined : onReview} settling={draft.status === 'building'} lang={lang} />
     </div>
   );
 }

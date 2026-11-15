@@ -317,7 +317,7 @@ function WidgetView({
       <ShelfContext.Provider value={shelf}>
       <MotionConfig reducedMotion="user">
         <main
-          className={`mx-auto grid w-full max-w-[1400px] flex-1 gap-5 px-4 py-5 md:px-6 md:py-6 lg:h-[calc(100dvh-4rem-1px)] lg:grid-cols-[minmax(340px,5fr)_8fr] lg:grid-rows-[minmax(0,1fr)] lg:gap-6 ${running ? '' : 'aimo-paused'}`}
+          className={`mx-auto grid min-h-0 w-full max-w-[1400px] flex-1 gap-5 lg:flex-none px-4 py-5 md:px-6 md:py-6 lg:h-[calc(100dvh-4rem-1px)] lg:grid-cols-[minmax(340px,5fr)_8fr] lg:grid-rows-[minmax(0,1fr)] lg:gap-6 ${running ? '' : 'aimo-paused'}`}
         >
           <section aria-label={t('header.title', lang)} className="flex h-[78dvh] min-h-0 flex-col rounded-2xl bg-white shadow-card lg:h-auto">
             <header className="flex flex-none items-center gap-1.5 px-5 pb-3 pt-6 md:px-8 md:pt-7">

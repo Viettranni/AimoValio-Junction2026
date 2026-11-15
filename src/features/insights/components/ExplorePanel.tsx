@@ -5,6 +5,7 @@ import { STARTERS, type InsightsVM } from '../hooks/useInsights';
 import { AnswerCard } from './AnswerCard';
 import { ClarifyCard } from './ClarifyCard';
 import { SiteSelect } from './SiteSelect';
+import { ThinkingCard } from './ThinkingCard';
 
 const CATEGORIES = ['Maitotuotteet', 'Liha', 'Kala', 'Hedelmät ja vihannekset', 'Leipomotuotteet', 'Kuivatuotteet', 'Kasvipohjaiset'];
 const EVENT_TYPES = ['Gaala', 'Häät', 'Konferenssi', 'Pikkujoulu', 'Syntymäpäivä', 'Lounas'];
@@ -42,7 +43,7 @@ export function ExplorePanel({ vm }: { vm: InsightsVM }) {
             className={`rounded-full border px-3 py-1 text-[13px] ${vm.prompt === s ? 'border-navy bg-navy text-[var(--ik-surface)]' : 'border-line text-navy'}`}>{s}</button>
         ))}
       </div>
-      {vm.loading ? <p role="status" className="text-[13.5px] text-muted">Kysytään datalta…</p>
+      {vm.loading ? <ThinkingCard key={vm.prompt} prompt={vm.prompt} />
         : !answer ? null
           : 'error' in answer ? <div className="ik-card p-4 text-[13.5px] text-danger">{answer.error}</div>
             : 'clarify' in answer ? <ClarifyCard answer={answer} clar={vm.clar} setClar={vm.setClar} onSend={vm.sendClarify} />

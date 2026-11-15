@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { VegaChart } from '@/shared/components/VegaChart';
 import type { InsightsVM } from '../hooks/useInsights';
 import { SiteSelect } from './SiteSelect';
+import { StoryLoading } from './ThinkingCard';
 
 /** "Your year": a Wrapped-style story, one card at a time (arrow keys and swipe-free buttons). */
 export function YearStory({ vm }: { vm: InsightsVM }) {
@@ -28,7 +29,7 @@ export function YearStory({ vm }: { vm: InsightsVM }) {
         <SiteSelect sites={vm.sites} value={vm.yearSite} onChange={vm.setYearSite} />
         <span className="text-[13px] text-muted">{wrapped?.title}</span>
       </div>
-      {!wrapped ? <p className="text-[13.5px] text-muted">Ladataan vuottasi…</p> : !c ? <p className="text-[13.5px] text-muted">Ei näytettävää.</p> : (
+      {!wrapped ? <StoryLoading /> : !c ? <p className="text-[13.5px] text-muted">Ei näytettävää.</p> : (
         <>
           <article className="ik-card ik-story-card relative overflow-hidden p-6 md:p-8" data-story-theme={card}
             data-story-kind={c.kind} data-story-tone={c.tone}

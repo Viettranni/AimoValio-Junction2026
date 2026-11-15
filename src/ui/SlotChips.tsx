@@ -33,14 +33,17 @@ export function SlotChips({
   missing,
   onEdit,
   lang,
+  roomy,
 }: {
   intake: Intake;
   missing: IntakeSlot[];
   onEdit: (slot: IntakeSlot) => void;
   lang: UiLang;
+  /** The Orders page: bigger pills with more room between them. */
+  roomy?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap gap-1 pb-2">
+    <div className={`flex flex-wrap ${roomy ? 'gap-2 pb-4' : 'gap-1 pb-2'}`}>
       <AnimatePresence initial={false} mode="popLayout">
         {REQUIRED_SLOTS.map((slot) => {
           const text = slotText(slot, intake, lang);
@@ -56,7 +59,7 @@ export function SlotChips({
               transition={{ duration: 0.2 }}
               onClick={() => onEdit(slot)}
               title={t('slot.edit', lang)}
-              className={`rounded-full px-2.5 py-[3px] text-[11.5px] font-medium tabular-nums transition-colors ${
+              className={`rounded-full font-medium tabular-nums transition-colors ${roomy ? 'px-4 py-1.5 text-[14px]' : 'px-2.5 py-[3px] text-[11.5px]'} ${
                 isMissing
                   ? 'border border-dashed border-blue/50 text-blue hover:bg-sky'
                   : 'border border-transparent bg-sky text-navy hover:border-blue/40'

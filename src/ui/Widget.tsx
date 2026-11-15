@@ -13,6 +13,7 @@ import { customerDisplayName, TICKER_NAMES } from './fixtures';
 import { t, uiLangFor, type UiKey } from './i18n';
 import { ChevronDownIcon, OrdersIcon } from './icons';
 import { MyOrders } from './MyOrders';
+import { OrderDraft, OrderDraftEmpty, OrderDraftSkeleton } from './OrderDraft';
 import { ReceiptView } from './ReceiptView';
 import { ReviewSheet } from './ReviewSheet';
 import { sampleTerms } from './shelf';
@@ -55,6 +56,8 @@ interface WidgetProps {
   demo: boolean;
   /** The host page's origin, passed by widget.js; size messages go only there. */
   parentOrigin?: string;
+  /** 'panel' (default): the embeddable widget. 'page': the Orders page, assistant and draft as two cards. */
+  layout?: 'panel' | 'page';
 }
 
 /** Live mode talks to the backend; fixture mode plays the scripted demo without an API key. */
@@ -77,11 +80,13 @@ function WidgetView({
   customerId,
   demo,
   parentOrigin,
+  layout = 'panel',
   session,
   examples,
   fixtureNames,
 }: WidgetProps & { session: WidgetSession; examples: UiKey[]; fixtureNames?: string[] }) {
-  const embedded = useEmbedded();
+  const page = layout === 'page';
+  const embedded = useEmbedded() && !page;
   const browserLang = useBrowserLang();
   const lang = uiLangFor(session.lang ?? browserLang);
 
@@ -237,7 +242,20 @@ function WidgetView({
           lang={lang}
         />
       );
-    if (skeleton) return <SkeletonSheet intake={session.intake} lang={lang} />;
+    if (skeleton) return page ? <OrderDraftSkeleton intake={session.intake} lang={lang} /> : <SkeletonSheet intake={session.intake} lang={lang} />;
+    if (draft && page)
+      return (
+        <OrderDraft
+          draft={draft}
+          diff={session.diff}
+          editing={session.editing}
+          animateIn={fromSkeleton}
+          locked={session.busy || (session.editing !== null && (session.editing.length === 0 || session.editing.includes('')))}
+          onChange={session.change}
+          onReview={() => go('review')}
+          lang={lang}
+        />
+      );
     if (draft)
       return (
         <DraftSheet
@@ -251,8 +269,101 @@ function WidgetView({
           lang={lang}
         />
       );
-    return null;
+    return page ? <OrderDraftEmpty lang={lang} /> : null;
   })();
+
+  const toggleOrders = () => {
+    if (view === 'orders') return backFromOrders();
+    session.refreshOrders?.();
+    go('orders');
+  };
+  const composer = (roomy: boolean) => (
+    <>
+      {session.intake && draft?.status !== 'submitted' && (
+        <SlotChips intake={draft?.intake ?? session.intake} missing={session.missing} onEdit={editSlot} lang={lang} roomy={roomy} />
+      )}
+      <Composer
+        value={text}
+        onChange={setText}
+        onSubmit={send}
+        onAttach={session.attachDocument ? (file) => { if (view !== 'orders') go('chat'); session.attachDocument?.(file); } : undefined}
+        reading={session.reading}
+        speechLang={session.lang}
+        disabled={session.busy || session.reading}
+        focusKey={focusKey}
+        lang={lang}
+        roomy={roomy}
+        placeholder={t(draft && draft.status !== 'submitted' ? 'composer.placeholderDraft' : 'composer.placeholder', lang)}
+      />
+    </>
+  );
+  const thread = (roomy: boolean) => (
+    <ChatThread
+      items={session.items}
+      typing={session.typing}
+      lang={lang}
+      examples={draft || receipt ? [] : examples}
+      onExample={send}
+      onChoice={session.choose}
+      onCheckIn={session.submitCheckIn}
+      onCheckInConfirm={session.confirmCheckIn}
+      onRetry={session.retry}
+      roomy={roomy}
+    />
+  );
+
+  if (page)
+    return (
+      <ShelfContext.Provider value={shelf}>
+      <MotionConfig reducedMotion="user">
+        <main
+          className={`mx-auto grid w-full max-w-[1400px] flex-1 gap-5 px-4 py-5 md:px-6 md:py-6 lg:h-[calc(100dvh-4rem-1px)] lg:grid-cols-[minmax(340px,5fr)_8fr] lg:grid-rows-[minmax(0,1fr)] lg:gap-6 ${running ? '' : 'aimo-paused'}`}
+        >
+          <section aria-label={t('header.title', lang)} className="flex h-[78dvh] min-h-0 flex-col rounded-2xl bg-white shadow-card lg:h-auto">
+            <header className="flex flex-none items-center gap-1.5 px-5 pb-3 pt-6 md:px-8 md:pt-7">
+              <h1 className="min-w-0 flex-1 truncate text-[24px] font-bold leading-tight tracking-[-0.01em] text-navy">{t('header.title', lang)}</h1>
+              {demo && (
+                <DemoControls
+                  light
+                  fast={session.fast}
+                  lang={lang}
+                  onFastForward={session.fastForward}
+                  onNextStep={() => void nextDeliveryStep()}
+                  onReset={reset}
+                  onToggleFast={session.setFast && (() => session.setFast!(!session.fast))}
+                />
+              )}
+              <button
+                type="button"
+                onClick={toggleOrders}
+                aria-pressed={view === 'orders'}
+                className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+                  view === 'orders' ? 'bg-sky text-navy' : 'text-muted hover:bg-sky hover:text-navy'
+                }`}
+              >
+                <OrdersIcon size={15} />
+                {t('draft.myOrders', lang)}
+              </button>
+            </header>
+            {thread(true)}
+            <div className="flex-none px-5 pb-5 pt-1 md:px-8 md:pb-7">{composer(true)}</div>
+          </section>
+
+          <section aria-label={t('sheet.title', lang)} className="flex min-h-[70dvh] min-w-0 flex-col lg:min-h-0">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={view === 'receipt' ? `receipt-${opened?.receipt.orderId}` : view}
+                {...paneMotion}
+                className="flex min-h-0 w-full flex-1 flex-col"
+              >
+                {pane}
+              </motion.div>
+            </AnimatePresence>
+          </section>
+        </main>
+      </MotionConfig>
+      </ShelfContext.Provider>
+    );
 
   const card = (
     <div className={`relative flex h-full w-full flex-col overflow-hidden bg-white md:flex-row ${running ? '' : 'aimo-paused'}`}>
@@ -281,11 +392,7 @@ function WidgetView({
           <HeaderButton
             label={t('header.orders', lang)}
             active={view === 'orders'}
-            onClick={() => {
-              if (view === 'orders') return backFromOrders();
-              session.refreshOrders?.();
-              go('orders');
-            }}
+            onClick={toggleOrders}
           >
             <OrdersIcon size={16} />
           </HeaderButton>
@@ -296,35 +403,9 @@ function WidgetView({
           )}
         </header>
 
-        <ChatThread
-          items={session.items}
-          typing={session.typing}
-          lang={lang}
-          examples={draft || receipt ? [] : examples}
-          onExample={send}
-          onChoice={session.choose}
-          onCheckIn={session.submitCheckIn}
-          onCheckInConfirm={session.confirmCheckIn}
-          onRetry={session.retry}
-        />
+        {thread(false)}
 
-        <div className="flex-none px-3 pb-3 pt-1">
-          {session.intake && draft?.status !== 'submitted' && (
-            <SlotChips intake={draft?.intake ?? session.intake} missing={session.missing} onEdit={editSlot} lang={lang} />
-          )}
-          <Composer
-            value={text}
-            onChange={setText}
-            onSubmit={send}
-            onAttach={session.attachDocument ? (file) => { if (view !== 'orders') go('chat'); session.attachDocument?.(file); } : undefined}
-            reading={session.reading}
-            speechLang={session.lang}
-            disabled={session.busy || session.reading}
-            focusKey={focusKey}
-            lang={lang}
-            placeholder={t(draft && draft.status !== 'submitted' ? 'composer.placeholderDraft' : 'composer.placeholder', lang)}
-          />
-        </div>
+        <div className="flex-none px-3 pb-3 pt-1">{composer(false)}</div>
       </section>
 
       <AnimatePresence>

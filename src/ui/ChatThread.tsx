@@ -24,6 +24,7 @@ export function ChatThread({
   onCheckIn,
   onCheckInConfirm,
   onRetry,
+  roomy,
 }: {
   items: ThreadItem[];
   typing: boolean;
@@ -35,6 +36,8 @@ export function ChatThread({
   onCheckIn: (itemId: string, text: string) => void;
   onCheckInConfirm: (itemId: string, entries: Array<{ lineId: string; leftoverQty: number }>) => Promise<void>;
   onRetry: () => void;
+  /** The Orders page: bigger type and bubbles, side padding from the card. */
+  roomy?: boolean;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const started = items.some((i) => i.kind === 'user');
@@ -49,14 +52,14 @@ export function ChatThread({
     // sr-only live regions). Without it they resolve against the iframe's viewport at their in-thread offset,
     // so the embedded document grows and the thread "scrolls on" into blank space below the last message.
     // `overscroll-contain` keeps a scroll that reaches the end from chaining into the host page.
-    <div ref={scroller} className="aimo-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 pb-3 pt-4" aria-live="polite">
-      <div className="flex flex-col gap-2.5">
+    <div ref={scroller} className={`aimo-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain ${roomy ? 'px-5 pb-4 pt-2 md:px-8' : 'px-3.5 pb-3 pt-4'}`} aria-live="polite">
+      <div className={`flex flex-col ${roomy ? 'gap-3' : 'gap-2.5'}`}>
         {items.map((item) => {
           switch (item.kind) {
             case 'greeting':
               return (
                 <motion.div key={item.id} {...enter} className="flex flex-col gap-2">
-                  <AssistantBubble>{t('greeting', lang)}</AssistantBubble>
+                  <AssistantBubble roomy={roomy}>{t('greeting', lang)}</AssistantBubble>
                   {!started && (
                     <div className="flex flex-col gap-1.5">
                       {examples.map((key, i) => (
@@ -67,7 +70,7 @@ export function ChatThread({
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.15 + i * 0.07, duration: 0.25 }}
                           onClick={() => onExample(t(key, lang))}
-                          className="group flex items-center justify-between gap-2 rounded-xl border border-line bg-white px-3 py-2 text-left text-[12.5px] text-navy transition-colors hover:border-blue hover:bg-ice"
+                          className={`group flex items-center justify-between gap-2 rounded-xl border border-line bg-white text-left text-navy transition-colors hover:border-blue hover:bg-ice ${roomy ? 'px-4 py-2.5 text-[14px]' : 'px-3 py-2 text-[12.5px]'}`}
                         >
                           <span>{t(key, lang)}</span>
                           <SendIcon size={13} className="flex-none text-muted transition-colors group-hover:text-blue" />
@@ -82,7 +85,11 @@ export function ChatThread({
                 <motion.div
                   key={item.id}
                   {...enter}
-                  className="ml-auto max-w-[85%] whitespace-pre-line rounded-[14px_14px_4px_14px] bg-blue px-3 py-2 text-[13px] leading-[19px] text-white"
+                  className={`ml-auto whitespace-pre-line bg-blue text-white ${
+                    roomy
+                      ? 'max-w-[92%] rounded-2xl px-5 py-4 text-[16.5px] font-medium leading-[23px]'
+                      : 'max-w-[85%] rounded-[14px_14px_4px_14px] px-3 py-2 text-[13px] leading-[19px]'
+                  }`}
                 >
                   {item.text}
                 </motion.div>
@@ -90,7 +97,7 @@ export function ChatThread({
             case 'assistant':
               return (
                 <motion.div key={item.id} {...enter}>
-                  <AssistantBubble>
+                  <AssistantBubble roomy={roomy}>
                     <LightText text={item.text} />
                   </AssistantBubble>
                 </motion.div>
@@ -159,9 +166,13 @@ export function ChatThread({
   );
 }
 
-function AssistantBubble({ children }: { children: React.ReactNode }) {
+function AssistantBubble({ children, roomy }: { children: React.ReactNode; roomy?: boolean }) {
   return (
-    <div className="max-w-[92%] rounded-[14px_14px_14px_4px] bg-ice px-3 py-2 text-[13px] leading-[19px] text-navy">
+    <div
+      className={`max-w-[92%] bg-ice text-navy ${
+        roomy ? 'rounded-2xl px-4 py-3 text-[14.5px] leading-[21px]' : 'rounded-[14px_14px_14px_4px] px-3 py-2 text-[13px] leading-[19px]'
+      }`}
+    >
       {children}
     </div>
   );

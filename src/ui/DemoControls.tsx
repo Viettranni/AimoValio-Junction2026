@@ -14,6 +14,7 @@ export function DemoControls({
   onReset,
   onToggleFast,
   lang,
+  light,
 }: {
   /** Omit both to hide the fast-mode switch (live mode has none). */
   fast?: boolean;
@@ -23,6 +24,8 @@ export function DemoControls({
   onReset: () => void;
   onToggleFast?: () => void;
   lang: UiLang;
+  /** On a white card (the Orders page) rather than the petrol header. */
+  light?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -48,7 +51,7 @@ export function DemoControls({
         onClick={() => setOpen((o) => !o)}
         aria-label={t('header.demo', lang)}
         aria-expanded={open}
-        className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+        className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${light ? 'text-muted hover:bg-sky hover:text-navy' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
       >
         <SlidersIcon size={16} />
       </button>

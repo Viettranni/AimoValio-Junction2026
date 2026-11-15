@@ -30,3 +30,23 @@
 }
 .ik-chart { width: 100%; min-height: 120px; }
 .ik-chart .vega-embed { width: 100%; }
+
+/* Analytiikka inside the Aimo app (Restaurants tab): white floating cards, navy charts, no page tint. */
+.aimo-app .ik-root {
+  --ik-cat-1: #183f7a;
+  --ik-seq-3: #183f7a;
+  --ik-seq-2: #5f82b7;
+  --ik-seq-1: #e7eef8;
+  background: transparent;
+}
+.aimo-app .ik-card {
+  border-color: transparent;
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+}
+.aimo-app .ik-root select,
+.aimo-app .ik-root input {
+  border-color: transparent;
+  box-shadow: var(--shadow-soft);
+  color: var(--navy);
+}

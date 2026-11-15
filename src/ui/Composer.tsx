@@ -22,6 +22,7 @@ export function Composer({
   onAttach,
   reading,
   speechLang,
+  roomy,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -37,6 +38,8 @@ export function Composer({
   reading?: boolean;
   /** The conversation's language as detected from what the buyer wrote (any code, e.g. "et"), for the mic. */
   speechLang?: string | null;
+  /** The Orders page: a taller, filled field with a plain arrow, as in the design. */
+  roomy?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -57,7 +60,9 @@ export function Composer({
 
   return (
     <form
-      className="flex items-center gap-1.5 rounded-full border border-line bg-white py-1 pl-3.5 pr-1 transition-colors focus-within:border-blue"
+      className={`flex items-center gap-1.5 border transition-colors focus-within:border-blue ${
+        roomy ? 'rounded-2xl border-transparent bg-ice py-2 pl-5 pr-2' : 'rounded-full border-line bg-white py-1 pl-3.5 pr-1'
+      }`}
       onSubmit={(e) => {
         e.preventDefault();
         submit();
@@ -128,13 +133,15 @@ export function Composer({
         placeholder={reading ? t('document.reading', lang) : speech.listening ? t('composer.listening', lang)
           : speech.error ? t(`composer.mic.${speech.error}`, lang) : placeholder}
         aria-label={placeholder}
-        className="min-w-0 flex-1 bg-transparent py-1.5 focus-visible:outline-none text-[13px] text-navy outline-none placeholder:text-muted"
+        className={`min-w-0 flex-1 bg-transparent py-1.5 text-navy outline-none placeholder:text-muted focus-visible:outline-none ${roomy ? 'text-[15px]' : 'text-[13px]'}`}
       />
       <button
         type="submit"
         disabled={disabled || !value.trim()}
         aria-label={t('composer.send', lang)}
-        className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-blue text-white transition-[background-color,opacity] hover:bg-blue-hover disabled:opacity-30"
+        className={`flex flex-none items-center justify-center rounded-full transition-[background-color,opacity] disabled:opacity-30 ${
+          roomy ? 'h-9 w-9 text-navy hover:bg-sky' : 'h-8 w-8 bg-blue text-white hover:bg-blue-hover'
+        }`}
       >
         <SendIcon size={15} strokeWidth={2.2} />
       </button>

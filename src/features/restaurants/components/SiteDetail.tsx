@@ -10,12 +10,14 @@ import { Sparkline } from './Sparkline';
 const TABS: Array<[SiteTab, string]> = [['overview', 'Yleiskatsaus'], ['people', 'Ihmiset'], ['deliveries', 'Toimitukset'], ['rules', 'Säännöt']];
 
 /** The open kitchen's side panel: overview, people, deliveries, rules. */
-export function SiteDetail({ site, data, tab, setTab, onClose }: {
+export function SiteDetail({ site, data, tab, setTab, onClose, onAnalytics }: {
   site: KitchenSite; data: Kitchens; tab: SiteTab; setTab: (t: SiteTab) => void; onClose: () => void;
+  /** When given, "Katso analytiikka" stays on the page (the app's Restaurants tab) instead of opening Analytiikka. */
+  onAnalytics?: () => void;
 }) {
   const people = [{ name: site.lead, role: 'Keittiövastaava' }, ...data.org.approvers.filter((a) => a.name !== site.lead)];
   return (
-    <aside role="dialog" aria-label={site.name} className="fixed inset-y-0 right-0 z-20 w-full max-w-md overflow-y-auto border-l border-line bg-[var(--ik-surface)] p-5 shadow-card">
+    <aside role="dialog" aria-label={site.name} className="fixed inset-y-0 right-0 z-40 w-full max-w-md overflow-y-auto border-l border-line bg-[var(--ik-surface)] p-5 shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div><h2 className="text-[20px] font-semibold text-ink">{site.name}</h2><p className="text-[13px] text-muted">{site.type}</p></div>
         <button type="button" onClick={onClose} className="rounded-full border border-line px-3 py-1 text-[13px] text-navy">Sulje</button>
@@ -35,8 +37,12 @@ export function SiteDetail({ site, data, tab, setTab, onClose }: {
               ))}
             </div>
             <div><p className="mb-1 font-semibold text-ink-soft">Kulutus, viimeiset 12 kuukautta</p><Sparkline values={site.trend} w={360} h={80} /></div>
-            <Link href={`/analytiikka/oivallukset?${new URLSearchParams({ buyerId: data.org.id, siteId: site.id })}`}
-              className="inline-block rounded-full bg-lime px-4 py-2 font-semibold text-lime-ink">Katso analytiikka</Link>
+            {onAnalytics ? (
+              <button type="button" onClick={onAnalytics} className="inline-block rounded-full bg-lime px-4 py-2 font-semibold text-lime-ink">Katso analytiikka</button>
+            ) : (
+              <Link href={`/analytiikka/oivallukset?${new URLSearchParams({ buyerId: data.org.id, siteId: site.id })}`}
+                className="inline-block rounded-full bg-lime px-4 py-2 font-semibold text-lime-ink">Katso analytiikka</Link>
+            )}
           </div>
         )}
         {tab === 'people' && (

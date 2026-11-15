@@ -14,7 +14,7 @@ export default async function OrdersPage({ searchParams }: PageProps<'/orders'>)
       conversationId={crypto.randomUUID()}
       customerId={first(params.customer) || 'helsinki-juhlapalvelu'}
       mode={first(params.fixture) === '1' ? 'fixture' : 'live'}
-      demo={first(params.demo) === '1'}
+      demo={first(params.demo) !== '0'}
     />
   );
 }

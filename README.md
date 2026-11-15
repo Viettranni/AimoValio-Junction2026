@@ -32,7 +32,7 @@ Start everything with `npm run dev` (port 3100, see Run it). Everything below us
 
 3. **The human sign-off:** http://localhost:3100/approvals. Anna sees the agent, the total, why it needs her and the lines. Approve re-checks Valio and places the (simulated) order, or re-quotes if a price moved; Reject tells the agent. No MCP tool can approve. (In this prototype the page has no login; see Assumptions.)
 
-4. **One client among many, the chef's widget:** http://localhost:3100/demo-host?demo=1. The same pipeline behind a chat, and the **same gateway**: Review shows a fixed-price offer ("Prices fixed until 14:32 · Offer OF-…", with a countdown and any price changes), and Approve is the gateway's `placeOrder` with the same authority policy as Claude over MCP. A 300-guest wedding (about €780) orders straight away; a 700-guest one (about €1,480) shows "Sent to Anna Virtanen for approval" with the reason, and the widget updates by itself when she approves on `/approvals`. The orchestrator is also an MCP tool (`chatWithAimo`), and its drafts can be checked out with `checkoutDraft`.
+4. **One client among many, the chef's widget:** http://localhost:3100/demo-host. The same pipeline behind a chat, and the **same gateway**: Review shows a fixed-price offer ("Prices fixed until 14:32 · Offer OF-…", with a countdown and any price changes), and Approve is the gateway's `placeOrder` with the same authority policy as Claude over MCP. A 300-guest wedding (about €780) orders straight away; a 700-guest one (about €1,480) shows "Sent to Anna Virtanen for approval" with the reason, and the widget updates by itself when she approves on `/approvals`. The orchestrator is also an MCP tool (`chatWithAimo`), and its drafts can be checked out with `checkoutDraft`.
 
 5. **The chef's own notes:** in the widget, tap 📎 and pick [`docs/demo/haat-lappu.jpg`](docs/demo/haat-lappu.jpg) (a photo of handwritten wedding notes) or [`docs/demo/pikkujoulut-tilaus.xlsx`](docs/demo/pikkujoulut-tilaus.xlsx) (an Excel order with amounts). What was read appears as the buyer's message; the assistant asks only for what is missing (here the budget and how many guests are vegan) and plans the event, or turns a list with amounts into a direct order. Agents get the same reader over MCP: `readOrderDocument`.
 
@@ -52,7 +52,7 @@ Requirements: Node 22 and npm.
 
 ```bash
 npm install
-npm run dev                    # http://localhost:3100/demo-host?demo=1
+npm run dev                    # http://localhost:3100/demo-host
 ```
 
 `npm run dev` (scripts/dev.ts) does the rest: it creates `.env.local` from `.env.example` when missing (fill in the variables below), seeds `data/aimo.sqlite` on the first run (`npm run seed` re-seeds), starts Next.js on port 3100 (`-p` or `PORT` to change it) and, if `cloudflared` is installed (`brew install cloudflared`), a public tunnel to the MCP endpoint for claude.ai connectors. The banner prints the widget, approvals and MCP links; the static page and the chat show the same copy-paste link. `npm run dev:next` is plain `next dev`.
@@ -65,7 +65,7 @@ npm run dev                    # http://localhost:3100/demo-host?demo=1
 | `VALIO_API_KEY` | Key for the Valio Aimo challenge API (prices, availability) |
 | `VALIO_API_BASE` | `https://junction26.valioaimo.fi` |
 
-Open http://localhost:3100/demo-host?demo=1: a mock Valio Aimo page with the widget in the corner. `?demo=1` shows the demo controls; **Reset demo** in those controls re-seeds the database (same as `npm run seed`), **Next delivery step** advances the demo clock to the latest order's next delivery state, and **Fast-forward to day after event** jumps to the day after delivery for the leftover check-in.
+Open http://localhost:3100/demo-host: a mock Valio Aimo page with the widget in the corner. The demo controls are shown by default (`?demo=0` hides them); **Reset demo** in those controls re-seeds the database (same as `npm run seed`), **Next delivery step** advances the demo clock to the latest order's next delivery state, and **Fast-forward to day after event** jumps to the day after delivery for the leftover check-in.
 
 Optional: set `AIMO_DB_PATH` to keep the SQLite database somewhere other than `data/aimo.sqlite`, `AIMO_AGENT_KEYS` / `AIMO_AGENT_KEY` for agent identities (see `.env.example`), and `AIMO_MODEL` for another model (e.g. `openai/<model>` with `OPENAI_API_KEY`).
 

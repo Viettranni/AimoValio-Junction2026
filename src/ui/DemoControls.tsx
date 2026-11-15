@@ -6,7 +6,7 @@ import type { UiLang } from '@/contracts';
 import { t } from './i18n';
 import { SlidersIcon } from './icons';
 
-/** Only rendered with ?demo=1. */
+/** Shown by default; ?demo=0 hides them. */
 export function DemoControls({
   fast,
   onFastForward,

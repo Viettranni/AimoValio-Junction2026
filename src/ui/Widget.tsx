@@ -167,6 +167,18 @@ function WidgetView({
     }
   }
 
+  // A new or changed open draft comes to the front. Without this, a draft planned while a receipt (after sending an
+  // order) or My orders is showing stays hidden behind it until the buyer toggles My orders.
+  const openDraftKey = draft && draft.status !== 'submitted' ? `${draft.id}:${draft.updatedAt}` : null;
+  const [seenDraftKey, setSeenDraftKey] = useState(openDraftKey);
+  if (openDraftKey !== seenDraftKey) {
+    setSeenDraftKey(openDraftKey);
+    if (openDraftKey && (view === 'receipt' || view === 'orders')) {
+      setAudit(null);
+      setView('chat');
+    }
+  }
+
   // The delivery timeline of the opened order comes from the gateway.
   const openedId = view === 'receipt' && opened && opened.delivery === undefined ? opened.receipt.orderId : null;
   useEffect(() => {

@@ -14,7 +14,8 @@
   var origin = new URL(script.src, location.href).origin;
   var customer = script.getAttribute('data-customer') || '';
   var side = script.getAttribute('data-position') === 'bottom-left' ? 'left' : 'right';
-  var demo = new URLSearchParams(location.search).get('demo') === '1';
+  // Demo controls are on by default; ?demo=0 on the host page hides them.
+  var demo = new URLSearchParams(location.search).get('demo') !== '0';
 
   var SIZES = {
     chat: ['min(380px, calc(100vw - 32px))', 'min(600px, calc(100vh - 116px))'],
@@ -73,7 +74,7 @@
 
   function createFrame() {
     var params = new URLSearchParams({ customer: customer, parentOrigin: location.origin });
-    if (demo) params.set('demo', '1');
+    params.set('demo', demo ? '1' : '0');
     frame = document.createElement('iframe');
     frame.className = 'aimo-frame';
     frame.title = 'Aimo ordering assistant';
